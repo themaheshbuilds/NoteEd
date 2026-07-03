@@ -146,7 +146,7 @@
 
             // 4. Restore math blocks
             html = html.replace(/@@MATH_(BLOCK|INLINE)_(\d+)@@/g, (match, type, index) => {
-                return escapeHtml(placeholders[parseInt(index)]);
+                return `<span class="math-instant">${escapeHtml(placeholders[parseInt(index)])}</span>`;
             });
 
             return html;
@@ -166,6 +166,10 @@
         h5,
         h6 {
             font-family: 'Outfit', 'Inter', sans-serif;
+        }
+        
+        .math-instant {
+            display: inline;
         }
     </style>
 </head>
@@ -748,6 +752,11 @@
             const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
             let node;
             while (node = walk.nextNode()) {
+                // If it's a math node, leave it instantly visible and skip typing it out
+                if (node.parentNode && node.parentNode.classList && node.parentNode.classList.contains('math-instant')) {
+                    continue;
+                }
+                
                 if (node.nodeValue.trim() !== '') {
                     textNodes.push({
                         node: node,
@@ -755,6 +764,14 @@
                     });
                     node.nodeValue = '';
                 }
+            }
+
+            // Instantly typeset the math equations before typing starts
+            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                if (typeof window.MathJax.typesetClear === 'function') {
+                    window.MathJax.typesetClear();
+                }
+                MathJax.typesetPromise([element]).catch(err => console.error(err));
             }
 
             let nodeIndex = 0;
