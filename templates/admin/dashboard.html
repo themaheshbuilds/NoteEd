@@ -63,7 +63,7 @@
                                 <div class="text-xs text-gray-500">{{ proof.email }}</div>
                             </td>
                             <td class="py-4 px-6">
-                                <a href="{{ url_for('static', filename=proof.file_path.replace('static/', '')) if proof.file_path.startswith('static/') else url_for('files.download_file', file_id=proof.file_path) }}" target="_blank" class="inline-flex items-center gap-1 text-sm text-primary-600 font-medium hover:underline">
+                                <a href="{{ url_for('admin.view_proof', proof_id=proof.id) }}" target="_blank" class="inline-flex items-center gap-1 text-sm text-primary-600 font-medium hover:underline">
                                     <i data-lucide="image" class="w-4 h-4"></i> View Image
                                 </a>
                             </td>

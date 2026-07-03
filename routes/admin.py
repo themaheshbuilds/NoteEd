@@ -80,6 +80,25 @@ def dashboard():
     
     return render_template("admin/dashboard.html", settings=settings, users=users, proofs=proofs, requests=requests_list, weekly_test_status=weekly_test_status, current_week=f"Week {current_week}, {current_year}")
 
+@admin_bp.route("/proof/<proof_id>/view", methods=["GET"])
+def view_proof(proof_id):
+    if not session.get("is_superadmin"):
+        return redirect(url_for("admin.login"))
+        
+    proof = db_service.query("SELECT * FROM payment_proofs WHERE id = ?", (proof_id,), one=True)
+    if not proof or not proof.get("file_path"):
+        flash("Proof file not found", "error")
+        return redirect(url_for("admin.dashboard"))
+        
+    import os
+    from flask import send_file
+    file_path = proof["file_path"]
+    if os.path.exists(file_path):
+        return send_file(file_path)
+    else:
+        flash("File no longer exists on server", "error")
+        return redirect(url_for("admin.dashboard"))
+
 @admin_bp.route("/proof/<proof_id>/<action>", methods=["POST"])
 def handle_proof(proof_id, action):
     if not session.get("is_superadmin"):
