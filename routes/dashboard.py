@@ -25,7 +25,18 @@ def get_current_user():
 def index():
     user = get_current_user()
     if not user:
-        return redirect(url_for("auth.login"))
+        # Pass empty/default values for unauthenticated users
+        return render_template(
+            "dashboard/index.html",
+            profile=None,
+            semesters=[],
+            sessions=[],
+            exams=[],
+            recent_files=[],
+            pending_tests=[],
+            is_sunday=False,
+            weekly_test_status=None
+        )
         
     # Get user profile info
     profile = db_service.query("SELECT * FROM profiles WHERE id = ?", (user["id"],), one=True)

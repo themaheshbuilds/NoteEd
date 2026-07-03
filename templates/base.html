@@ -596,5 +596,59 @@
             });
         }
     </script>
+    
+    <!-- Unauthenticated Dashboard Interceptor -->
+    {% if not session.get('user_id') %}
+    <!-- Login Required Modal -->
+    <div id="auth-modal" class="fixed inset-0 z-[200] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('auth-modal').classList.add('hidden')"></div>
+        <div class="relative flex items-center justify-center min-h-screen px-4">
+            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-center animate-fade-in relative overflow-hidden">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#0071e3] to-[#42a1ff]"></div>
+                <button onclick="document.getElementById('auth-modal').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+                <div class="w-16 h-16 bg-[#0071e3]/10 text-[#0071e3] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="lock" class="w-8 h-8"></i>
+                </div>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Login Required</h3>
+                <p class="text-gray-500 mb-6 text-sm">You need to log in or create a free account to interact with the dashboard and use AI features.</p>
+                <div class="flex flex-col gap-3">
+                    <a href="{{ url_for('auth.login') }}" class="w-full py-2.5 bg-[#0071e3] hover:bg-[#0077ED] text-white rounded-xl font-medium transition-colors">
+                        Log In to Continue
+                    </a>
+                    <a href="{{ url_for('auth.signup') }}" class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-medium transition-colors">
+                        Create Free Account
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Intercept clicks on interactive elements
+            document.body.addEventListener('click', function(e) {
+                const target = e.target.closest('a, button, .cursor-pointer, input, select, textarea');
+                if (target) {
+                    // Check if it's a login/signup link or inside the modal itself
+                    const href = target.getAttribute('href') || '';
+                    if (href.includes('/login') || href.includes('/signup') || href.includes('/auth/') || target.closest('#auth-modal') || target.closest('#cookie-banner')) {
+                        return; // Let them click it
+                    }
+                    
+                    // Otherwise, block it and show modal
+                    e.preventDefault();
+                    e.stopPropagation();
+                    document.getElementById('auth-modal').classList.remove('hidden');
+                }
+            }, true); // Use capture phase to intercept before other scripts
+        });
+    </script>
+    {% endif %}
 </body>
 </html>

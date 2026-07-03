@@ -100,6 +100,15 @@ def handle_proof(proof_id, action):
         db_service.execute("UPDATE payment_proofs SET status = 'rejected' WHERE id = ?", (proof_id,))
         flash("Proof rejected.", "success")
         
+    # Delete screenshot from disk to save space (but keep DB record)
+    if proof.get("file_path"):
+        import os
+        try:
+            if os.path.exists(proof["file_path"]):
+                os.remove(proof["file_path"])
+        except Exception as e:
+            print(f"Failed to delete payment proof screenshot: {e}")
+            
     return redirect(url_for("admin.dashboard"))
 
 @admin_bp.route("/weekly-tests/global/<action>", methods=["POST"])
