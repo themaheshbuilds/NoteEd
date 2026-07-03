@@ -348,10 +348,6 @@ class AIService:
         if cached:
             return cached
             
-        key, base_url, chat_model, vision_model = self._get_config()
-        if not key:
-            return "NVIDIA NIM API Key not set. Here is a simulated response based on your document content."
-
         # Truncate context to prevent context window overflow on custom models
         context_text = context_text[:4000] if context_text else ""
         
@@ -391,54 +387,59 @@ Document Context:
         else:
             messages.append({"role": "user", "content": user_prompt})
 
-        model_to_use = vision_model if image_base64 else chat_model
-        
+        # Base payload (model will be updated per-config inside loop)
         payload = {
-            "model": model_to_use,
+            "model": "",
             "messages": messages,
             "temperature": 0.7,
             "top_p": 1,
             "max_tokens": 2048
         }
 
-        for attempt in range(6):
+        configs = self.get_prioritized_configs(task_type="live")
+        if not configs:
+            return "No AI API key configured. Please add a key in Settings."
+
+        for cfg in configs:
+            cfg_key, cfg_base_url, cfg_chat_model, cfg_vision_model, cfg_platform = cfg
+
+            model_to_use = cfg_vision_model if image_base64 else cfg_chat_model
+            payload["model"] = model_to_use
+
             try:
-                headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-                response = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload, timeout=120)
+                headers = {"Authorization": f"Bearer {cfg_key}", "Content-Type": "application/json"}
+                response = requests.post(f"{cfg_base_url}/chat/completions", headers=headers, json=payload, timeout=120)
+
+                if response.status_code == 429:
+                    print(f"[Chat] Rate-limited on {cfg_platform}, trying next provider...")
+                    time.sleep(1)
+                    continue
+
                 response.raise_for_status()
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
-                # Strip <think>...</think> tags if present, even if unclosed
+                # Strip <think>...</think> tags if present (reasoning models)
                 content = re.sub(r'<think>.*?(?:</think>|$)', '', content, flags=re.DOTALL).strip()
-                
-                # Save to cache
+
                 self._set_cached_response(user_prompt, content, topic_id=topic_id)
-                
                 return content
+
             except requests.exceptions.HTTPError as e:
                 _handle_auth_error(e)
                 status = e.response.status_code if e.response is not None else 'unknown'
-                print(f"Error in Chat NIM API (HTTP {status}): {e}")
-                
+                print(f"[Chat] HTTP {status} on {cfg_platform}: {e}")
                 if status in [429, 401, 403, 500, 502, 503]:
-                    # Fetch next key for rotation
-                    new_key, new_base_url, new_chat_model, new_vision_model = self._get_config()
-                    if new_key and new_key != key:
-                        key, base_url = new_key, new_base_url
-                        model_to_use = new_vision_model if image_base64 else new_chat_model
-                        payload["model"] = model_to_use
-                        headers["Authorization"] = f"Bearer {key}"
-                    time.sleep(1 + attempt)
+                    time.sleep(1)
                     continue
-                else:
-                    return f"Apologies, I encountered an error communicating with the AI model ({status}). Please try again."
+                return f"Apologies, I encountered an error communicating with the AI ({status}). Please try again."
             except requests.exceptions.Timeout:
-                return "The AI request timed out. Please try again with a shorter question."
+                print(f"[Chat] Timeout on {cfg_platform}, trying next...")
+                continue
             except Exception as e:
-                print(f"Error in Chat NIM API: {e}")
-                return "Apologies, I encountered an error communicating with the AI model. Please try again."
-                
-        return "The AI service is currently unavailable or rate-limited. Please wait a moment and try again."
+                print(f"[Chat] Error on {cfg_platform}: {e}")
+                continue
+
+        return "⏳ All AI providers are currently rate-limited. Please wait 1–2 minutes and try again."
 
     def explain_topic(self, topic_name, level="beginner", language="English"):
         """

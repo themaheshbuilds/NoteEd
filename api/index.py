@@ -14,6 +14,12 @@ except Exception:
 # Load environment variables
 load_dotenv()
 
+# Warn if running on Vercel without a persistent database
+if os.environ.get("VERCEL") and not (os.getenv("DATABASE_URL") or os.getenv("POSTGRES_URL")):
+    print("⚠️  WARNING: Running on Vercel without DATABASE_URL or POSTGRES_URL set!")
+    print("⚠️  The app will use ephemeral /tmp/kiraak_study.db — all data WILL BE LOST on cold start.")
+    print("⚠️  Please connect a Supabase or Neon PostgreSQL database in your Vercel project settings.")
+
 def create_app():
     app = Flask(__name__, template_folder="../templates", static_folder="../static")
     from werkzeug.middleware.proxy_fix import ProxyFix

@@ -2,8 +2,12 @@ import os
 import sqlite3
 import psycopg2
 import psycopg2.extras
-# pyrefly: ignore [missing-import]
-from supabase import create_client, Client
+try:
+    # pyrefly: ignore [missing-import]
+    from supabase import create_client, Client
+except Exception:
+    create_client = None
+    Client = None
 
 class DBService:
     def __init__(self):
@@ -270,7 +274,7 @@ class DBService:
             # AI Query Semantic Cache Table
             cursor.execute(self._translate_schema("""
             CREATE TABLE IF NOT EXISTS ai_query_cache (
-                id SERIAL PRIMARY KEY,
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 query_text TEXT,
                 normalized_query TEXT,
                 ai_response TEXT,

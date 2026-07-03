@@ -569,49 +569,36 @@
             }
         });
 
-        // Typeset math equations in structured content robustly
-        const tryTypeset = (attempts = 0) => {
-            const container = document.getElementById('structured-content');
+        // MathJax Typesetting - single-call guard prevents race conditions
+        let _typesetDone = false;
+        function doTypeset() {
+            if (_typesetDone) return;
+            const sc = document.getElementById('structured-content');
+            if (!sc) return;
             if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-                if (typeof window.MathJax.typesetClear === 'function') {
-                    window.MathJax.typesetClear();
-                }
-                window.MathJax.typesetPromise([container]).then(() => {
-                    console.log('MathJax typeset complete on structured content');
-                }).catch(err => console.error(err));
-            } else if (attempts < 50) {
-                setTimeout(() => tryTypeset(attempts + 1), 200);
+                _typesetDone = true;
+                MathJax.typesetPromise([sc]).catch(err => {
+                    console.error('MathJax error:', err);
+                    _typesetDone = false;
+                });
             }
-        };
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('generated')) {
-            // Remove the 'generated' parameter from URL so it doesn't trigger again on refresh
             urlParams.delete('generated');
             const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
             window.history.replaceState({}, '', newUrl);
-
-            const container = document.getElementById('structured-content');
-            // Directly set content without typewriter animation
-            container.innerHTML = container.innerHTML;
-            // Typeset MathJax instantly
-            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-                if (typeof window.MathJax.typesetClear === 'function') {
-                    window.MathJax.typesetClear();
-                }
-                MathJax.typesetPromise([container]).catch(err => console.error(err));
-            }
-        } else {
-            tryTypeset();
         }
-        // Ensure MathJax typesets content after all resources are loaded (including refresh)
-        window.addEventListener('load', () => {
-            // Use the existing tryTypeset function which has retry logic
-            tryTypeset();
-        });
-        document.addEventListener("mathjax-loaded", () => {
-            tryTypeset();
-        });
+
+        // Try immediately (works if MathJax is already cached/loaded)
+        doTypeset();
+
+        // Wait for MathJax async load to complete
+        document.addEventListener('mathjax-loaded', doTypeset, { once: true });
+
+        // Final safety net after all resources load
+        window.addEventListener('load', () => { setTimeout(doTypeset, 50); }, { once: true });
     });
 </script>
 
