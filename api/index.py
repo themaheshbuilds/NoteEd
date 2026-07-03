@@ -1,6 +1,15 @@
 import os
+import time
 from flask import Flask
 from dotenv import load_dotenv
+
+# Set default timezone to IST (Hyderabad/Kolkata)
+os.environ['TZ'] = 'Asia/Kolkata'
+try:
+    if hasattr(time, 'tzset'):
+        time.tzset()
+except Exception:
+    pass
 
 # Load environment variables
 load_dotenv()

@@ -726,7 +726,73 @@
 
 
     function printNotes() {
-        window.print();
+        const rawContainers = document.querySelectorAll('#raw-notes-container .markdown-body');
+        let fullMarkdown = '';
+        rawContainers.forEach(container => {
+            const txt = document.createElement('textarea');
+            txt.innerHTML = container.innerHTML;
+            fullMarkdown += txt.value + '\n\n';
+        });
+
+        let htmlContent = '';
+        if (typeof marked !== 'undefined') {
+            htmlContent = marked.parse(fullMarkdown);
+        } else {
+            htmlContent = '<pre>' + fullMarkdown + '</pre>';
+        }
+
+        let printContainer = document.getElementById('print-container');
+        if (!printContainer) {
+            printContainer = document.createElement('div');
+            printContainer.id = 'print-container';
+            document.body.appendChild(printContainer);
+        }
+        
+        printContainer.innerHTML = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
+                <style>
+                    @media print {
+                        body > *:not(#print-container) { display: none !important; }
+                        #print-container { display: block !important; position: absolute; left: 0; top: 0; width: 100%; background: white; z-index: 9999; }
+                        #print-container h1, #print-container h2, #print-container h3 { color: #000; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 24px; }
+                        #print-container p { margin-bottom: 16px; }
+                        #print-container ul, #print-container ol { margin-bottom: 16px; padding-left: 20px; }
+                        #print-container pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: monospace; }
+                        #print-container code { font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; }
+                        #print-container blockquote { border-left: 4px solid #ccc; margin: 0; padding-left: 16px; color: #666; }
+                        #print-container table { border-collapse: collapse; width: 100%; margin-bottom: 16px; }
+                        #print-container th, #print-container td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        #print-container th { background-color: #f2f2f2; }
+                        .print-header-info { text-align: center; margin-bottom: 30px; }
+                        .print-header-info h1 { border: none !important; margin-bottom: 5px; }
+                        .print-header-info p { color: #666; margin-top: 0; }
+                        .print-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; color: rgba(0,0,0,0.05); z-index: -1; pointer-events: none; user-select: none; font-weight: bold; white-space: nowrap; }
+                    }
+                    @media screen {
+                        #print-container { display: none; }
+                    }
+                </style>
+                <div class="print-watermark">Helix AI</div>
+                <div class="print-header-info">
+                    <h1>{{ topic.name }}</h1>
+                    <p>{{ topic.subject_name }} - {{ topic.unit_name }}</p>
+                </div>
+                ${htmlContent}
+            </div>
+        `;
+        
+        setTimeout(() => {
+            if (typeof MathJax !== 'undefined') {
+                MathJax.typesetPromise([printContainer]).then(() => {
+                    window.print();
+                    // Clean up after printing
+                    setTimeout(() => printContainer.innerHTML = '', 1000);
+                });
+            } else {
+                window.print();
+                setTimeout(() => printContainer.innerHTML = '', 1000);
+            }
+        }, 100);
     }
 
 
