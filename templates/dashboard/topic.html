@@ -592,10 +592,14 @@
             window.history.replaceState({}, '', newUrl);
 
             const container = document.getElementById('structured-content');
-            if (typeof typeWriterReveal !== 'undefined') {
-                typeWriterReveal(container, container.innerHTML, 3, tryTypeset);
-            } else {
-                tryTypeset();
+            // Directly set content without typewriter animation
+            container.innerHTML = container.innerHTML;
+            // Typeset MathJax instantly
+            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                if (typeof window.MathJax.typesetClear === 'function') {
+                    window.MathJax.typesetClear();
+                }
+                MathJax.typesetPromise([container]).catch(err => console.error(err));
             }
         } else {
             tryTypeset();
