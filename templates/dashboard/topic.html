@@ -586,6 +586,11 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('generated')) {
+            // Remove the 'generated' parameter from URL so it doesn't trigger again on refresh
+            urlParams.delete('generated');
+            const newUrl = window.location.pathname + (urlParams.toString() ? '?' + urlParams.toString() : '');
+            window.history.replaceState({}, '', newUrl);
+
             const container = document.getElementById('structured-content');
             if (typeof typeWriterReveal !== 'undefined') {
                 typeWriterReveal(container, container.innerHTML, 3, tryTypeset);
