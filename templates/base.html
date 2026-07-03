@@ -598,7 +598,7 @@
     </script>
     
     <!-- Unauthenticated Dashboard Interceptor -->
-    {% if not session.get('user_id') %}
+    {% if not session.get('user_id') and request.endpoint and request.endpoint.startswith('dashboard.') %}
     <!-- Login Required Modal -->
     <div id="auth-modal" class="fixed inset-0 z-[200] hidden">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('auth-modal').classList.add('hidden')"></div>
