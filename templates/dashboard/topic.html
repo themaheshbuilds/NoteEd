@@ -604,6 +604,11 @@
         } else {
             tryTypeset();
         }
+        // Ensure MathJax typesets content after all resources are loaded (including refresh)
+        window.addEventListener('load', () => {
+            // Use the existing tryTypeset function which has retry logic
+            tryTypeset();
+        });
         document.addEventListener("mathjax-loaded", () => {
             tryTypeset();
         });
