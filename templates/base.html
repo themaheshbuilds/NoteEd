@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Helix AI{% endblock %}</title>
     <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}" type="image/png">
-    
+
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#1d1d1f">
@@ -13,140 +14,143 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Helix AI">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
-    
+
     <!-- Tailwind CSS Play CDN with Typography plugin -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    
+
     <!-- Markdown & Syntax Highlighting -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            colors: {
-              primary: {
-                50: '#eef0ff',
-                100: '#e0e4ff',
-                200: '#c7cdff',
-                300: '#a3aaff',
-                400: '#7e7dff',
-                500: '#5c54ff',
-                600: '#4848e5',
-                700: '#3d3ddb',
-                800: '#3232bb',
-                900: '#2c2d93',
-                950: '#1a1a54',
-              },
-              accent: {
-                50: '#fff6ec',
-                100: '#ffecd3',
-                200: '#ffd3a5',
-                300: '#ffb26d',
-                400: '#ff8a00',
-                500: '#fa6c00',
-                600: '#e55300',
-                700: '#be3a02',
-                800: '#972f09',
-                900: '#7a280c',
-                950: '#421104',
-              },
-            },
-            fontFamily: {
-              sans: ['Lexend', 'sans-serif'],
-              lexend: ['Lexend', 'sans-serif'],
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eef0ff',
+                            100: '#e0e4ff',
+                            200: '#c7cdff',
+                            300: '#a3aaff',
+                            400: '#7e7dff',
+                            500: '#5c54ff',
+                            600: '#4848e5',
+                            700: '#3d3ddb',
+                            800: '#3232bb',
+                            900: '#2c2d93',
+                            950: '#1a1a54',
+                        },
+                        accent: {
+                            50: '#fff6ec',
+                            100: '#ffecd3',
+                            200: '#ffd3a5',
+                            300: '#ffb26d',
+                            400: '#ff8a00',
+                            500: '#fa6c00',
+                            600: '#e55300',
+                            700: '#be3a02',
+                            800: '#972f09',
+                            900: '#7a280c',
+                            950: '#421104',
+                        },
+                    },
+                    fontFamily: {
+                        sans: ['Lexend', 'sans-serif'],
+                        lexend: ['Lexend', 'sans-serif'],
+                    }
+                }
             }
-          }
         }
-      }
     </script>
     <!-- Google Fonts: Inter + Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <!-- MathJax Configuration & Library -->
     <script>
-      window.MathJax = {
-        tex: {
-          inlineMath: [['$', '$'], ['\\(', '\\)']],
-          displayMath: [['$$', '$$'], ['\\[', '\\]']],
-          processEscapes: true
-        },
-        options: {
-          ignoreHtmlClass: 'tex2jax_ignore',
-          processHtmlClass: 'tex2jax_process'
-        },
-        startup: {
-          pageReady: () => {
-            return MathJax.startup.defaultPageReady().then(() => {
-              document.dispatchEvent(new Event("mathjax-loaded"));
-            });
-          }
-        }
-      };
-      
-      window.typesetMath = function(element = null) {
-        let args = element ? [element] : undefined;
-        if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-            MathJax.typesetPromise(args).catch(err => console.error(err));
-        } else {
-            document.addEventListener("mathjax-loaded", () => {
-                MathJax.typesetPromise(args).catch(err => console.error(err));
-            }, { once: true });
-        }
-      };
-      
-      // Helper function to shield Math equations from marked.js parsing
-      function parseMarkdownWithMath(text) {
-        if (!text) return "";
-        if (typeof marked === 'undefined') return text;
-        
-        const placeholders = [];
-        
-        // 1. Replace display math ($$...$$ or \[...\])
-        let processed = text.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
-            placeholders.push(match);
-            return `@@MATH_BLOCK_${placeholders.length - 1}@@`;
-        });
-        processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (match) => {
-            placeholders.push(match);
-            return `@@MATH_BLOCK_${placeholders.length - 1}@@`;
-        });
-        
-        // 2. Replace inline math (\(... \) and $...$)
-        processed = processed.replace(/\\\(([\s\S]*?)\\\)/g, (match) => {
-            placeholders.push(match);
-            return `@@MATH_INLINE_${placeholders.length - 1}@@`;
-        });
-        processed = processed.replace(/\$([^\$\n]+?)\$/g, (match) => {
-            placeholders.push(match);
-            return `@@MATH_INLINE_${placeholders.length - 1}@@`;
-        });
-        
-        // 3. Run marked markdown parsing
-        let html = marked.parse(processed);
-        
-        // Helper to escape HTML special characters in math
-        function escapeHtml(unsafe) {
-            return unsafe
-                 .replace(/&/g, "&amp;")
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/"/g, "&quot;")
-                 .replace(/'/g, "&#039;");
-        }
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            startup: {
+                pageReady: () => {
+                    return MathJax.startup.defaultPageReady().then(() => {
+                        document.dispatchEvent(new Event("mathjax-loaded"));
+                    });
+                }
+            }
+        };
 
-        // 4. Restore math blocks
-        html = html.replace(/@@MATH_(BLOCK|INLINE)_(\d+)@@/g, (match, type, index) => {
-            return escapeHtml(placeholders[parseInt(index)]);
-        });
-        
-        return html;
-      }
+        window.typesetMath = function (element = null) {
+            let args = element ? [element] : undefined;
+            if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
+                MathJax.typesetPromise(args).catch(err => console.error(err));
+            } else {
+                document.addEventListener("mathjax-loaded", () => {
+                    MathJax.typesetPromise(args).catch(err => console.error(err));
+                }, { once: true });
+            }
+        };
+
+        // Helper function to shield Math equations from marked.js parsing
+        function parseMarkdownWithMath(text) {
+            if (!text) return "";
+            if (typeof marked === 'undefined') return text;
+
+            const placeholders = [];
+
+            // 1. Replace display math ($$...$$ or \[...\])
+            let processed = text.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
+                placeholders.push(match);
+                return `@@MATH_BLOCK_${placeholders.length - 1}@@`;
+            });
+            processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (match) => {
+                placeholders.push(match);
+                return `@@MATH_BLOCK_${placeholders.length - 1}@@`;
+            });
+
+            // 2. Replace inline math (\(... \) and $...$)
+            processed = processed.replace(/\\\(([\s\S]*?)\\\)/g, (match) => {
+                placeholders.push(match);
+                return `@@MATH_INLINE_${placeholders.length - 1}@@`;
+            });
+            processed = processed.replace(/\$([^\$\n]+?)\$/g, (match) => {
+                placeholders.push(match);
+                return `@@MATH_INLINE_${placeholders.length - 1}@@`;
+            });
+
+            // 3. Run marked markdown parsing
+            let html = marked.parse(processed);
+
+            // Helper to escape HTML special characters in math
+            function escapeHtml(unsafe) {
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            // 4. Restore math blocks
+            html = html.replace(/@@MATH_(BLOCK|INLINE)_(\d+)@@/g, (match, type, index) => {
+                return escapeHtml(placeholders[parseInt(index)]);
+            });
+
+            return html;
+        }
     </script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -154,90 +158,123 @@
         body {
             font-family: 'Inter', 'Outfit', sans-serif;
         }
-        h1, h2, h3, h4, h5, h6 {
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             font-family: 'Outfit', 'Inter', sans-serif;
         }
     </style>
 </head>
+
 <body class="bg-[#f5f5f7] text-[#1d1d1f] transition-all min-h-screen flex flex-col">
     <!-- Navbar -->
-    <nav class="bg-white/80 backdrop-blur-md m-4 px-5 py-3 flex items-center justify-between shadow-sm rounded-2xl border border-gray-200 sticky top-4 z-40">
+    <nav
+        class="bg-white/80 backdrop-blur-md m-4 px-5 py-3 flex items-center justify-between shadow-sm rounded-2xl border border-gray-200 sticky top-4 z-40">
         <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-2">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Helix AI" class="h-10 mix-blend-multiply">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Helix AI"
+                class="h-10 mix-blend-multiply">
             <span class="font-bold text-xl tracking-tight text-[#1d1d1f] font-outfit block">Helix AI</span>
         </a>
 
         <!-- Center Nav Links (desktop) -->
         <div class="hidden lg:flex items-center space-x-4">
             {% if current_user %}
-            <a href="/search" class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
+            <a href="/search"
+                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
                 <i data-lucide="search" class="w-4 h-4"></i> Search
             </a>
-            <a href="/analytics" class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
+            <a href="/analytics"
+                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
                 <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics
             </a>
-            <a href="/chat" class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
+            <a href="/chat"
+                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
                 <i data-lucide="message-square" class="w-4 h-4"></i> AI Chat
             </a>
-            <a href="/leaderboard" class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
+            <a href="/leaderboard"
+                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
                 <i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard
             </a>
-            <a href="/bookmarks" class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
+            <a href="/bookmarks"
+                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
                 <i data-lucide="bookmark" class="w-4 h-4"></i> Bookmarks
             </a>
-            <a href="/support" class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
+            <a href="/support"
+                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
                 <i data-lucide="help-circle" class="w-4 h-4"></i> Support
             </a>
-            <button onclick="openCommandBar()" class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="terminal" class="w-4 h-4"></i> Command <kbd class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200 font-mono text-gray-500">Ctrl+K</kbd>
+            <button onclick="openCommandBar()"
+                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
+                <i data-lucide="terminal" class="w-4 h-4"></i> Command <kbd
+                    class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200 font-mono text-gray-500">Ctrl+K</kbd>
             </button>
             {% endif %}
         </div>
 
         <div class="flex items-center space-x-2 md:space-x-3 shrink-0">
             {% if current_user %}
-                <a href="{{ url_for('study.paste_syllabus') }}" class="inline-flex p-2 md:px-4 md:py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition items-center justify-center" aria-label="Import">
-                    <i data-lucide="download" class="w-4 h-4 md:mr-1.5"></i> <span class="hidden md:inline">Import</span>
-                </a>
-                <a href="{{ url_for('planner.view_planner') }}" class="inline-flex p-2 md:px-4 md:py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition items-center justify-center" aria-label="Planner">
-                    <i data-lucide="calendar" class="w-4 h-4 md:mr-1.5"></i> <span class="hidden md:inline">Planner</span>
-                </a>
-                <a href="/settings" class="p-2 rounded-full bg-gray-100 text-gray-600 hover:text-[#1d1d1f] hover:bg-gray-200 transition flex items-center justify-center" aria-label="Settings">
-                    <i data-lucide="settings" class="w-5 h-5"></i>
-                </a>
+            <a href="{{ url_for('study.paste_syllabus') }}"
+                class="inline-flex p-2 md:px-4 md:py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition items-center justify-center"
+                aria-label="Import">
+                <i data-lucide="download" class="w-4 h-4 md:mr-1.5"></i> <span class="hidden md:inline">Import</span>
+            </a>
+            <a href="{{ url_for('planner.view_planner') }}"
+                class="inline-flex p-2 md:px-4 md:py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition items-center justify-center"
+                aria-label="Planner">
+                <i data-lucide="calendar" class="w-4 h-4 md:mr-1.5"></i> <span class="hidden md:inline">Planner</span>
+            </a>
+            <a href="/settings"
+                class="p-2 rounded-full bg-gray-100 text-gray-600 hover:text-[#1d1d1f] hover:bg-gray-200 transition flex items-center justify-center"
+                aria-label="Settings">
+                <i data-lucide="settings" class="w-5 h-5"></i>
+            </a>
             {% else %}
-                <a href="{{ url_for('auth.login') }}" class="px-4 py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition">
-                    Login
-                </a>
-                <a href="{{ url_for('auth.signup') }}" class="px-4 py-2 rounded-full bg-[#0071e3] text-gray-900 text-sm font-semibold hover:bg-[#0077ed] transition">
-                    Sign Up
-                </a>
+            <a href="{{ url_for('auth.login') }}"
+                class="px-4 py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition">
+                Login
+            </a>
+            <a href="{{ url_for('auth.signup') }}"
+                class="px-4 py-2 rounded-full bg-[#0071e3] text-gray-900 text-sm font-semibold hover:bg-[#0077ed] transition">
+                Sign Up
+            </a>
             {% endif %}
         </div>
     </nav>
 
     <!-- Mobile Bottom Nav -->
     {% if current_user %}
-    <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around py-2 px-1 shadow-lg">
-        <a href="{{ url_for('dashboard.index') }}" class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
+    <div
+        class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around py-2 px-1 shadow-lg">
+        <a href="{{ url_for('dashboard.index') }}"
+            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
             <i data-lucide="home" class="w-5 h-5"></i> Home
         </a>
-        <a href="/search" class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
+        <a href="/search"
+            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
             <i data-lucide="search" class="w-5 h-5"></i> Search
         </a>
-        <button onclick="openCommandBar()" class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 font-bold gap-1 text-[#0071e3]">
+        <button onclick="openCommandBar()"
+            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 font-bold gap-1 text-[#0071e3]">
             <i data-lucide="sparkles" class="w-5 h-5"></i> AI
         </button>
-        <a href="/chat" class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
+        <a href="/chat"
+            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
             <i data-lucide="message-square" class="w-5 h-5"></i> Chat
         </a>
-        <a href="/leaderboard" class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
+        <a href="/leaderboard"
+            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
             <i data-lucide="trophy" class="w-5 h-5"></i> Ranks
         </a>
-        <a href="/bookmarks" class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
+        <a href="/bookmarks"
+            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
             <i data-lucide="bookmark" class="w-5 h-5"></i> Saved
         </a>
-        <a href="/support" class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
+        <a href="/support"
+            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
             <i data-lucide="help-circle" class="w-5 h-5"></i> Support
         </a>
     </div>
@@ -248,33 +285,37 @@
 
         <!-- Flashed Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="mb-6 space-y-2">
-              {% for category, message in messages %}
-                <div class="p-4 rounded-xl flex items-center gap-3 {% if category == 'error' %}bg-red-900/30 border border-red-500/20 text-red-200{% else %}bg-emerald-900/30 border border-emerald-500/20 text-emerald-200{% endif %} glass-card">
-                  {% if category == 'error' %}
-                    <span>❌</span>
-                  {% else %}
-                    <span>✅</span>
-                  {% endif %}
-                  <span class="text-sm">{{ message }}</span>
-                </div>
-              {% endfor %}
+        {% if messages %}
+        <div class="mb-6 space-y-2">
+            {% for category, message in messages %}
+            <div
+                class="p-4 rounded-xl flex items-center gap-3 {% if category == 'error' %}bg-red-900/30 border border-red-500/20 text-red-200{% else %}bg-emerald-900/30 border border-emerald-500/20 text-emerald-200{% endif %} glass-card">
+                {% if category == 'error' %}
+                <span>❌</span>
+                {% else %}
+                <span>✅</span>
+                {% endif %}
+                <span class="text-sm">{{ message }}</span>
             </div>
-          {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
     </main>
 
     <!-- Background Task Toast container -->
-    <div id="task-toast-container" class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[100] flex flex-col gap-2 pointer-events-none"></div>
+    <div id="task-toast-container"
+        class="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-[100] flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- Footer -->
     <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 py-8 text-center text-sm opacity-70">
         <div class="max-w-2xl mx-auto px-4">
             <p class="mb-4">────────────────────────────────────────────</p>
-            <p class="italic mb-2 text-primary-800 dark:text-primary-300 font-medium">"Mastery isn't achieved by studying everything once, <br> but by understanding one concept deeply and practicing it relentlessly."</p>
+            <p class="italic mb-2 text-primary-800 dark:text-primary-300 font-medium">"Mastery isn't achieved by
+                studying everything once, <br> but by understanding one concept deeply and practicing it relentlessly."
+            </p>
             <p class="font-bold tracking-widest uppercase text-[10px] mb-4">Learn • Practice • Master</p>
             <div class="flex flex-wrap justify-center gap-4 mb-4 text-xs">
                 <a href="/contact" class="hover:text-primary-600 transition">Contact</a>
@@ -291,46 +332,46 @@
 
     {% if current_user %}
     <script>
-    // Background Task Polling
-    function pollTasks() {
-        fetch('/api/tasks/active')
-            .then(res => res.json())
-            .then(tasks => {
-                const container = document.getElementById('task-toast-container');
-                if (!container) return;
-                
-                const activeTaskIds = new Set();
-                
-                if (tasks && tasks.length > 0) {
-                    tasks.forEach(task => {
-                        activeTaskIds.add(task.id);
-                        let toast = document.getElementById(`task-toast-${task.id}`);
-                        const isNew = !toast;
-                        
-                        if (isNew) {
-                            toast = document.createElement('div');
-                            toast.id = `task-toast-${task.id}`;
-                            toast.className = 'glass-card bg-white/95 border border-gray-200 p-4 rounded-2xl shadow-lg w-72 pointer-events-auto transform transition-all animate-slide-in';
-                        }
-                        
-                        let icon = '<div class="w-8 h-8 rounded-full bg-primary-100 text-[#0071e3] flex items-center justify-center animate-pulse"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path></svg></div>';
-                        let progressHtml = '';
-                        
-                        if (task.status === 'completed') {
-                            icon = '<div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>';
-                        } else if (task.status === 'failed') {
-                            icon = '<div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>';
-                        } else {
-                            const percent = task.total_items > 0 ? Math.round((task.completed_items / task.total_items) * 100) : 0;
-                            progressHtml = `
+        // Background Task Polling
+        function pollTasks() {
+            fetch('/api/tasks/active')
+                .then(res => res.json())
+                .then(tasks => {
+                    const container = document.getElementById('task-toast-container');
+                    if (!container) return;
+
+                    const activeTaskIds = new Set();
+
+                    if (tasks && tasks.length > 0) {
+                        tasks.forEach(task => {
+                            activeTaskIds.add(task.id);
+                            let toast = document.getElementById(`task-toast-${task.id}`);
+                            const isNew = !toast;
+
+                            if (isNew) {
+                                toast = document.createElement('div');
+                                toast.id = `task-toast-${task.id}`;
+                                toast.className = 'glass-card bg-white/95 border border-gray-200 p-4 rounded-2xl shadow-lg w-72 pointer-events-auto transform transition-all animate-slide-in';
+                            }
+
+                            let icon = '<div class="w-8 h-8 rounded-full bg-primary-100 text-[#0071e3] flex items-center justify-center animate-pulse"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path></svg></div>';
+                            let progressHtml = '';
+
+                            if (task.status === 'completed') {
+                                icon = '<div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>';
+                            } else if (task.status === 'failed') {
+                                icon = '<div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>';
+                            } else {
+                                const percent = task.total_items > 0 ? Math.round((task.completed_items / task.total_items) * 100) : 0;
+                                progressHtml = `
                                 <div class="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
                                     <div class="bg-[#0071e3] h-1.5 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
                                 </div>
                                 <p class="text-[10px] text-gray-500 mt-1 text-right">${task.completed_items} / ${task.total_items}</p>
                             `;
-                        }
-                        
-                        toast.innerHTML = `
+                            }
+
+                            toast.innerHTML = `
                             <div class="flex gap-3">
                                 ${icon}
                                 <div class="flex-1 min-w-0">
@@ -340,28 +381,28 @@
                                 </div>
                             </div>
                         `;
-                        
-                        if (isNew) {
-                            container.appendChild(toast);
+
+                            if (isNew) {
+                                container.appendChild(toast);
+                            }
+                        });
+                    }
+
+                    // Remove stale toasts
+                    Array.from(container.children).forEach(toastEl => {
+                        const taskId = toastEl.id.replace('task-toast-', '');
+                        if (!activeTaskIds.has(taskId)) {
+                            toastEl.remove();
                         }
                     });
-                }
-                
-                // Remove stale toasts
-                Array.from(container.children).forEach(toastEl => {
-                    const taskId = toastEl.id.replace('task-toast-', '');
-                    if (!activeTaskIds.has(taskId)) {
-                        toastEl.remove();
-                    }
-                });
-            })
-            .catch(err => console.error('Task poll error', err));
-    }
-    
-    // Poll every 3 seconds
-    setInterval(pollTasks, 3000);
-    // Initial poll
-    pollTasks();
+                })
+                .catch(err => console.error('Task poll error', err));
+        }
+
+        // Poll every 3 seconds
+        setInterval(pollTasks, 3000);
+        // Initial poll
+        pollTasks();
     </script>
     {% endif %}
 
@@ -372,7 +413,8 @@
 
         <!-- Modal -->
         <div class="relative flex items-start justify-center pt-[15vh]">
-            <div class="w-full max-w-2xl mx-4 glass-card border border-white/10 shadow-2xl shadow-primary-500/10 overflow-hidden animate-fade-in">
+            <div
+                class="w-full max-w-2xl mx-4 glass-card border border-white/10 shadow-2xl shadow-primary-500/10 overflow-hidden animate-fade-in">
                 <!-- Header -->
                 <div class="px-5 pt-5 pb-3 border-b border-white/5">
                     <div class="flex items-center justify-between mb-2">
@@ -380,34 +422,35 @@
                             <span class="text-lg">🤖</span>
                             <h3 class="text-sm font-bold text-primary-300 font-outfit">AI Command Bar</h3>
                         </div>
-                        <button onclick="closeCommandBar()" class="text-xs opacity-50 hover:opacity-100 transition flex items-center gap-1">
-                            <kbd class="px-1.5 py-0.5 rounded bg-white/10 border border-white/10 font-mono text-[10px]">Esc</kbd>
+                        <button onclick="closeCommandBar()"
+                            class="text-xs opacity-50 hover:opacity-100 transition flex items-center gap-1">
+                            <kbd
+                                class="px-1.5 py-0.5 rounded bg-white/10 border border-white/10 font-mono text-[10px]">Esc</kbd>
                         </button>
                     </div>
-                    <p class="text-xs opacity-50">Tell the AI what to do — it can create study plans, import syllabi, generate quizzes, and more.</p>
+                    <p class="text-xs opacity-50">Tell the AI what to do — it can create study plans, import syllabi,
+                        generate quizzes, and more.</p>
                 </div>
 
                 <!-- Input -->
                 <form id="ai-command-form" class="p-5">
                     <div class="flex items-center gap-3">
                         <div class="flex-1 relative">
-                            <input
-                                type="text"
-                                id="ai-command-input"
+                            <input type="text" id="ai-command-input"
                                 placeholder='Ask AI anything... e.g. "Create 5th sem DBMS normalization"'
                                 class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition placeholder:opacity-40"
-                                autocomplete="off"
-                            >
+                                autocomplete="off">
                         </div>
-                        <button
-                            type="submit"
-                            id="ai-command-submit"
-                            class="px-5 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-sm font-bold text-white transition flex items-center gap-2 shrink-0"
-                        >
+                        <button type="submit" id="ai-command-submit"
+                            class="px-5 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-sm font-bold text-white transition flex items-center gap-2 shrink-0">
                             <span id="ai-cmd-btn-text">Send</span>
-                            <svg id="ai-cmd-spinner" class="hidden animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            <svg id="ai-cmd-spinner" class="hidden animate-spin h-4 w-4"
+                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
                             </svg>
                         </button>
                     </div>
@@ -418,16 +461,21 @@
 
                 <!-- Quick Suggestions -->
                 <div class="px-5 pb-4 flex flex-wrap gap-2">
-                    <button type="button" onclick="fillCommand('Create syllabus for Semester 5: Subject AI, Unit 1 Intro, Topics: Agents, Search')" class="text-[11px] px-4 py-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white border border-white/20 hover:opacity-90 shadow-[0_0_15px_rgba(139,92,246,0.5)] transition-all font-bold">
+                    <button type="button"
+                        onclick="fillCommand('Create syllabus for Semester 5: Subject AI, Unit 1 Intro, Topics: Agents, Search')"
+                        class="text-[11px] px-4 py-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white border border-white/20 hover:opacity-90 shadow-[0_0_15px_rgba(139,92,246,0.5)] transition-all font-bold">
                         📋 Syllabus template
                     </button>
-                    <button type="button" onclick="fillCommand('Create a study plan for my next exam')" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
+                    <button type="button" onclick="fillCommand('Create a study plan for my next exam')"
+                        class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
                         📅 Create study plan
                     </button>
-                    <button type="button" onclick="fillCommand('Generate quiz for my weakest topic')" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
+                    <button type="button" onclick="fillCommand('Generate quiz for my weakest topic')"
+                        class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
                         📝 Generate quiz
                     </button>
-                    <button type="button" onclick="fillCommand('What should I study today?')" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
+                    <button type="button" onclick="fillCommand('What should I study today?')"
+                        class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
                         💡 Study suggestion
                     </button>
                 </div>
@@ -437,126 +485,140 @@
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-    // AI Command Bar Logic
-    function openCommandBar() {
-        const overlay = document.getElementById('ai-command-overlay');
-        overlay.classList.remove('hidden');
-        document.body.style.overflow = 'hidden';
-        setTimeout(() => {
-            document.getElementById('ai-command-input').focus();
-        }, 100);
-    }
-
-    function closeCommandBar() {
-        const overlay = document.getElementById('ai-command-overlay');
-        overlay.classList.add('hidden');
-        document.body.style.overflow = '';
-        // Reset state
-        const resp = document.getElementById('ai-command-response');
-        resp.classList.add('hidden');
-        resp.className = 'hidden mt-4 p-4 rounded-xl text-sm border';
-        document.getElementById('ai-command-input').value = '';
-    }
-
-    function fillCommand(text) {
-        const input = document.getElementById('ai-command-input');
-        input.value = text;
-        input.focus();
-    }
-
-    // Keyboard shortcut: Ctrl+K
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-            e.preventDefault();
+        // AI Command Bar Logic
+        function openCommandBar() {
             const overlay = document.getElementById('ai-command-overlay');
-            if (overlay.classList.contains('hidden')) {
-                openCommandBar();
-            } else {
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => {
+                document.getElementById('ai-command-input').focus();
+            }, 100);
+        }
+
+        function closeCommandBar() {
+            const overlay = document.getElementById('ai-command-overlay');
+            overlay.classList.add('hidden');
+            document.body.style.overflow = '';
+            // Reset state
+            const resp = document.getElementById('ai-command-response');
+            resp.classList.add('hidden');
+            resp.className = 'hidden mt-4 p-4 rounded-xl text-sm border';
+            document.getElementById('ai-command-input').value = '';
+        }
+
+        function fillCommand(text) {
+            const input = document.getElementById('ai-command-input');
+            input.value = text;
+            input.focus();
+        }
+
+        // Keyboard shortcut: Ctrl+K
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                e.preventDefault();
+                const overlay = document.getElementById('ai-command-overlay');
+                if (overlay.classList.contains('hidden')) {
+                    openCommandBar();
+                } else {
+                    closeCommandBar();
+                }
+            }
+            if (e.key === 'Escape') {
                 closeCommandBar();
             }
-        }
-        if (e.key === 'Escape') {
-            closeCommandBar();
-        }
-    });
+        });
 
-    // Form submission
-    document.getElementById('ai-command-form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const input = document.getElementById('ai-command-input');
-        const command = input.value.trim();
-        if (!command) return;
+        // Form submission
+        document.getElementById('ai-command-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('ai-command-input');
+            const command = input.value.trim();
+            if (!command) return;
 
-        const btnText = document.getElementById('ai-cmd-btn-text');
-        const spinner = document.getElementById('ai-cmd-spinner');
-        const submitBtn = document.getElementById('ai-command-submit');
-        const responseDiv = document.getElementById('ai-command-response');
+            const btnText = document.getElementById('ai-cmd-btn-text');
+            const spinner = document.getElementById('ai-cmd-spinner');
+            const submitBtn = document.getElementById('ai-command-submit');
+            const responseDiv = document.getElementById('ai-command-response');
 
-        // Show loading
-        btnText.textContent = 'Processing...';
-        spinner.classList.remove('hidden');
-        submitBtn.disabled = true;
-        submitBtn.classList.add('opacity-70');
-        responseDiv.classList.add('hidden');
+            // Show loading
+            btnText.textContent = 'Processing...';
+            spinner.classList.remove('hidden');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-70');
+            responseDiv.classList.add('hidden');
 
-        try {
-            const response = await fetch('/ai/command', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ command: command })
-            });
-            const data = await response.json();
+            try {
+                const response = await fetch('/ai/command', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ command: command })
+                });
+                const data = await response.json();
 
-            responseDiv.classList.remove('hidden');
+                responseDiv.classList.remove('hidden');
 
-            if (response.ok && data.success) {
-                responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-emerald-900/30 border-emerald-500/20 text-emerald-200';
-                responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>✅</span><div>${data.message || 'Command executed successfully!'}</div></div>`;
+                if (response.ok && data.success) {
+                    responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-emerald-900/30 border-emerald-500/20 text-emerald-200';
+                    responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>✅</span><div>${data.message || 'Command executed successfully!'}</div></div>`;
 
-                // Auto-redirect after success
-                if (data.redirect) {
-                    setTimeout(() => {
-                        window.location.href = data.redirect;
-                    }, 1500);
+                    // Auto-redirect after success
+                    if (data.redirect) {
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 1500);
+                    }
+                } else {
+                    responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-red-900/30 border-red-500/20 text-red-200';
+                    responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>❌</span><div>${data.message || data.error || 'Something went wrong. Please try again.'}</div></div>`;
                 }
-            } else {
+            } catch (err) {
+                responseDiv.classList.remove('hidden');
                 responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-red-900/30 border-red-500/20 text-red-200';
-                responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>❌</span><div>${data.message || data.error || 'Something went wrong. Please try again.'}</div></div>`;
+                responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>❌</span><div>Network error. Please check your connection and try again.</div></div>`;
+            } finally {
+                btnText.textContent = 'Send';
+                spinner.classList.add('hidden');
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70');
             }
-        } catch (err) {
-            responseDiv.classList.remove('hidden');
-            responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-red-900/30 border-red-500/20 text-red-200';
-            responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>❌</span><div>Network error. Please check your connection and try again.</div></div>`;
-        } finally {
-            btnText.textContent = 'Send';
-            spinner.classList.add('hidden');
-            submitBtn.disabled = false;
-            submitBtn.classList.remove('opacity-70');
-        }
-    });
+        });
     </script>
     <script>
-      lucide.createIcons();
+        lucide.createIcons();
     </script>
 
     <!-- Cookie Consent Banner -->
     <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 z-[200] hidden">
         <div class="max-w-3xl mx-auto p-4">
-            <div class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div
+                class="bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-gray-200 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div class="flex items-start gap-3 flex-1">
                     <div class="p-2 bg-primary-50 rounded-xl text-primary-500 shrink-0">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/><path d="M8.5 8.5v.01"/><path d="M16 15.5v.01"/><path d="M12 12v.01"/><path d="M11 17v.01"/><path d="M7 14v.01"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
+                            <path d="M8.5 8.5v.01" />
+                            <path d="M16 15.5v.01" />
+                            <path d="M12 12v.01" />
+                            <path d="M11 17v.01" />
+                            <path d="M7 14v.01" />
+                        </svg>
                     </div>
                     <div>
                         <p class="text-sm text-[#1d1d1f] font-semibold">We use cookies</p>
-                        <p class="text-xs text-gray-500 mt-0.5">We use essential cookies only to keep you logged in. No tracking or advertising cookies. <a href="/privacy-policy" class="text-primary-600 hover:text-primary-700 underline underline-offset-2">Learn more</a></p>
+                        <p class="text-xs text-gray-500 mt-0.5">We use essential cookies only to keep you logged in. No
+                            tracking or advertising cookies. <a href="/privacy-policy"
+                                class="text-primary-600 hover:text-primary-700 underline underline-offset-2">Learn
+                                more</a></p>
                     </div>
                 </div>
                 <div class="flex gap-2 shrink-0 w-full sm:w-auto">
-                    <button onclick="acceptCookies()" class="flex-1 sm:flex-none px-5 py-2 rounded-full bg-[#1d1d1f] hover:bg-black text-white text-sm font-semibold transition-all">
+                    <button onclick="acceptCookies()"
+                        class="flex-1 sm:flex-none px-5 py-2 rounded-full bg-[#1d1d1f] hover:bg-black text-white text-sm font-semibold transition-all">
                         Accept
                     </button>
-                    <button onclick="acceptCookies()" class="flex-1 sm:flex-none px-5 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-[#1d1d1f] text-sm font-semibold transition-all">
+                    <button onclick="acceptCookies()"
+                        class="flex-1 sm:flex-none px-5 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-[#1d1d1f] text-sm font-semibold transition-all">
                         Got it
                     </button>
                 </div>
@@ -564,9 +626,9 @@
         </div>
     </div>
     <script>
-        (function() {
+        (function () {
             if (!localStorage.getItem('cookie_consent')) {
-                setTimeout(function() {
+                setTimeout(function () {
                     document.getElementById('cookie-banner').classList.remove('hidden');
                     document.getElementById('cookie-banner').style.animation = 'slideUp 0.3s ease-out';
                 }, 1000);
@@ -576,12 +638,33 @@
             localStorage.setItem('cookie_consent', 'accepted');
             const banner = document.getElementById('cookie-banner');
             banner.style.animation = 'slideDown 0.3s ease-in forwards';
-            setTimeout(function() { banner.classList.add('hidden'); }, 300);
+            setTimeout(function () { banner.classList.add('hidden'); }, 300);
         }
     </script>
     <style>
-        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes slideDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(100%); opacity: 0; } }
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+        }
     </style>
 
     <!-- PWA Service Worker Registration -->
@@ -596,43 +679,50 @@
             });
         }
     </script>
-    
+
     <!-- Unauthenticated Dashboard Interceptor -->
     {% if not session.get('user_id') and request.endpoint and request.endpoint.startswith('dashboard.') %}
     <!-- Login Required Modal -->
     <div id="auth-modal" class="fixed inset-0 z-[200] hidden">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('auth-modal').classList.add('hidden')"></div>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onclick="document.getElementById('auth-modal').classList.add('hidden')"></div>
         <div class="relative flex items-center justify-center min-h-screen px-4">
-            <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-center animate-fade-in relative overflow-hidden">
+            <div
+                class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 text-center animate-fade-in relative overflow-hidden">
                 <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#0071e3] to-[#42a1ff]"></div>
-                <button onclick="document.getElementById('auth-modal').classList.add('hidden')" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
+                <button onclick="document.getElementById('auth-modal').classList.add('hidden')"
+                    class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
-                <div class="w-16 h-16 bg-[#0071e3]/10 text-[#0071e3] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <div
+                    class="w-16 h-16 bg-[#0071e3]/10 text-[#0071e3] rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <i data-lucide="lock" class="w-8 h-8"></i>
                 </div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">Login Required</h3>
-                <p class="text-gray-500 mb-6 text-sm">You need to log in or create a free account to interact with the dashboard and use AI features.</p>
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Please Login to Continue</h3>
+                <p class="text-gray-500 mb-6 text-sm">You need to log in or create a free account to interact with the
+                    dashboard and use AI features.</p>
                 <div class="flex flex-col gap-3">
-                    <a href="{{ url_for('auth.login') }}" class="w-full py-2.5 bg-[#0071e3] hover:bg-[#0077ED] text-white rounded-xl font-medium transition-colors">
+                    <a href="{{ url_for('auth.login') }}"
+                        class="w-full py-2.5 bg-[#0071e3] hover:bg-[#0077ED] text-white rounded-xl font-medium transition-colors">
                         Log In to Continue
                     </a>
-                    <a href="{{ url_for('auth.signup') }}" class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-medium transition-colors">
+                    <a href="{{ url_for('auth.signup') }}"
+                        class="w-full py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-medium transition-colors">
                         Create Free Account
                     </a>
                 </div>
             </div>
         </div>
     </div>
-    
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof lucide !== 'undefined') {
                 lucide.createIcons();
             }
-            
+
             // Intercept clicks on interactive elements
-            document.body.addEventListener('click', function(e) {
+            document.body.addEventListener('click', function (e) {
                 const target = e.target.closest('a, button, .cursor-pointer, input, select, textarea');
                 if (target) {
                     // Check if it's a login/signup link or inside the modal itself
@@ -640,7 +730,7 @@
                     if (href.includes('/login') || href.includes('/signup') || href.includes('/auth/') || target.closest('#auth-modal') || target.closest('#cookie-banner')) {
                         return; // Let them click it
                     }
-                    
+
                     // Otherwise, block it and show modal
                     e.preventDefault();
                     e.stopPropagation();
@@ -657,8 +747,8 @@
             const textNodes = [];
             const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
             let node;
-            while(node = walk.nextNode()) {
-                if(node.nodeValue.trim() !== '') {
+            while (node = walk.nextNode()) {
+                if (node.nodeValue.trim() !== '') {
                     textNodes.push({
                         node: node,
                         fullText: node.nodeValue
@@ -666,24 +756,24 @@
                     node.nodeValue = '';
                 }
             }
-            
+
             let nodeIndex = 0;
             let charIndex = 0;
-            
+
             function typeNextChar() {
-                if(nodeIndex < textNodes.length) {
+                if (nodeIndex < textNodes.length) {
                     let currentItem = textNodes[nodeIndex];
-                    if(charIndex < currentItem.fullText.length) {
+                    if (charIndex < currentItem.fullText.length) {
                         let chunk = Math.min(3, currentItem.fullText.length - charIndex);
                         currentItem.node.nodeValue += currentItem.fullText.substr(charIndex, chunk);
                         charIndex += chunk;
-                        
+
                         // Scroll to bottom if we are in a scrollable container (like chat)
                         const scrollParent = element.closest('.overflow-y-auto');
                         if (scrollParent) {
                             scrollParent.scrollTop = scrollParent.scrollHeight;
                         }
-                        
+
                         setTimeout(typeNextChar, speed);
                     } else {
                         nodeIndex++;
@@ -691,19 +781,26 @@
                         setTimeout(typeNextChar, speed);
                     }
                 } else {
-                    if (onComplete) onComplete();
-                    
-                    if (typeof MathJax !== 'undefined') {
-                        MathJax.typesetPromise([element]).then(() => {
-                            if (typeof hljs !== 'undefined') {
-                                element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
-                            }
-                            if (typeof addCodeCopyButtons === 'function') {
-                                addCodeCopyButtons(element);
-                            }
-                        });
-                    } else if (typeof hljs !== 'undefined') {
-                        element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                    // Merge all the 1-character text nodes back into normal text nodes
+                    // This is CRITICAL for MathJax to be able to find the Math delimiters!
+                    element.normalize();
+
+                    if (onComplete) {
+                        onComplete();
+                    } else {
+                        // Only run default typesetting if no custom completion handler was provided
+                        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
+                            MathJax.typesetPromise([element]).then(() => {
+                                if (typeof hljs !== 'undefined') {
+                                    element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                                }
+                                if (typeof addCodeCopyButtons === 'function') {
+                                    addCodeCopyButtons(element);
+                                }
+                            }).catch(err => console.error('MathJax error in typewriter:', err));
+                        } else if (typeof hljs !== 'undefined') {
+                            element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                        }
                     }
                 }
             }
@@ -711,4 +808,5 @@
         }
     </script>
 </body>
+
 </html>
