@@ -378,7 +378,7 @@
                         </div>
                         {% else %}
                         <div class="flex justify-start relative group">
-                            <div class="ai-message p-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 text-gray-800 text-sm prose prose-sm max-w-[85%] shadow-sm overflow-x-auto"
+                            <div class="ai-message p-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 text-gray-800 text-base prose max-w-[85%] shadow-sm overflow-x-auto"
                                 data-markdown="{{ msg.content | escape }}"></div>
                         </div>
                         {% endif %}
@@ -704,7 +704,7 @@
                 const aiWrapper = document.createElement('div');
                 aiWrapper.className = 'flex justify-start';
                 const aiDiv = document.createElement('div');
-                aiDiv.className = 'p-3 rounded-2xl rounded-bl-sm bg-gray-100 border border-gray-200 text-[#1d1d1f] text-sm prose prose-sm max-w-[85%] shadow-sm overflow-x-auto';
+                aiDiv.className = 'p-3 rounded-2xl rounded-bl-sm bg-gray-100 border border-gray-200 text-[#1d1d1f] text-base prose max-w-[85%] shadow-sm overflow-x-auto';
 
                 if (data.response && typeof marked !== 'undefined') {
                     const parsedHtml = parseMarkdownWithMath(data.response);

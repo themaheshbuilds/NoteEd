@@ -863,7 +863,12 @@ CRITICAL JSON OUTPUT RULES:
                         response = requests.post(url, headers=headers, json=gemini_payload, timeout=90)
                         response.raise_for_status()
                         result_data = response.json()
-                        content = result_data["candidates"][0]["content"]["parts"][0]["text"]
+                        candidate = result_data["candidates"][0]
+                        content = candidate["content"]["parts"][0]["text"]
+                        
+                        finish_reason = candidate.get("finishReason")
+                        if finish_reason == "MAX_TOKENS":
+                            raise Exception(f"Gemini API truncated output (MAX_TOKENS). Falling back to next API.")
                         
                         result = self._extract_json(content)
                         if result:
@@ -886,7 +891,14 @@ CRITICAL JSON OUTPUT RULES:
                         response = requests.post(f"{cfg_base_url}/chat/completions", headers=headers, json=payload, timeout=90)
                         response.raise_for_status()
                         
-                        content = response.json()["choices"][0]["message"]["content"]
+                        response_json = response.json()
+                        choice = response_json["choices"][0]
+                        content = choice["message"]["content"]
+                        
+                        finish_reason = choice.get("finish_reason")
+                        if finish_reason == "length":
+                            raise Exception(f"{platform.upper()} API truncated output (length). Falling back to next API.")
+                            
                         result = self._extract_json(content)
                         if result:
                             return result
