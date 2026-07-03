@@ -833,17 +833,15 @@ CRITICAL JSON OUTPUT RULES:
                     if platform == "gemini":
                         # Native Gemini Format
                         gemini_contents = []
-                        sys_msg = None
+                        sys_msg_text = ""
                         for m in messages:
                             if m["role"] == "system":
-                                sys_msg = {"role": "model", "parts": [{"text": m["content"]}]}
+                                sys_msg_text += m["content"] + "\n\n"
                             else:
                                 gemini_contents.append({
                                     "role": "user" if m["role"] == "user" else "model",
                                     "parts": [{"text": m["content"]}]
                                 })
-                        if sys_msg:
-                            gemini_contents.insert(0, sys_msg)
                             
                         gemini_payload = {
                             "contents": gemini_contents,
@@ -853,6 +851,12 @@ CRITICAL JSON OUTPUT RULES:
                                 "responseMimeType": "application/json"
                             }
                         }
+                        
+                        if sys_msg_text:
+                            gemini_payload["systemInstruction"] = {
+                                "parts": [{"text": sys_msg_text.strip()}]
+                            }
+                            
                         url = f"https://generativelanguage.googleapis.com/v1beta/models/{cfg_chat_model}:generateContent?key={cfg_key}"
                         headers = {"Content-Type": "application/json"}
                         
