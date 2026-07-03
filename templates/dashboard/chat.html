@@ -359,13 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 aiDiv.className = 'ai-message p-4 rounded-2xl rounded-bl-sm bg-white border border-gray-100 text-[#1d1d1f] text-sm prose prose-sm max-w-[85%] shadow-sm overflow-x-auto';
                 
                 if (data.response && typeof marked !== 'undefined') {
-                    aiDiv.innerHTML = parseMarkdownWithMath(data.response);
-                    if (typeof hljs !== 'undefined') {
-                        aiDiv.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
-                    }
-                    addCodeCopyButtons(aiDiv);
+                    const parsedHtml = parseMarkdownWithMath(data.response);
+                    typeWriterReveal(aiDiv, parsedHtml, 15);
                 } else {
-                    aiDiv.innerText = data.response || "No response";
+                    typeWriterReveal(aiDiv, data.response || "No response", 15);
                 }
                 
                 aiWrapper.appendChild(aiDiv);

@@ -214,7 +214,7 @@ def generate_resources(topic_id):
     task_service.start_generate_materials_task(user_id, [(topic_id, topic["name"], topic["subject_name"])], run_sync=True)
     
     flash("AI Study Deck generated successfully!", "success")
-    return redirect(url_for("dashboard.view_topic", topic_id=topic_id))
+    return redirect(url_for("dashboard.view_topic", topic_id=topic_id, generated=1))
 
 from datetime import datetime, timezone, timedelta
 

@@ -650,5 +650,65 @@
         });
     </script>
     {% endif %}
+    <script>
+        // Global Typewriter Effect for AI content
+        function typeWriterReveal(element, fullHtml, speed = 8, onComplete = null) {
+            element.innerHTML = fullHtml;
+            const textNodes = [];
+            const walk = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+            let node;
+            while(node = walk.nextNode()) {
+                if(node.nodeValue.trim() !== '') {
+                    textNodes.push({
+                        node: node,
+                        fullText: node.nodeValue
+                    });
+                    node.nodeValue = '';
+                }
+            }
+            
+            let nodeIndex = 0;
+            let charIndex = 0;
+            
+            function typeNextChar() {
+                if(nodeIndex < textNodes.length) {
+                    let currentItem = textNodes[nodeIndex];
+                    if(charIndex < currentItem.fullText.length) {
+                        let chunk = Math.min(3, currentItem.fullText.length - charIndex);
+                        currentItem.node.nodeValue += currentItem.fullText.substr(charIndex, chunk);
+                        charIndex += chunk;
+                        
+                        // Scroll to bottom if we are in a scrollable container (like chat)
+                        const scrollParent = element.closest('.overflow-y-auto');
+                        if (scrollParent) {
+                            scrollParent.scrollTop = scrollParent.scrollHeight;
+                        }
+                        
+                        setTimeout(typeNextChar, speed);
+                    } else {
+                        nodeIndex++;
+                        charIndex = 0;
+                        setTimeout(typeNextChar, speed);
+                    }
+                } else {
+                    if (onComplete) onComplete();
+                    
+                    if (typeof MathJax !== 'undefined') {
+                        MathJax.typesetPromise([element]).then(() => {
+                            if (typeof hljs !== 'undefined') {
+                                element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                            }
+                            if (typeof addCodeCopyButtons === 'function') {
+                                addCodeCopyButtons(element);
+                            }
+                        });
+                    } else if (typeof hljs !== 'undefined') {
+                        element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                    }
+                }
+            }
+            typeNextChar();
+        }
+    </script>
 </body>
 </html>
