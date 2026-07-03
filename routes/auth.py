@@ -131,15 +131,27 @@ def login():
         user = db_service.query("SELECT * FROM profiles WHERE email = ?", (email,), one=True)
         
         # Verify user and password
-        if user and "password_hash" in user.keys() and user["password_hash"] and check_password_hash(user["password_hash"], password):
-            session["user_id"] = user["id"]
-            session["email"] = user["email"]
-            session["full_name"] = user["full_name"]
+        if user and "password_hash" in dict(user).keys() and dict(user)["password_hash"] and check_password_hash(dict(user)["password_hash"], password):
+            session.permanent = True
+            session["user_id"] = dict(user)["id"]
+            session["email"] = dict(user)["email"]
+            session["full_name"] = dict(user)["full_name"]
+            
+            # Downgrade if premium expired
+            user_dict = dict(user)
+            if user_dict.get("is_premium") and user_dict.get("premium_expires_at"):
+                try:
+                    expires_at = datetime.fromisoformat(user_dict["premium_expires_at"])
+                    if expires_at < datetime.utcnow():
+                        db_service.execute("UPDATE profiles SET is_premium = 0, premium_expires_at = NULL WHERE id = ?", (user_dict["id"],))
+                        db_service.execute("UPDATE user_usage SET subscription_tier = 'free' WHERE user_id = ?", (user_dict["id"],))
+                except Exception:
+                    pass
             
             # Update last active
             db_service.execute(
                 "UPDATE profiles SET last_active = ? WHERE id = ?",
-                (datetime.now().isoformat(), user["id"])
+                (datetime.now().isoformat(), user_dict["id"])
             )
             
             flash("Logged in successfully.", "success")
@@ -245,9 +257,22 @@ def google_callback():
             # Update last active
             db_service.execute("UPDATE profiles SET last_active = ? WHERE id = ?", (datetime.now().isoformat(), user_id))
             
+        session.permanent = True
         session["user_id"] = user_id
         session["email"] = email
         session["full_name"] = full_name
+        
+        # Downgrade if premium expired
+        if user:
+            user_dict = dict(user)
+            if user_dict.get("is_premium") and user_dict.get("premium_expires_at"):
+                try:
+                    expires_at = datetime.fromisoformat(user_dict["premium_expires_at"])
+                    if expires_at < datetime.utcnow():
+                        db_service.execute("UPDATE profiles SET is_premium = 0, premium_expires_at = NULL WHERE id = ?", (user_dict["id"],))
+                        db_service.execute("UPDATE user_usage SET subscription_tier = 'free' WHERE user_id = ?", (user_dict["id"],))
+                except Exception:
+                    pass
         
         flash("Logged in successfully with Google.", "success")
         return redirect(url_for("dashboard.index"))

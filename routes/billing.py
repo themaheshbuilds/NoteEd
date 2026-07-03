@@ -86,8 +86,8 @@ def upload_proof():
         import os
         from werkzeug.utils import secure_filename
         
-        # Save file to static/uploads/proofs directory
-        upload_dir = os.path.join(current_app.root_path, "../static/uploads/proofs")
+        # Save file to upload directory (which is /tmp on Vercel)
+        upload_dir = os.path.join(current_app.config["UPLOAD_FOLDER"], "proofs")
         os.makedirs(upload_dir, exist_ok=True)
         
         filename = secure_filename(file.filename)
@@ -100,7 +100,9 @@ def upload_proof():
         # Insert into DB
         from services.db_service import db_service
         proof_id = str(uuid.uuid4())
-        db_path = f"static/uploads/proofs/{new_filename}"
+        
+        # For Vercel/ephemeral we ideally use a storage bucket, but we'll store the filepath for now
+        db_path = filepath
         
         db_service.execute(
             "INSERT INTO payment_proofs (id, user_id, file_path, status) VALUES (?, ?, ?, 'pending')",
