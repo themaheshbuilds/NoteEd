@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 import json
 import time
 from datetime import datetime
@@ -110,3 +110,4 @@ def submit_all_answers(test_id):
     
     flash(f"Test completed! You scored {total_score}/100.", "success")
     return redirect(url_for("tests.view_test", test_id=test_id))
+

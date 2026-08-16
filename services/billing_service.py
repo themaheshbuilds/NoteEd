@@ -25,7 +25,7 @@ class BillingService:
             }
             
             payload = {
-                "purpose": "KiraakStudy Premium (Monthly)",
+                "purpose": "NoteEd Premium (Monthly)",
                 "amount": "49", # ₹49
                 "buyer_name": user_id,
                 "email": email,
@@ -66,13 +66,13 @@ class BillingService:
             print(f"Error verifying Instamojo payment: {e}")
             return False
 
-    def upgrade_user_to_premium(self, user_id):
+    def upgrade_user_to_premium(self, user_id, days=30):
         try:
             # Update the user's tier to premium in the database
             db_service.execute("UPDATE user_usage SET subscription_tier = 'premium' WHERE user_id = ?", (user_id,))
             
-            # Set expiration to 30 days from now
-            expires_at = (datetime.datetime.utcnow() + datetime.timedelta(days=30)).isoformat()
+            # Set expiration to specified days from now (e.g., 30 days for monthly, 365 for yearly)
+            expires_at = (datetime.datetime.utcnow() + datetime.timedelta(days=days)).isoformat()
             
             # CRITICAL FIX: Ensure the profile is also marked as premium and set the expiry date
             db_service.execute(
@@ -86,3 +86,4 @@ class BillingService:
             return False
 
 billing_service = BillingService()
+

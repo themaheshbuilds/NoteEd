@@ -9,6 +9,21 @@ except Exception:
     create_client = None
     Client = None
 
+class DictRow(dict):
+    """Dictionary that supports both key-based access with .get() and numeric indexing."""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._values = list(self.values())
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self._values[item]
+        return super().__getitem__(item)
+
+def dict_factory(cursor, row):
+    fields = [col[0] for col in cursor.description]
+    return DictRow(zip(fields, row))
+
 class DBService:
     def __init__(self):
         # Vercel Supabase Integration automatically injects POSTGRES_URL
@@ -48,7 +63,7 @@ class DBService:
             return conn, conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         else:
             conn = sqlite3.connect(self.sqlite_db)
-            conn.row_factory = sqlite3.Row
+            conn.row_factory = dict_factory
             return conn, conn.cursor()
 
     def _translate_schema(self, sql):
@@ -151,9 +166,11 @@ class DBService:
                 topic_id TEXT,
                 user_id TEXT,
                 title TEXT,
+                is_archived INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )"""))
+            
             # System Settings Table
             cursor.execute(self._translate_schema("""
             CREATE TABLE IF NOT EXISTS system_settings (
@@ -429,6 +446,33 @@ class DBService:
                 if self.use_postgres: cursor.execute("ROLLBACK TO SAVEPOINT sp4")
                 pass
                 
+            # Migration: add experience_level to profiles if it doesn't exist
+            try:
+                if self.use_postgres: cursor.execute("SAVEPOINT sp5")
+                cursor.execute("ALTER TABLE profiles ADD COLUMN experience_level TEXT DEFAULT 'intermediate'")
+                if self.use_postgres: cursor.execute("RELEASE SAVEPOINT sp5")
+            except Exception:
+                if self.use_postgres: cursor.execute("ROLLBACK TO SAVEPOINT sp5")
+                pass
+
+            # Migration: add is_archived to chat_sessions if it doesn't exist
+            try:
+                if self.use_postgres: cursor.execute("SAVEPOINT sp6")
+                cursor.execute("ALTER TABLE chat_sessions ADD COLUMN is_archived INTEGER DEFAULT 0")
+                if self.use_postgres: cursor.execute("RELEASE SAVEPOINT sp6")
+            except Exception:
+                if self.use_postgres: cursor.execute("ROLLBACK TO SAVEPOINT sp6")
+                pass
+
+            # Migration: add study_purpose to profiles if it doesn't exist
+            try:
+                if self.use_postgres: cursor.execute("SAVEPOINT sp7")
+                cursor.execute("ALTER TABLE profiles ADD COLUMN study_purpose TEXT DEFAULT 'learning'")
+                if self.use_postgres: cursor.execute("RELEASE SAVEPOINT sp7")
+            except Exception:
+                if self.use_postgres: cursor.execute("ROLLBACK TO SAVEPOINT sp7")
+                pass
+
             conn.commit()
         except Exception as e:
             conn.rollback()
@@ -462,3 +506,4 @@ class DBService:
             conn.close()
 
 db_service = DBService()
+

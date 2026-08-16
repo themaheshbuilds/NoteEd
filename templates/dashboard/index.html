@@ -1,246 +1,403 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Helix AI{% endblock %}
+{% block title %}Dashboard - NoteEd{% endblock %}
 
 {% block content %}
-<!-- AI Command Prompt -->
-<div class="glass-card p-5 mb-6 cursor-pointer" onclick="openCommandBar()">
-    <div class="flex items-center gap-4">
-        <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-                <span class="text-sm font-medium text-gray-500">Ask AI anything... e.g. "Create 5th sem DBMS study
-                    plan"</span>
-            </div>
-        </div>
-        <kbd
-            class="hidden sm:inline-block text-[10px] px-2 py-1 rounded-md bg-gray-100 text-gray-500 font-mono">Ctrl+K</kbd>
-    </div>
-</div>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 space-y-8">
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Main Study Track & Organization -->
-    <div class="lg:col-span-2 space-y-6">
-        <!-- Streak and Stats -->
-        <div class="glass-card p-8 flex flex-wrap items-center justify-between gap-4">
-            <div>
-                <h1 class="text-3xl font-bold tracking-tight text-[#1d1d1f]">Helix Study Hub</h1>
-                <p class="text-gray-500 text-sm mt-1">Organize your academic syllabus and unlock AI vision notes.</p>
-            </div>
-            <div class="flex items-center space-x-6">
-                <div class="text-center">
-                    <span class="block text-3xl font-bold text-[#0071e3]">{{ profile.study_streak if profile else 0 }}</span>
-                    <span class="text-[10px] uppercase font-bold tracking-widest text-gray-500">Day Streak</span>
+    <!-- ── 1. HERO BANNER & DYNAMIC HOURLY IST GREETING ──────────────────── -->
+    <div class="glass-card p-6 sm:p-8 rounded-3xl relative overflow-hidden border border-white/20 shadow-xl">
+        <!-- Ambient Background Glow Decor -->
+        <div class="absolute -top-24 -right-24 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+            <div class="space-y-2.5">
+                <!-- Status Badges & Live IST Time Clock -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-500">
+                        <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                        <span class="w-2 h-2 rounded-full bg-blue-500 -ml-3"></span>
+                        <span>{{ ist_info.tag if ist_info else 'AI Study Hub' }}</span>
+                    </div>
+
+                    <!-- Live 12-Hour IST Clock -->
+                    <div id="liveIstClock" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/10 text-xs font-mono font-bold tracking-wide" style="color: var(--text-primary);">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-blue-500"></i>
+                        <span id="istTimeText">{{ ist_info.time_12h if ist_info else 'IST' }} IST</span>
+                    </div>
                 </div>
-                <div class="text-center">
-                    <span class="block text-3xl font-bold text-gray-800">Active</span>
-                    <span class="text-[10px] uppercase font-bold tracking-widest text-gray-500">Status</span>
-                </div>
-            </div>
-        </div>
 
-        <!-- Quick Actions -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <button onclick="openCommandBar()"
-                class="glass-card p-6 text-center hover:bg-gray-50 transition-all duration-200">
-                <i data-lucide="sparkles" class="w-8 h-8 mx-auto mb-3 text-[#0071e3]"></i>
-                <span class="text-sm font-semibold text-[#1d1d1f]">AI Study Plan</span>
-            </button>
-            <a href="{{ url_for('study.paste_syllabus') }}"
-                class="glass-card p-6 text-center hover:bg-gray-50 transition-all duration-200 block">
-                <i data-lucide="file-plus" class="w-8 h-8 mx-auto mb-3 text-emerald-500"></i>
-                <span class="text-sm font-semibold text-[#1d1d1f]">Import Syllabus</span>
-            </a>
-            <a href="/analytics" class="glass-card p-6 text-center hover:bg-gray-50 transition-all duration-200 block">
-                <i data-lucide="bar-chart-2" class="w-8 h-8 mx-auto mb-3 text-accent-500"></i>
-                <span class="text-sm font-semibold text-[#1d1d1f]">View Analytics</span>
-            </a>
-            <a href="/search" class="glass-card p-6 text-center hover:bg-gray-50 transition-all duration-200 block">
-                <i data-lucide="search" class="w-8 h-8 mx-auto mb-3 text-primary-500"></i>
-                <span class="text-sm font-semibold text-[#1d1d1f]">Search Notes</span>
-            </a>
-        </div>
+                <!-- Dynamic Hourly Title (e.g. "Good Evening, Alex! 🌆", "Golden Focus Window ✨") -->
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight font-outfit flex flex-wrap items-center gap-2" style="color: var(--text-primary);">
+                    <span>{{ ist_info.emoji if ist_info else '👋' }}</span>
+                    <span>{{ ist_info.greeting if ist_info else 'Welcome back' }}, {{ (profile.full_name or current_user.full_name or 'Scholar').split(' ')[0] }}!</span>
+                </h1>
 
-        <!-- Semesters Section -->
-        <div class="glass-card p-8">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-bold text-[#1d1d1f]">Your Semesters</h2>
-                <form action="{{ url_for('dashboard.add_semester') }}" method="POST"
-                    class="flex items-center space-x-2">
-                    <input type="text" name="name" placeholder="e.g. Semester 5" required
-                        class="px-4 py-2 rounded-full bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-[#0071e3] text-[#1d1d1f]">
-                    <button type="submit"
-                        class="px-4 py-2 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-sm font-semibold text-gray-900 transition">
-                        + Add
-                    </button>
-                </form>
+                <!-- Hourly Dynamic Motivational Subtitle -->
+                <p class="text-sm sm:text-base max-w-2xl leading-relaxed" style="color: var(--text-secondary);">
+                    {{ ist_info.subtitle if ist_info else 'Your AI academic assistant is ready to help you conquer your syllabus.' }}
+                </p>
             </div>
 
-            {% if semesters %}
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {% for sem in semesters %}
-                <a href="{{ url_for('dashboard.view_semester', sem_id=sem.id) }}"
-                    class="block p-5 rounded-2xl border border-gray-100 hover:border-[#0071e3] hover:shadow-md transition">
-                    <h3 class="font-bold text-lg text-[#1d1d1f]">{{ sem.name }}</h3>
-                    <span class="text-xs text-gray-500">View subjects & curriculum</span>
+            <!-- Quick Action Hub -->
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+                <button onclick="openCommandBar()" 
+                    class="flex-1 sm:flex-none px-4 py-2.5 rounded-full text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 text-white hover:opacity-95 transform hover:-translate-y-0.5 active:translate-y-0 min-w-[120px]"
+                    style="background: var(--accent-gradient); box-shadow: 0 4px 15px var(--accent-glow);">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    AI Study Plan
+                </button>
+                <a href="{{ url_for('study.paste_syllabus') }}" 
+                    class="flex-1 sm:flex-none px-4 py-2.5 rounded-full text-xs font-bold transition-all border flex items-center justify-center gap-2 hover:opacity-95 transform hover:-translate-y-0.5 active:translate-y-0 min-w-[120px]"
+                    style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                    <i data-lucide="file-plus" class="w-4 h-4 text-emerald-500"></i>
+                    Import Syllabus
                 </a>
-                {% endfor %}
+                <a href="{{ url_for('chat.global_chat') }}" 
+                    class="flex-1 sm:flex-none px-4 py-2.5 rounded-full text-xs font-bold transition-all border flex items-center justify-center gap-2 hover:opacity-95 transform hover:-translate-y-0.5 active:translate-y-0 min-w-[120px]"
+                    style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                    <i data-lucide="message-square" class="w-4 h-4 text-blue-400"></i>
+                    Ask Tutor
+                </a>
             </div>
-            {% else %}
-            <div class="text-center py-12 border border-dashed border-gray-200 rounded-2xl">
-                <p class="text-gray-500 mb-2">No semesters created yet.</p>
-                <p class="text-xs text-gray-500">Tip: Paste a syllabus to auto-generate all semesters, units, and
-                    topics!</p>
-            </div>
-            {% endif %}
-        </div>
-
-        <!-- Recent Uploads & AI processing status -->
-        <div class="glass-card p-8">
-            <h2 class="text-xl font-bold mb-6 text-[#1d1d1f]">Recent Uploads</h2>
-            {% if recent_files %}
-            <div class="space-y-4">
-                {% for file in recent_files %}
-                <div class="p-4 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-between">
-                    <div>
-                        <span class="block font-medium text-sm text-[#1d1d1f]">{{ file.name }}</span>
-                        <span class="text-xs text-gray-500">{{ file.subject_name }} &rarr; {{ file.topic_name }}</span>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        {% if file.ocr_text %}
-                        <span
-                            class="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 text-[10px] uppercase font-bold">AI
-                            Processed</span>
-                        {% else %}
-                        <span
-                            class="px-2.5 py-1 rounded-full bg-accent-100 text-accent-700 text-[10px] uppercase font-bold">Processing</span>
-                        {% endif %}
-                        <a href="{{ url_for('files.download_file', file_id=file.id) }}"
-                            class="text-[#0071e3] hover:text-[#0077ed] text-xs font-semibold">Download</a>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-sm text-gray-500">No materials uploaded yet. Go to a topic to upload notes.</p>
-            {% endif %}
         </div>
     </div>
 
-    <!-- Side Utilities (Pomodoro, AI Suggestions, Exam Countdown) -->
-    <div class="space-y-6">
-        <!-- Pomodoro Timer -->
-        <div class="glass-card p-8 text-center">
-            <h2 class="text-lg font-bold mb-2 flex justify-center items-center gap-2 text-[#1d1d1f]"><i
-                    data-lucide="timer" class="w-5 h-5 text-gray-500"></i> Pomodoro Focus</h2>
-            <div id="pomodoro-display" class="text-4xl font-black my-6 font-mono tracking-wider text-[#1d1d1f]">25:00
+    <!-- ── 2. KPI STATISTICS BAR ─────────────────────────────────────────── -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <!-- Streak Card -->
+        <div class="glass-card p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:border-blue-500/40 group">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold tracking-wider uppercase" style="color: var(--text-muted);">Daily Streak</span>
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-orange-500/10 text-orange-500 border border-orange-500/20 group-hover:scale-110 transition-transform">
+                    <i data-lucide="flame" class="w-5 h-5"></i>
+                </div>
             </div>
-            <div class="flex justify-center space-x-3">
-                <button id="pomodoro-toggle" onclick="togglePomodoro()"
-                    class="px-5 py-2 rounded-full bg-[#0071e3] hover:bg-[#0077ed] text-sm font-bold text-gray-900 transition">Start</button>
-                <button onclick="resetPomodoro()"
-                    class="px-5 py-2 rounded-full bg-gray-100 hover:bg-gray-200 text-sm font-semibold text-[#1d1d1f] transition">Reset</button>
+            <div class="flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold font-outfit" style="color: var(--text-primary);">{{ profile.study_streak if profile else 0 }}</span>
+                <span class="text-xs font-semibold text-orange-500">Days Active</span>
+            </div>
+            <div class="mt-3 w-full bg-black/10 dark:bg-white/10 h-1.5 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-orange-500 to-amber-400 h-full rounded-full" style="width: {{ [((profile.study_streak if profile else 0) * 14.28), 100]|min }}%;"></div>
             </div>
         </div>
 
-        <!-- AI Study Suggestions -->
-        <div class="glass-card p-8 relative overflow-hidden">
-            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-[#1d1d1f]">
-                <i data-lucide="lightbulb" class="w-5 h-5 text-accent-500"></i> AI Study Coach
-            </h2>
-            
-            {% if profile and profile.is_premium %}
-                <ul class="space-y-3" id="ai-coach-list">
-                    <li class="text-sm p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700 flex items-center gap-2">
-                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin text-accent-500"></i> Generating your personalized study plan...
-                    </li>
-                </ul>
-                <script>
-                    document.addEventListener("DOMContentLoaded", () => {
-                        fetch("/api/dashboard/ai-coach")
-                            .then(r => r.json())
-                            .then(data => {
-                                const list = document.getElementById("ai-coach-list");
-                                list.innerHTML = "";
-                                if (data.suggestions && data.suggestions.length > 0) {
-                                    data.suggestions.forEach(tip => {
-                                        list.innerHTML += `<li class="text-sm p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700">${tip}</li>`;
-                                    });
-                                } else {
-                                    list.innerHTML = `<li class="text-sm p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700">Ready to study! Focus on your next topic.</li>`;
-                                }
-                            })
-                            .catch(() => {
-                                document.getElementById("ai-coach-list").innerHTML = `<li class="text-sm p-4 rounded-xl bg-gray-50 border border-gray-100 text-red-500">Failed to connect to AI Coach.</li>`;
-                            });
-                    });
-                </script>
-            {% else %}
-                <div class="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex flex-col items-center justify-center z-10 rounded-2xl">
-                    <div class="bg-white/80 p-3 rounded-full shadow-sm mb-3">
-                        <i data-lucide="lock" class="w-6 h-6 text-gray-400"></i>
+        <!-- Semesters Enrolled -->
+        <div class="glass-card p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:border-purple-500/40 group">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold tracking-wider uppercase" style="color: var(--text-muted);">Curriculums</span>
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-purple-500/10 text-purple-500 border border-purple-500/20 group-hover:scale-110 transition-transform">
+                    <i data-lucide="book-open" class="w-5 h-5"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold font-outfit" style="color: var(--text-primary);">{{ semesters|length if semesters else 0 }}</span>
+                <span class="text-xs font-semibold" style="color: var(--text-secondary);">Semesters</span>
+            </div>
+            <p class="text-[11px] mt-3 truncate" style="color: var(--text-muted);">Organized academic syllabus</p>
+        </div>
+
+        <!-- Study Sessions -->
+        <div class="glass-card p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:border-emerald-500/40 group">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold tracking-wider uppercase" style="color: var(--text-muted);">Study Velocity</span>
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 group-hover:scale-110 transition-transform">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-2xl sm:text-3xl font-extrabold font-outfit" style="color: var(--text-primary);">{{ sessions|length if sessions else 0 }}</span>
+                <span class="text-xs font-semibold text-emerald-500">Recent Sessions</span>
+            </div>
+            <p class="text-[11px] mt-3 truncate" style="color: var(--text-muted);">AI reviews & flashcard drills</p>
+        </div>
+
+        <!-- Membership Plan -->
+        <div class="glass-card p-5 sm:p-6 rounded-2xl border transition-all duration-300 hover:border-blue-500/40 group">
+            <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold tracking-wider uppercase" style="color: var(--text-muted);">Plan Tier</span>
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-blue-500/10 text-blue-500 border border-blue-500/20 group-hover:scale-110 transition-transform">
+                    <i data-lucide="crown" class="w-5 h-5"></i>
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-xl sm:text-2xl font-extrabold font-outfit uppercase" style="color: var(--text-primary);">
+                    {{ 'Pro Member' if is_premium else 'Free Tier' }}
+                </span>
+            </div>
+            <div class="mt-3">
+                <a href="{{ url_for('billing.upgrade_page') }}" class="text-[11px] font-bold text-blue-500 hover:underline flex items-center gap-1">
+                    {{ 'Manage Subscription →' if is_premium else 'Upgrade to Pro ⚡' }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── 3. MAIN DASHBOARD CONTENT GRID ─────────────────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- LEFT COLUMN: Semesters & Study Progress (2 cols) -->
+        <div class="lg:col-span-2 space-y-8">
+
+            <!-- Semesters Deck -->
+            <div class="glass-card p-6 sm:p-8 rounded-3xl border">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">Your Academic Semesters</h2>
+                        <p class="text-xs mt-1" style="color: var(--text-secondary);">Select a semester to explore units, topics, flashcards, and AI notes.</p>
                     </div>
-                    <p class="text-sm font-semibold text-gray-700 mb-3 text-center px-4">Unlock personalized AI study plans and daily tracking with Premium.</p>
-                    <a href="{{ url_for('billing.upgrade_page') }}" class="px-5 py-2 bg-[#1d1d1f] hover:bg-black text-white rounded-xl text-sm font-medium transition-all shadow-md flex items-center gap-2">
-                        Upgrade to Premium
+                    <form action="{{ url_for('dashboard.add_semester') }}" method="POST" class="flex items-center gap-2">
+                        <input type="text" name="name" placeholder="e.g. Semester 5" required
+                            class="px-4 py-2 rounded-xl text-xs focus:outline-none transition w-36 sm:w-44"
+                            aria-label="Semester name">
+                        <button type="submit"
+                            class="px-4 py-2 rounded-xl text-xs font-bold text-white transition shadow-sm hover:opacity-90"
+                            style="background: var(--accent-gradient);">
+                            + Add
+                        </button>
+                    </form>
+                </div>
+
+                {% if semesters %}
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {% for sem in semesters %}
+                    <a href="{{ url_for('dashboard.view_semester', sem_id=sem.id) }}"
+                        class="p-5 rounded-2xl border transition-all duration-300 hover:-translate-y-1 hover:shadow-lg group flex flex-col justify-between"
+                        style="background: var(--bg-elevated); border-color: var(--border);">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">Active Syllabus</span>
+                                <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform"></i>
+                            </div>
+                            <h3 class="font-bold text-base sm:text-lg mb-1 group-hover:text-blue-500 transition-colors" style="color: var(--text-primary);">{{ sem.name }}</h3>
+                            <p class="text-xs line-clamp-1" style="color: var(--text-secondary);">Access subjects, units, questions & notes</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t flex items-center justify-between text-[11px] font-medium" style="border-color: var(--border-subtle); color: var(--text-muted);">
+                            <span>Curriculum Deck</span>
+                            <span class="text-blue-500 font-semibold flex items-center gap-1">Open <i data-lucide="arrow-up-right" class="w-3 h-3"></i></span>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-12 border-2 border-dashed rounded-3xl p-6" style="border-color: var(--border);">
+                    <div class="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center bg-blue-500/10 text-blue-500 mb-3">
+                        <i data-lucide="book-plus" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-base mb-1" style="color: var(--text-primary);">No Semesters Created Yet</h3>
+                    <p class="text-xs max-w-sm mx-auto mb-4" style="color: var(--text-secondary);">
+                        Paste your course syllabus to auto-generate all units, chapters, topics, and question banks in seconds.
+                    </p>
+                    <a href="{{ url_for('study.paste_syllabus') }}" 
+                        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold text-white shadow-md hover:opacity-95"
+                        style="background: var(--accent-gradient);">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        Paste Syllabus Now
                     </a>
                 </div>
-                <ul class="space-y-3 opacity-40 select-none pointer-events-none">
-                    <li class="text-sm p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700">Analyzing your recent test scores...</li>
-                    <li class="text-sm p-4 rounded-xl bg-gray-50 border border-gray-100 text-gray-700">Preparing a personalized Pomodoro schedule...</li>
-                </ul>
+                {% endif %}
+            </div>
+
+            <!-- Recent AI Vision Documents -->
+            {% if recent_files %}
+            <div class="glass-card p-6 sm:p-8 rounded-3xl border">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-lg font-bold font-outfit" style="color: var(--text-primary);">Recent AI Vision Files</h2>
+                        <p class="text-xs" style="color: var(--text-secondary);">Recently uploaded PDFs and lecture notes with OCR insights.</p>
+                    </div>
+                    <a href="/search" class="text-xs font-semibold text-blue-500 hover:underline">View all</a>
+                </div>
+                <div class="space-y-3">
+                    {% for f in recent_files %}
+                    <div class="p-3.5 rounded-xl border flex items-center justify-between transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                        style="background: var(--bg-elevated); border-color: var(--border);">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center bg-blue-500/10 text-blue-500 shrink-0">
+                                <i data-lucide="file-text" class="w-4 h-4"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <span class="font-bold text-xs truncate block" style="color: var(--text-primary);">{{ f.name }}</span>
+                                <span class="text-[10px] block truncate" style="color: var(--text-muted);">{{ f.subject_name }} &bull; {{ f.topic_name }}</span>
+                            </div>
+                        </div>
+                        <a href="{{ url_for('dashboard.view_topic', topic_id=f.topic_id) }}" class="px-3 py-1 rounded-lg text-xs font-semibold bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 shrink-0">
+                            Study
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
             {% endif %}
         </div>
 
-        <!-- Upcoming Exam Countdown -->
-        <div class="glass-card p-8">
-            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-[#1d1d1f]"><i data-lucide="calendar"
-                    class="w-5 h-5 text-rose-500"></i> Upcoming Exams</h2>
-            {% if exams %}
-            <div class="space-y-3">
-                {% for exam in exams %}
-                <div class="p-4 rounded-xl bg-rose-50 border border-rose-100">
-                    <span class="block font-bold text-sm text-rose-700">{{ exam.title }}</span>
-                    <span class="text-xs text-rose-500">{{ exam.start_time }}</span>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-xs text-gray-500">No upcoming exam events found. Schedule one in the Planner!</p>
-            {% endif %}
-        </div>
+        <!-- RIGHT COLUMN: Side Utilities & Study Coach (1 col) -->
+        <div class="space-y-8">
 
-        <!-- Pending Weekly Tests (Temporarily Hidden) -->
-        <!--
-        <div class="glass-card p-8 border border-primary-200 bg-primary-50/30">
-            <h2 class="text-lg font-bold mb-4 flex items-center gap-2 text-primary-700"><i data-lucide="clipboard-list"
-                    class="w-5 h-5"></i> Weekly Assessments</h2>
-            {% if pending_tests %}
-            <div class="space-y-3">
-                {% for test in pending_tests %}
-                <div class="p-4 rounded-xl bg-white border border-primary-100 flex flex-col gap-3">
-                    <span class="block font-bold text-sm text-[#1d1d1f]">{{ test.title }}</span>
-                    <a href="/test/{{ test.id }}"
-                        class="text-center px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-xs font-bold transition">Take
-                        Test</a>
+            <!-- ── DAILY ROTATING AI STUDY COACH PANEL ─────────────────────── -->
+            <div class="glass-card p-6 rounded-3xl border relative overflow-hidden">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-xl flex items-center justify-center bg-purple-500/10 text-purple-500 border border-purple-500/20">
+                            <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold font-outfit" style="color: var(--text-primary);">AI Study Coach</h3>
+                            <p class="text-[10px]" style="color: var(--text-muted);">Daily Cognitive Strategies</p>
+                        </div>
+                    </div>
+                    <button type="button" onclick="shuffleCoachTip()" 
+                        class="px-2.5 py-1 rounded-lg text-[10px] font-bold border transition hover:opacity-80 flex items-center gap-1"
+                        style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-secondary);"
+                        title="Shuffle study strategy">
+                        <i data-lucide="refresh-cw" class="w-3 h-3 text-purple-400"></i> Shuffle
+                    </button>
                 </div>
-                {% endfor %}
+
+                <!-- Daily Rotating Study Tips -->
+                <div id="ai-coach-container" class="space-y-3 text-xs leading-relaxed">
+                    {% if daily_study_tips %}
+                        {% for tip in daily_study_tips %}
+                        <div class="coach-tip-card p-3.5 rounded-xl border transition-all duration-300 hover:border-purple-500/30" style="background: var(--bg-elevated); border-color: var(--border);">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="font-bold flex items-center gap-1.5 text-xs" style="color: var(--text-primary);">
+                                    <span>{{ tip.emoji }}</span>
+                                    <span>{{ tip.title }}</span>
+                                </span>
+                                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                                    {{ tip.category }}
+                                </span>
+                            </div>
+                            <p style="color: var(--text-secondary);">{{ tip.tip }}</p>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="p-3.5 rounded-xl border" style="background: var(--bg-elevated); border-color: var(--border);">
+                            <p class="font-semibold mb-1" style="color: var(--text-primary);">💡 Active Recall & Feynman Method</p>
+                            <p style="color: var(--text-secondary);">Explain difficult formulas in plain terms without notes to solidify long-term neural recall.</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            {% elif is_sunday %}
-                {% if weekly_test_status == 'dismissed' %}
-                <p class="text-xs text-gray-500">There are no weekly assessments for this week.</p>
-                {% elif weekly_test_status == 'approved' %}
-                <p class="text-xs text-gray-500">No pending tests. Great job!</p>
+
+            <!-- Upcoming Exams Countdown -->
+            <div class="glass-card p-6 rounded-3xl border">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-bold font-outfit flex items-center gap-2" style="color: var(--text-primary);">
+                        <i data-lucide="calendar" class="w-4 h-4 text-rose-500"></i>
+                        Upcoming Exams
+                    </h3>
+                    <a href="{{ url_for('planner.view_planner') }}" class="text-[11px] font-semibold text-blue-500 hover:underline">+ Schedule</a>
+                </div>
+                
+                {% if exams %}
+                <div class="space-y-3">
+                    {% for exam in exams %}
+                    <div class="p-3.5 rounded-xl border flex items-center justify-between" style="background: var(--bg-elevated); border-color: var(--border);">
+                        <div>
+                            <span class="font-bold text-xs block" style="color: var(--text-primary);">{{ exam.title }}</span>
+                            <span class="text-[10px]" style="color: var(--text-muted);">{{ exam.start_time }}</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-500 border border-rose-500/20">Exam</span>
+                    </div>
+                    {% endfor %}
+                </div>
                 {% else %}
-                <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-3">
-                    <i data-lucide="clock" class="w-5 h-5 text-amber-500"></i>
-                    <p class="text-xs text-amber-700 font-medium">This week's test is awaiting admin release. Check back later today!</p>
+                <div class="text-center py-6">
+                    <p class="text-xs" style="color: var(--text-secondary);">No exams scheduled yet.</p>
+                    <a href="{{ url_for('planner.view_planner') }}" class="text-xs font-semibold text-blue-500 hover:underline mt-1 inline-block">
+                        Add exam dates in Planner →
+                    </a>
                 </div>
                 {% endif %}
-            {% else %}
-            <p class="text-xs text-gray-500">Weekly tests are generated every Sunday. Stay tuned!</p>
-            {% endif %}
+            </div>
+
+            <!-- Study Tools & Shortcuts -->
+            <div class="glass-card p-6 rounded-3xl border">
+                <h3 class="text-sm font-bold font-outfit mb-3" style="color: var(--text-primary);">Quick Study Tools</h3>
+                <div class="grid grid-cols-2 gap-2 text-xs font-semibold">
+                    <a href="{{ url_for('dashboard.bookmarks') }}" class="p-3 rounded-xl border flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                        <i data-lucide="bookmark" class="w-4 h-4 text-blue-500"></i> Bookmarks
+                    </a>
+                    <a href="{{ url_for('dashboard.leaderboard') }}" class="p-3 rounded-xl border flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                        <i data-lucide="trophy" class="w-4 h-4 text-amber-500"></i> Leaderboard
+                    </a>
+                    <a href="{{ url_for('planner.view_planner') }}" class="p-3 rounded-xl border flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                        <i data-lucide="calendar" class="w-4 h-4 text-purple-500"></i> Planner
+                    </a>
+                    <a href="{{ url_for('dashboard.support') }}" class="p-3 rounded-xl border flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                        <i data-lucide="help-circle" class="w-4 h-4 text-emerald-500"></i> Support
+                    </a>
+                </div>
+            </div>
+
         </div>
-        -->
     </div>
 </div>
+
+<!-- ── CLIENT-SIDE IST LIVE CLOCK & TIP SHUFFLER SCRIPT ──────────────────── -->
+<script>
+    // 1. Live Ticking IST 12-Hour Clock
+    function updateIstClock() {
+        const now = new Date();
+        // Offset for UTC+5:30 (India Standard Time)
+        const istOffset = 5.5 * 60 * 60 * 1000;
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+        const istDate = new Date(utc + istOffset);
+        
+        let hours = istDate.getHours();
+        const minutes = String(istDate.getMinutes()).padStart(2, '0');
+        const seconds = String(istDate.getSeconds()).padStart(2, '0');
+        const ampm = hours >= 12 ? 'PM' : 'AM';
+        hours = hours % 12;
+        hours = hours ? hours : 12; // '0' should be '12'
+        
+        const timeString = `${hours}:${minutes}:${seconds} ${ampm} IST`;
+        const timeEl = document.getElementById('istTimeText');
+        if (timeEl) {
+            timeEl.textContent = timeString;
+        }
+    }
+    setInterval(updateIstClock, 1000);
+    updateIstClock();
+
+    // 2. Study Coach Tip Pool & Shuffler
+    const allCoachTips = {{ all_study_tips | tojson if all_study_tips else '[]' }};
+    let currentTipIndex = 0;
+
+    function shuffleCoachTip() {
+        if (!allCoachTips || allCoachTips.length === 0) return;
+        const container = document.getElementById('ai-coach-container');
+        if (!container) return;
+
+        // Pick 2 random distinct tips
+        const shuffled = [...allCoachTips].sort(() => 0.5 - Math.random());
+        const selected = shuffled.slice(0, 2);
+
+        container.style.opacity = '0';
+        container.style.transform = 'translateY(4px)';
+        
+        setTimeout(() => {
+            container.innerHTML = selected.map(tip => `
+                <div class="coach-tip-card p-3.5 rounded-xl border transition-all duration-300 hover:border-purple-500/30" style="background: var(--bg-elevated); border-color: var(--border);">
+                    <div class="flex items-center justify-between mb-1.5">
+                        <span class="font-bold flex items-center gap-1.5 text-xs" style="color: var(--text-primary);">
+                            <span>${tip.emoji}</span>
+                            <span>${tip.title}</span>
+                        </span>
+                        <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            ${tip.category}
+                        </span>
+                    </div>
+                    <p style="color: var(--text-secondary);">${tip.tip}</p>
+                </div>
+            `).join('');
+
+            container.style.opacity = '1';
+            container.style.transform = 'translateY(0)';
+            if (window.lucide) lucide.createIcons();
+        }, 180);
+    }
+</script>
 {% endblock %}

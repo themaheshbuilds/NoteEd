@@ -1,39 +1,53 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-4rem)] flex flex-col">
+<div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 pb-3 h-[calc(100dvh-6.5rem)] flex flex-col animate-fade-in">
+    <!-- Mobile chat sidebar backdrop -->
+    <div id="chat-sidebar-backdrop" onclick="closeMobileSidebar()"></div>
     <!-- Header -->
-    <div class="flex items-center justify-between mb-6 flex-shrink-0">
-        <div>
-            <h1 class="text-3xl font-extrabold text-[#1d1d1f] tracking-tight">AI Chat</h1>
-            <p class="text-gray-500 mt-2 text-sm">Review your past conversations with your AI Tutor across all topics.</p>
+    <div class="flex items-center justify-between mb-3 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <!-- Mobile menu toggle button -->
+            <button onclick="toggleMobileSidebar()" class="md:hidden p-2 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-bold" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);" aria-label="Open chat history">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span>History</span>
+            </button>
+            <div>
+                <h1 class="text-lg sm:text-2xl font-extrabold tracking-tight font-outfit" style="color: var(--text-primary);">AI Study Chat</h1>
+                <p class="text-xs mt-0.5 hidden sm:block" style="color: var(--text-secondary);">Review your past conversations with your AI Tutor across all topics.</p>
+            </div>
         </div>
     </div>
 
     <!-- Main Chat Interface -->
-    <div class="glass-card flex-1 flex overflow-hidden border border-gray-100 rounded-3xl shadow-sm bg-white/50">
+    <div class="glass-card flex-1 flex overflow-hidden border rounded-3xl shadow-xl relative"
+         style="background: var(--card); border-color: var(--border);">
         
         <!-- Left Sidebar: History -->
-        <div id="chat-sidebar" class="w-72 border-r border-gray-100 bg-white/40 flex flex-col h-full hidden md:flex flex-shrink-0 transition-all duration-300">
-            <div class="p-4 border-b border-gray-100/50">
-                <h3 class="font-bold text-gray-700 text-sm flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        <div id="chat-sidebar" class="w-72 border-r flex flex-col h-full hidden md:flex flex-shrink-0 transition-all duration-300"
+             style="background: var(--bg-elevated); border-color: var(--border);">
+            <div class="p-4 border-b flex items-center justify-between" style="border-color: var(--border-subtle);">
+                <h3 class="font-bold text-xs uppercase tracking-wider flex items-center gap-2" style="color: var(--text-muted);">
+                    <i data-lucide="message-square" class="w-4 h-4 text-blue-500"></i>
                     Chat History
                 </h3>
             </div>
             
-            <div class="flex-1 overflow-y-auto p-4 space-y-6">
+            <div class="flex-1 overflow-y-auto p-4 space-y-5 custom-scroll">
                 {% if grouped_sessions %}
                     {% for topic_name, sessions in grouped_sessions.items() %}
                         <div class="group">
-                            <h4 class="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-2 px-2 flex items-center justify-between cursor-pointer hover:text-gray-600 transition-colors" onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')">
-                                {{ topic_name }}
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="transition-transform duration-200"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            <h4 class="text-[10px] font-bold uppercase tracking-wider mb-2 px-2 flex items-center justify-between cursor-pointer transition-colors"
+                                style="color: var(--text-muted);"
+                                onclick="this.nextElementSibling.classList.toggle('hidden'); this.querySelector('svg').classList.toggle('rotate-180')">
+                                <span class="truncate pr-1">{{ topic_name }}</span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
                             </h4>
                             <div class="space-y-1 transition-all duration-300">
                                 {% for session in sessions %}
                                     <a href="{{ url_for('chat.global_chat', session_id=session.id) }}" 
-                                       class="block px-3 py-2 rounded-xl text-xs font-medium truncate transition-all {% if active_session_id == session.id %}bg-[#0071e3] text-gray-900 shadow-sm font-bold{% else %}text-gray-600 hover:bg-gray-100/80{% endif %}">
+                                       class="block px-3 py-2 rounded-xl text-xs font-semibold truncate transition-all {% if active_session_id == session.id %}text-white shadow-sm font-bold{% else %}hover:bg-black/5 dark:hover:bg-white/5{% endif %}"
+                                       style="{% if active_session_id == session.id %}background: var(--accent-gradient);{% else %}color: var(--text-secondary);{% endif %}">
                                         {{ session.title }}
                                     </a>
                                 {% endfor %}
@@ -41,7 +55,7 @@
                         </div>
                     {% endfor %}
                 {% else %}
-                    <div class="text-center p-6 opacity-50">
+                    <div class="text-center p-6" style="color: var(--text-muted);">
                         <p class="text-xs">No chat history found.</p>
                         <p class="text-[10px] mt-2">Go to a Topic and chat with your AI Tutor to start saving history.</p>
                     </div>
@@ -52,79 +66,105 @@
         <!-- Right Side: Active Chat -->
         <div class="flex-1 flex flex-col h-full relative bg-transparent min-w-0">
             {% if active_session %}
-                <div class="p-4 border-b border-gray-100/50 bg-white/60 backdrop-blur-md z-10 flex items-center justify-between">
+                <div class="p-3.5 sm:p-4 border-b z-10 flex items-center justify-between"
+                     style="background: var(--bg-elevated); border-color: var(--border-subtle);">
                     <div class="min-w-0 pr-4 flex items-center gap-3">
-                        <button onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                        <button onclick="toggleSidebar()" class="p-1.5 rounded-lg hover:bg-black/5 dark:hover:bg-white/5 transition-colors" style="color: var(--text-secondary);">
+                            <i data-lucide="menu" class="w-5 h-5"></i>
                         </button>
-                        <div>
-                            <h2 class="font-bold text-[#1d1d1f] text-sm truncate">{{ active_session.title }}</h2>
-                            <p class="text-[10px] text-gray-500 truncate">Context: {{ active_session.topic_name }}</p>
+                        <div class="min-w-0">
+                            <h2 class="font-bold text-xs sm:text-sm truncate" style="color: var(--text-primary);">{{ active_session.title }}</h2>
+                            <p class="text-[10px] truncate" style="color: var(--text-muted);">Context: {{ active_session.topic_name }}</p>
                         </div>
                     </div>
-                    <a href="{{ url_for('dashboard.view_topic', topic_id=active_session.topic_id) }}" class="flex-shrink-0 px-4 py-1.5 bg-white border border-gray-200 hover:bg-gray-50 text-xs font-semibold rounded-full shadow-sm transition-all text-gray-700">
-                        Go to Topic
+                    <a href="{{ url_for('dashboard.view_topic', topic_id=active_session.topic_id) }}" 
+                       class="flex-shrink-0 px-3.5 py-1.5 border text-xs font-bold rounded-full shadow-sm transition hover:opacity-90 flex items-center gap-1"
+                       style="background: var(--card); border-color: var(--border); color: var(--text-primary);">
+                        <span>Go to Topic</span>
+                        <i data-lucide="arrow-up-right" class="w-3.5 h-3.5"></i>
                     </a>
                 </div>
                 
-                <div id="chat-box" class="flex-1 overflow-y-auto p-6 space-y-6 text-sm flex flex-col">
+                <div id="chat-box" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 text-sm flex flex-col custom-scroll">
                     {% if chat_messages %}
                         {% for msg in chat_messages %}
                             {% if msg.role == 'user' %}
                                 <div class="flex justify-end">
-                                    <div class="p-4 rounded-2xl rounded-tr-sm bg-[#0071e3] text-gray-900 text-sm max-w-[75%] shadow-sm whitespace-pre-wrap leading-relaxed">{{ msg.content }}</div>
+                                    <div class="p-3.5 sm:p-4 rounded-2xl rounded-tr-sm text-white text-xs sm:text-sm max-w-[85%] sm:max-w-[75%] shadow-md whitespace-pre-wrap leading-relaxed font-sans font-medium"
+                                         style="background: var(--accent-gradient);">{{ msg.content }}</div>
                                 </div>
                             {% else %}
-                                <div class="flex justify-start relative group">
-                                    <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs flex-shrink-0 mr-3 mt-1 shadow-sm border border-primary-200">AI</div>
-                                    <div class="ai-message p-5 rounded-2xl rounded-tl-sm bg-white border border-gray-100 text-[#1d1d1f] text-base prose max-w-[85%] shadow-sm overflow-x-auto leading-relaxed" data-markdown="{{ msg.content | escape }}"></div>
-                                    <button onclick="copyToClipboard(this)" data-content="{{ msg.content | escape }}" class="absolute -right-2 -bottom-2 opacity-0 group-hover:opacity-100 bg-white border border-gray-200 text-gray-500 rounded-full p-2 shadow-sm hover:text-primary-600 transition-all text-xs" title="Copy"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></button>
+                                <div class="flex justify-start relative group items-start gap-2.5">
+                                    <div class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs flex-shrink-0 shadow-sm border text-white"
+                                         style="background: var(--accent-gradient); border-color: rgba(255,255,255,0.2);">AI</div>
+                                    <div class="ai-message p-4 sm:p-5 rounded-2xl rounded-tl-sm border text-xs sm:text-sm prose max-w-[85%] shadow-sm overflow-x-auto leading-relaxed" 
+                                         style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);"
+                                         data-markdown="{{ msg.content | escape }}"></div>
+                                    <button onclick="copyToClipboard(this)" data-content="{{ msg.content | escape }}" 
+                                            class="opacity-0 group-hover:opacity-100 border rounded-full p-2 shadow-sm transition-all text-xs shrink-0 self-end mb-1" 
+                                            style="background: var(--card); border-color: var(--border); color: var(--text-muted);"
+                                            title="Copy">
+                                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                    </button>
                                 </div>
                             {% endif %}
                         {% endfor %}
                     {% else %}
-                        <div class="flex justify-start">
-                            <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center font-bold text-xs flex-shrink-0 mr-3 mt-1 shadow-sm border border-primary-200">AI</div>
-                            <div class="p-5 rounded-2xl rounded-tl-sm bg-white border border-gray-100 text-[#1d1d1f] text-sm max-w-[85%] shadow-sm leading-relaxed">
-                                Hello! This is a new chat session. Ask me anything.
+                        <div class="flex justify-start items-center gap-3">
+                            <div class="w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs text-white shadow-sm" style="background: var(--accent-gradient);">AI</div>
+                            <div class="p-4 rounded-2xl rounded-tl-sm border text-xs sm:text-sm max-w-[85%] shadow-sm"
+                                 style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                                Hello! This is a new chat session. Ask me anything about your syllabus.
                             </div>
                         </div>
                     {% endif %}
                 </div>
                 
-                <div class="p-4 bg-gradient-to-t from-white/90 to-transparent sticky bottom-0">
+                <div class="p-3 sm:p-4 border-t sticky bottom-0" style="background: var(--bg-elevated); border-color: var(--border-subtle);">
                     <!-- Image Preview Container -->
                     <div id="image-preview-container" class="max-w-4xl mx-auto mb-2 hidden">
                         <div class="relative inline-block">
-                            <img id="image-preview" src="" class="h-20 w-auto rounded-lg shadow-sm border border-gray-200">
-                            <button type="button" onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-gray-900 rounded-full p-1 shadow-md hover:bg-red-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            <img id="image-preview" src="" class="h-20 w-auto rounded-lg shadow-sm border" style="border-color: var(--border);">
+                            <button type="button" onclick="clearImage()" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-md hover:bg-red-600">
+                                <i data-lucide="x" class="w-3 h-3"></i>
                             </button>
                         </div>
                     </div>
                     
-                    <form id="chat-form" class="flex gap-2 max-w-4xl mx-auto bg-white p-2 rounded-[1.25rem] shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_10px_20px_-2px_rgba(0,0,0,0.04)] border border-gray-100">
+                    <form id="chat-form" class="flex items-center gap-2 max-w-4xl mx-auto p-1.5 rounded-2xl border shadow-lg"
+                          style="background: var(--card); border-color: var(--border);">
                         <input type="hidden" id="chat-session-id" value="{{ active_session.id }}">
                         <input type="hidden" id="chat-topic-id" value="{{ active_session.topic_id }}">
                         <input type="file" id="image-input" accept="image/*" class="hidden">
                         
-                        <button type="button" onclick="document.getElementById('image-input').click()" class="p-3 rounded-xl hover:bg-gray-100 text-gray-500 transition-colors self-end flex items-center justify-center" title="Upload Image">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                        <button type="button" onclick="document.getElementById('image-input').click()" 
+                                class="p-2.5 rounded-xl transition-colors hover:bg-black/5 dark:hover:bg-white/5" 
+                                style="color: var(--text-muted);"
+                                title="Upload Image">
+                            <i data-lucide="paperclip" class="w-4 h-4"></i>
                         </button>
                         
-                        <textarea id="chat-input" rows="1" placeholder="Reply to AI Tutor... (Shift+Enter for new line)" class="flex-1 px-4 py-3 bg-transparent text-sm focus:outline-none text-[#1d1d1f] transition-all resize-none overflow-hidden min-h-[48px] max-h-[120px] leading-relaxed"></textarea>
-                        <button type="submit" class="px-6 py-2.5 rounded-xl bg-black hover:bg-gray-800 text-sm font-bold text-gray-900 shadow transition-all self-end flex items-center justify-center min-w-[100px] h-[44px]">
-                            Send
+                        <textarea id="chat-input" rows="1" placeholder="Reply to AI Tutor... (Shift+Enter for new line)" 
+                                  class="flex-1 px-3 py-2 bg-transparent text-xs sm:text-sm focus:outline-none transition-all resize-none min-h-[40px] max-h-[100px] leading-relaxed"
+                                  style="color: var(--text-primary);"></textarea>
+                        <button type="submit" 
+                                class="px-5 py-2 rounded-xl text-xs sm:text-sm font-bold text-white shadow-md transition hover:opacity-95 transform active:scale-95 shrink-0 flex items-center justify-center gap-1.5" 
+                                style="background: var(--accent-gradient);">
+                            <span>Send</span>
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
                         </button>
                     </form>
                 </div>
             {% else %}
                 <div class="flex-1 flex flex-col items-center justify-center text-center p-8 bg-transparent">
-                    <div class="w-20 h-20 bg-white rounded-full shadow-sm flex items-center justify-center mb-6 border border-gray-100 text-4xl">
-                        ✨
+                    <div class="w-16 h-16 rounded-2xl shadow-sm flex items-center justify-center mb-4 border text-3xl"
+                         style="background: var(--bg-elevated); border-color: var(--border);">
+                        💬
                     </div>
-                    <h2 class="text-2xl font-bold text-[#1d1d1f]">AI Chat History</h2>
-                    <p class="text-gray-500 mt-3 text-sm max-w-sm leading-relaxed">Select a conversation from the sidebar to review your past notes and discussions with your AI Tutor.</p>
+                    <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">AI Chat History</h2>
+                    <p class="text-xs max-w-sm leading-relaxed mt-2" style="color: var(--text-secondary);">
+                        Select a conversation from the sidebar to review your past notes and discussions with your AI Tutor.
+                    </p>
                 </div>
             {% endif %}
         </div>
@@ -134,20 +174,34 @@
 <!-- Upgrade Modal -->
 <div id="upgradeModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4">
     <!-- Backdrop -->
-    <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="closeUpgradeModal()"></div>
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeUpgradeModal()"></div>
     <!-- Modal Content -->
-    <div class="relative bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full border border-gray-100 animate-slide-up">
-        <button onclick="closeUpgradeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-600 transition p-2 rounded-full hover:bg-gray-50">
-            <i data-lucide="x" class="w-5 h-5"></i>
+    <div class="relative rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full border animate-slide-up"
+         style="background: var(--card); border-color: var(--border);">
+        <button onclick="closeUpgradeModal()" class="absolute top-4 right-4 transition p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-muted);">
+            <i data-lucide="x" class="w-4 h-4"></i>
         </button>
-        <div class="w-16 h-16 rounded-full bg-primary-100 flex items-center justify-center mb-6 text-primary-600 mx-auto">
-            <i data-lucide="sparkles" class="w-8 h-8"></i>
-        </div>
-        <h3 class="text-2xl font-bold text-center text-[#1d1d1f] mb-3 font-outfit">Quota Exceeded</h3>
-        <p id="upgradeModalMessage" class="text-gray-500 text-center mb-8">You have reached your free daily chat limit. Please upgrade to Premium to continue!</p>
-        <div class="flex gap-3">
-            <button onclick="closeUpgradeModal()" class="flex-1 py-3 px-4 rounded-xl bg-gray-100 text-[#1d1d1f] font-semibold hover:bg-gray-200 transition">Cancel</button>
-            <a href="{{ url_for('billing.upgrade_page') }}" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-primary-600 to-primary-600 text-white font-semibold hover:opacity-90 transition shadow-md shadow-primary-500/20 text-center">Upgrade Now</a>
+        <div class="text-center">
+            <div class="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center mb-4 border"
+                 style="background: var(--bg-elevated); border-color: var(--border);">
+                <i data-lucide="sparkles" class="w-7 h-7 text-amber-500"></i>
+            </div>
+            <h3 class="text-xl font-bold font-outfit mb-2" style="color: var(--text-primary);">Upgrade to Pro</h3>
+            <p id="upgradeModalMessage" class="text-xs mb-6" style="color: var(--text-secondary);">
+                You have reached your free daily chat limit. Please upgrade to continue learning with unlimited AI.
+            </p>
+            <div class="flex gap-3">
+                <button onclick="closeUpgradeModal()" class="flex-1 py-2.5 px-4 rounded-xl font-semibold text-xs border transition"
+                        style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-secondary);">
+                    Cancel
+                </button>
+                <a href="{{ url_for('billing.upgrade_page') }}" class="flex-1 py-2.5 px-4 rounded-xl text-white font-bold text-xs shadow-md transition hover:opacity-95 text-center flex items-center justify-center gap-1"
+                   style="background: var(--accent-gradient);">
+                    <span>Upgrade Now</span>
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -194,11 +248,40 @@ function addCodeCopyButtons(container) {
     });
 }
 
-function toggleSidebar() {
+function toggleMobileSidebar() {
     const sidebar = document.getElementById('chat-sidebar');
-    if (sidebar) {
-        sidebar.classList.toggle('hidden');
-        sidebar.classList.toggle('md:flex');
+    const backdrop = document.getElementById('chat-sidebar-backdrop');
+    if (!sidebar) return;
+    const isOpen = sidebar.classList.contains('sidebar-open');
+    if (isOpen) {
+        sidebar.classList.remove('sidebar-open');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.style.overflow = '';
+    } else {
+        sidebar.classList.add('sidebar-open');
+        if (backdrop) backdrop.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+function closeMobileSidebar() {
+    const sidebar = document.getElementById('chat-sidebar');
+    const backdrop = document.getElementById('chat-sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('sidebar-open');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.style.overflow = '';
+}
+
+function toggleSidebar() {
+    if (window.innerWidth < 768) {
+        toggleMobileSidebar();
+    } else {
+        // Desktop: show/hide normally
+        const sidebar = document.getElementById('chat-sidebar');
+        if (sidebar) {
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('md:flex');
+        }
     }
 }
 
@@ -235,29 +318,32 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Set Marked.js options
+    // Set Marked.js options if available
     if (typeof marked !== 'undefined') {
         marked.setOptions({ breaks: true, gfm: true });
-               // Render all existing chat messages
-        document.querySelectorAll('.ai-message').forEach(el => {
-            const md = el.getAttribute('data-markdown');
-            if (md) {
-                el.innerHTML = parseMarkdownWithMath(md);
-                if (typeof hljs !== 'undefined') {
-                    el.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
-                }
+    }
+    
+    // Render all existing chat messages
+    document.querySelectorAll('.ai-message').forEach(el => {
+        const md = el.getAttribute('data-markdown');
+        if (md && window.parseMarkdownWithMath) {
+            el.innerHTML = parseMarkdownWithMath(md);
+            if (typeof hljs !== 'undefined') {
+                el.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
+            }
+            if (typeof addCodeCopyButtons === 'function') {
                 addCodeCopyButtons(el);
             }
-        });
-        
-        // Typeset math equations
-        if (window.typesetMath) {
-            window.typesetMath();
         }
-        
-        // Scroll to bottom on load
-        if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+    });
+    
+    // Typeset math equations
+    if (window.typesetMath) {
+        window.typesetMath();
     }
+    
+    // Scroll to bottom on load
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
     
     // Auto-expand textarea
     if (chatInput) {
@@ -316,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             typingWrapper.className = 'flex justify-start';
             const typingDiv = document.createElement('div');
             typingDiv.className = 'p-4 rounded-2xl rounded-bl-sm bg-white border border-gray-100 text-[#1d1d1f] text-sm max-w-[85%] shadow-sm animate-pulse';
-            typingDiv.innerText = 'AI is typing...';
+            typingDiv.innerText = 'NoteEd is Thinking...';
             typingWrapper.appendChild(typingDiv);
             chatBox.appendChild(typingWrapper);
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -358,15 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const aiDiv = document.createElement('div');
                 aiDiv.className = 'ai-message p-4 rounded-2xl rounded-bl-sm bg-white border border-gray-100 text-[#1d1d1f] text-base prose max-w-[85%] shadow-sm overflow-x-auto';
                 
-                if (data.response && typeof marked !== 'undefined') {
-                    const parsedHtml = parseMarkdownWithMath(data.response);
-                    typeWriterReveal(aiDiv, parsedHtml, 15);
-                } else {
-                    typeWriterReveal(aiDiv, data.response || "No response", 15);
-                }
-                
-                aiWrapper.appendChild(aiDiv);
-                
                 const copyBtn = document.createElement('button');
                 copyBtn.className = 'absolute -right-2 -bottom-2 opacity-0 group-hover:opacity-100 bg-white border border-gray-200 text-gray-500 rounded-full p-2 shadow hover:text-primary-600 transition-all text-xs';
                 copyBtn.title = 'Copy';
@@ -374,9 +451,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
                 copyBtn.onclick = function() { copyToClipboard(this); };
                 
+                aiWrapper.appendChild(aiDiv);
                 aiWrapper.appendChild(copyBtn);
                 chatBox.appendChild(aiWrapper);
                 chatBox.scrollTop = chatBox.scrollHeight;
+
+                if (data.response && typeof marked !== 'undefined') {
+                    const parsedHtml = parseMarkdownWithMath(data.response);
+                    typeWriterReveal(aiDiv, parsedHtml, 12);
+                } else {
+                    typeWriterReveal(aiDiv, data.response || "No response", 12);
+                }
                 
                 // Typeset math equations in the new message
                 if (window.typesetMath) {
@@ -412,3 +497,4 @@ function closeUpgradeModal() {
 }
 </script>
 {% endblock %}
+

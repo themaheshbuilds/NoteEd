@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
-{% block title %}Import Syllabus - Helix AI{% endblock %}
+{% block title %}Import Syllabus - NoteEd{% endblock %}
 
 {% block content %}
 <div class="max-w-3xl mx-auto my-6 p-8 glass-card border border-gray-200 shadow-sm bg-white rounded-2xl">
@@ -8,7 +8,7 @@
         Syllabus Importer
     </h2>
     <p class="text-sm text-gray-500 mb-6">
-        Paste your university or school syllabus below. Helix AI will parse the structure and automatically generate corresponding Subjects, Units, and Topics to build your custom curriculum.
+        Paste your university or school syllabus below. NoteEd will parse the structure and automatically generate corresponding Subjects, Units, and Topics to build your custom curriculum.
     </p>
 
     <form action="{{ url_for('study.paste_syllabus') }}" method="POST" class="space-y-6">
@@ -72,3 +72,4 @@ Topics:
 }
 </script>
 {% endblock %}
+

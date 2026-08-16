@@ -1,4 +1,4 @@
-import os
+﻿import os
 import uuid
 import json
 from flask import Blueprint, request, redirect, url_for, flash, jsonify, send_from_directory, current_app
@@ -142,3 +142,4 @@ def delete_file(file_id):
         flash("File deleted.", "success")
         return redirect(url_for("dashboard.view_topic", topic_id=topic_id))
     return redirect(url_for("dashboard.index"))
+

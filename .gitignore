@@ -18,3 +18,20 @@ kiraak_study.db
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Uploads
+uploads/
+api/uploads/
+*.pdf
+
+# Local test & key scripts
+test_*.py
+test_*.html
+test_*.js
+api testiong.py
+verify_all_keys.py
+debug_json*.py
+export_qb.py
+clean_db.py
+output.txt
+question_bank_export.json

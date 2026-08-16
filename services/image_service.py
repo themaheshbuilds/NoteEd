@@ -1,4 +1,4 @@
-import io
+﻿import io
 from PIL import Image, ImageEnhance, ImageOps
 
 class ImageService:
@@ -45,3 +45,4 @@ class ImageService:
         except Exception as e:
             print(f"Error enhancing image: {e}")
             return image_bytes # Return original if processing fails
+

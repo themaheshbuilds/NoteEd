@@ -1,4 +1,5 @@
 import uuid
+import os
 from datetime import datetime
 # pyrefly: ignore [missing-import]
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
@@ -10,9 +11,9 @@ dashboard_bp = Blueprint("dashboard", __name__)
 def get_current_user():
     if "user_id" not in session:
         return None
-    # Fetch subscription tier
-    usage = db_service.query("SELECT subscription_tier FROM user_usage WHERE user_id = ?", (session["user_id"],), one=True)
-    tier = usage["subscription_tier"] if usage else "free"
+    # Fetch subscription tier using usage_service which syncs from profiles
+    from services.usage_service import usage_service
+    tier = usage_service.check_and_sync_premium_status(session["user_id"])
     
     return {
         "id": session["user_id"],
@@ -97,16 +98,30 @@ def index():
         if release_status_row:
             weekly_test_status = release_status_row["key_value"] # "approved" or "dismissed"
 
+    # Determine premium status from authoritative subscription_tier
+    is_premium = (user.get('subscription_tier') == 'premium') or bool(profile['is_premium'])
+
+    # Dynamic IST 12-Hour Hourly Greetings and Daily Rotating AI Coach Tips
+    from services.study_coach_service import get_ist_time_info, get_daily_study_tips, get_all_study_tips
+    ist_info = get_ist_time_info()
+    daily_study_tips = get_daily_study_tips(count=2)
+    all_study_tips = get_all_study_tips()
+
     return render_template(
         "dashboard/index.html",
         profile=profile,
+        current_user=user,
+        is_premium=is_premium,
         semesters=semesters,
         sessions=sessions,
         exams=exams,
         recent_files=recent_files,
         pending_tests=pending_tests,
         is_sunday=is_sunday,
-        weekly_test_status=weekly_test_status
+        weekly_test_status=weekly_test_status,
+        ist_info=ist_info,
+        daily_study_tips=daily_study_tips,
+        all_study_tips=all_study_tips
     )
 
 @dashboard_bp.route("/setup", methods=["GET", "POST"])
@@ -119,6 +134,66 @@ def setup():
     
     if request.method == "POST":
         education = request.form.get("education")
+
+        # Custom Degree / MBA / Other Course Creation
+        if education == "custom" or request.form.get("custom_course_name"):
+            course_name = request.form.get("custom_course_name", "Degree Course").strip()
+            univ_name = request.form.get("custom_board_name", "University / Autonomous").strip()
+            year_sem = request.form.get("custom_year_name", "Semester 1").strip()
+            branch = request.form.get("custom_group_name", "General").strip()
+            raw_subjects = request.form.get("custom_subjects", "").strip()
+
+            if not course_name:
+                course_name = "Custom Degree / Course"
+
+            sem_name = f"{course_name} ({branch}) - {year_sem}"
+            if univ_name:
+                sem_name += f" [{univ_name}]"
+
+            sem_id = str(uuid.uuid4())
+            db_service.execute(
+                "INSERT INTO semesters (id, user_id, name) VALUES (?, ?, ?)",
+                (sem_id, user["id"], sem_name)
+            )
+
+            import re
+            sub_list = []
+            if raw_subjects:
+                lines = [line.strip() for line in re.split(r'[\r\n,]+', raw_subjects) if line.strip()]
+                sub_list = lines
+
+            if not sub_list:
+                sub_list = [f"{course_name} Core Paper 1", f"{course_name} Core Paper 2", f"{course_name} Core Paper 3"]
+
+            for sub_name in sub_list:
+                sub_id = str(uuid.uuid4())
+                db_service.execute(
+                    "INSERT INTO subjects (id, semester_id, name, code) VALUES (?, ?, ?, ?)",
+                    (sub_id, sem_id, sub_name, "")
+                )
+                default_units = [
+                    ("Unit 1: Introduction & Foundational Concepts", [f"Overview of {sub_name}", f"Key Principles & Definitions in {sub_name}", f"Theoretical Framework of {sub_name}"]),
+                    ("Unit 2: Core Models & Methodologies", [f"Core Methodologies in {sub_name}", f"Process & Implementation Techniques", f"Standard Models & Workflows"]),
+                    ("Unit 3: Advanced Analysis & Problem Solving", [f"Advanced Concepts in {sub_name}", f"Analytical Frameworks & Tools", f"Problem Solving Strategies"]),
+                    ("Unit 4: Real-World Applications & Case Studies", [f"Practical Case Studies in {sub_name}", f"Industry Standards & Best Practices", f"Contemporary Issues in {sub_name}"]),
+                    ("Unit 5: Exam Review, Revision & Viva Q&A", [f"High-Yield Exam Topics in {sub_name}", f"Key Formulas & Summaries", f"Viva Voce Preparation for {sub_name}"])
+                ]
+                for u_idx, (u_title, default_topics) in enumerate(default_units, 1):
+                    unit_id = str(uuid.uuid4())
+                    db_service.execute(
+                        "INSERT INTO units (id, subject_id, name, number) VALUES (?, ?, ?, ?)",
+                        (unit_id, sub_id, u_title, u_idx)
+                    )
+                    for t_name in default_topics:
+                        topic_id = str(uuid.uuid4())
+                        db_service.execute(
+                            "INSERT INTO topics (id, unit_id, name) VALUES (?, ?, ?)",
+                            (topic_id, unit_id, t_name)
+                        )
+
+            flash(f"Custom course '{course_name}' imported successfully with all subjects and starter units!", "success")
+            return redirect(url_for("dashboard.index"))
+
         board = request.form.get("board")
         group = request.form.get("group")
         year = request.form.get("year")
@@ -131,12 +206,18 @@ def setup():
         sem_name = f"{year} - {group} ({board.upper()})"
         import re
         match_c24 = re.match(r"(c\d+)_(\d+)(?:st|nd|rd|th)_sem", year, re.IGNORECASE)
+        match_btech = re.match(r"(\d+)(?:st|nd|rd|th)_year_(\d+)(?:st|nd|rd|th)_sem", year, re.IGNORECASE)
         if match_c24:
             curriculum = match_c24.group(1).upper()
             sem_num = match_c24.group(2)
             board_upper = board.upper()
             formatted_board = "TG SBTET" if board_upper == "SBTET_TG" else ("AP SBTET" if board_upper == "SBTET_AP" else board_upper)
             sem_name = f"{curriculum} SEM {sem_num} - {formatted_board} {group.upper()}"
+        elif match_btech:
+            y_num = match_btech.group(1)
+            s_num = match_btech.group(2)
+            board_label = "JNTUH" if "jntu" in board.lower() else board.upper()
+            sem_name = f"B.Tech Year {y_num}-{s_num} ({board_label}) - {group.upper()}"
         elif year in ["first_year", "second_year"]:
             yr_str = "1st Year" if year == "first_year" else "2nd Year"
             board_upper = board.upper()
@@ -306,8 +387,7 @@ def view_topic(topic_id):
            FROM topics t
            JOIN units u ON t.unit_id = u.id
            JOIN subjects s ON u.subject_id = s.id
-           WHERE t.id = ?""", (topic_id,), one=True
-    )
+           WHERE t.id = ?""", (topic_id,), one=True)
     
     files = db_service.query("SELECT * FROM files WHERE topic_id = ? AND is_archived = 0", (topic_id,))
     
@@ -321,8 +401,8 @@ def view_topic(topic_id):
     archived_flashcards = db_service.query("SELECT * FROM flashcards WHERE topic_id = ? AND is_archived = 1", (topic_id,))
     archived_quizzes = db_service.query("SELECT * FROM quizzes WHERE topic_id = ? AND is_archived = 1 ORDER BY created_at DESC", (topic_id,))
     
-    # Fetch chat sessions
-    chat_sessions = db_service.query("SELECT * FROM chat_sessions WHERE topic_id = ? ORDER BY created_at DESC", (topic_id,))
+    # Fetch chat sessions (exclude archived ones)
+    chat_sessions = db_service.query("SELECT * FROM chat_sessions WHERE topic_id = ? AND is_archived = 0 ORDER BY created_at DESC", (topic_id,))
     
     # Determine which session to load
     session_id = request.args.get("session_id")
@@ -345,6 +425,11 @@ def view_topic(topic_id):
     if bookmark:
         is_bookmarked = True
     
+    # Fetch user's profile for experience level and study purpose
+    profile = db_service.query("SELECT experience_level, study_purpose FROM profiles WHERE id = ?", (user["id"],), one=True)
+    experience_level = profile["experience_level"] if profile and profile["experience_level"] else "intermediate"
+    study_purpose = profile["study_purpose"] if profile and profile["study_purpose"] else "learning"
+    
     return render_template(
         "dashboard/topic.html",
         topic=topic,
@@ -358,7 +443,9 @@ def view_topic(topic_id):
         archived_flashcards=archived_flashcards,
         archived_quizzes=archived_quizzes,
         chat_sessions=chat_sessions,
-        active_session_id=session_id
+        active_session_id=session_id,
+        experience_level=experience_level,
+        study_purpose=study_purpose
     )
 
 # ── Bookmarks ────────────────────────────────────────────────────────────
@@ -382,7 +469,7 @@ def bookmarks():
         (user["id"],)
     )
 
-    return render_template("dashboard/bookmarks.html", bookmarked_topics=bookmarked_topics)
+    return render_template("dashboard/bookmarks.html", bookmarks=bookmarked_topics)
 
 # ── Settings ────────────────────────────────────────────────────────────
 @dashboard_bp.route("/settings")
@@ -400,7 +487,11 @@ def update_profile():
     if not user:
         return redirect(url_for("auth.login"))
         
-    full_name = request.form.get("full_name")
+    first_name = (request.form.get("first_name") or "").strip()
+    last_name = (request.form.get("last_name") or "").strip()
+    full_name_input = (request.form.get("full_name") or "").strip()
+    
+    full_name = f"{first_name} {last_name}".strip() or full_name_input
     if full_name:
         db_service.execute("UPDATE profiles SET full_name = ? WHERE id = ?", (full_name, user["id"]))
         session["full_name"] = full_name
@@ -432,7 +523,7 @@ def update_api_keys():
     from flask import session
     session.pop("api_key_invalid", None)
     
-    flash(f"API Settings updated successfully. Received key length: {len(api_keys) if api_keys else 0}, Platform: {ai_platform}", "success")
+    flash("API Settings updated successfully.", "success")
     return redirect(url_for("dashboard.settings"))
 
 @dashboard_bp.route("/settings/reset", methods=["POST"])
@@ -564,21 +655,94 @@ def api_ai_coach():
     user = get_current_user()
     if not user: return jsonify({'error': 'Unauthorized'}), 401
 
-    profile = db_service.query('SELECT is_premium FROM profiles WHERE id = ?', (user['id'],), one=True)
-    if not profile or not profile['is_premium']:
+    from services.usage_service import usage_service
+    tier = usage_service.get_tier(user['id'])
+    
+    # Admin bypass or premium check
+    # [M7] Admin email from environment variable
+    admin_email = os.getenv("ADMIN_EMAIL", "")
+    profile_check = db_service.query('SELECT email FROM profiles WHERE id = ?', (user['id'],), one=True)
+    is_admin = admin_email and profile_check and profile_check['email'] == admin_email
+    
+    if not is_admin and tier != 'premium':
         return jsonify({'suggestions': []})
 
-    subjects = db_service.query('''SELECT s.name FROM subjects s JOIN semesters sem ON s.semester_id = sem.id WHERE sem.user_id = ? LIMIT 5''', (user['id'],))
+    subjects = db_service.query('SELECT s.name FROM subjects s JOIN semesters sem ON s.semester_id = sem.id WHERE sem.user_id = ? LIMIT 5', (user['id'],))
     subject_names = [s['name'] for s in subjects]
 
-    from services.ai_service import ai_service
     prompt = f'The user is studying: {", ".join(subject_names) if subject_names else "general subjects"}. Provide exactly 3 short, personalized, actionable study tips (1 sentence each). Output JSON with a "tips" array.'
 
     try:
         result = ai_service._generate_partial(prompt, max_tokens=200)
-        tips = result.get('tips', [])
+        tips = result.get("tips", [])
         if not tips: raise ValueError('No tips')
     except Exception:
         tips = ['Take a 25-minute Pomodoro session today.', 'Review your most recent notes to reinforce memory.', 'Test yourself with a quick flashcard session.']
 
     return jsonify({'suggestions': tips})
+
+
+@dashboard_bp.route('/api/topic/<topic_id>/save-experience-level', methods=['POST'])
+def save_experience_level(topic_id):
+    user = get_current_user()
+    if not user: return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json(silent=True) or {}
+    experience_level = data.get('experience_level')
+    if experience_level not in ['beginner', 'intermediate', 'topper']:
+        return jsonify({'error': 'Invalid experience level'}), 400
+    db_service.execute("UPDATE profiles SET experience_level = ? WHERE id = ?", (experience_level, user['id']))
+    return jsonify({'status': 'success'})
+
+
+@dashboard_bp.route('/api/topic/<topic_id>/save-study-purpose', methods=['POST'])
+def save_study_purpose(topic_id):
+    user = get_current_user()
+    if not user: return jsonify({'error': 'Unauthorized'}), 401
+    data = request.get_json(silent=True) or {}
+    study_purpose = data.get('study_purpose')
+    if study_purpose not in ['learning', 'exam_prep']:
+        return jsonify({'error': 'Invalid study purpose'}), 400
+    db_service.execute("UPDATE profiles SET study_purpose = ? WHERE id = ?", (study_purpose, user['id']))
+    return jsonify({'status': 'success'})
+
+
+@dashboard_bp.route('/api/global-search', methods=['GET'])
+def global_search():
+    user = get_current_user()
+    if not user:
+        return jsonify({'results': [], 'topics': [], 'subjects': []}), 401
+        
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify({'topics': [], 'subjects': []})
+        
+    like_param = f"%{query}%"
+    
+    # 1. Search Topics
+    topics = db_service.query("""
+        SELECT t.id, t.name, u.name as unit_name, s.name as subject_name
+        FROM topics t
+        JOIN units u ON t.unit_id = u.id
+        JOIN subjects s ON u.subject_id = s.id
+        JOIN semesters sem ON s.semester_id = sem.id
+        WHERE sem.user_id = ? AND (t.name LIKE ? OR u.name LIKE ? OR s.name LIKE ?)
+        ORDER BY t.name ASC
+        LIMIT 8
+    """, (user['id'], like_param, like_param, like_param))
+    
+    # 2. Search Subjects
+    subjects = db_service.query("""
+        SELECT s.id, s.name, sem.name as semester_name
+        FROM subjects s
+        JOIN semesters sem ON s.semester_id = sem.id
+        WHERE sem.user_id = ? AND s.name LIKE ?
+        ORDER BY s.name ASC
+        LIMIT 4
+    """, (user['id'], like_param))
+    
+    return jsonify({
+        'topics': [dict(t) for t in (topics or [])],
+        'subjects': [dict(s) for s in (subjects or [])]
+    })
+
+

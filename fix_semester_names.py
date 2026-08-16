@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 import re
 import os
 
@@ -37,3 +37,4 @@ def fix_semester_names():
 
 if __name__ == "__main__":
     fix_semester_names()
+

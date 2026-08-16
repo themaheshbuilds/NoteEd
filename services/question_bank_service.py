@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 import json
 import random
 import concurrent.futures
@@ -98,3 +98,4 @@ class QuestionBankService:
             print(f"[QuestionBank] Error parsing questions for {topic['topic_name']}: {e}")
 
 question_bank_service = QuestionBankService()
+

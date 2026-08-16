@@ -1,0 +1,955 @@
+{
+  "year": "II Year - I Semester",
+  "groups": {
+    "CSE": [
+      {
+        "subject": "Computer Oriented Statistical Methods",
+        "code": "A500006",
+        "category": "BSC",
+        "chapters": [
+          {
+            "name": "Unit-I: Random Variables and Probability Distributions",
+            "topics": [
+              "Concept of a Random Variable",
+              "Discrete Probability Distributions",
+              "Continuous Probability Distributions",
+              "Mean of a Random Variable",
+              "Variance of a Random Variable",
+              "Binomial Distribution",
+              "Poisson Distribution"
+            ]
+          },
+          {
+            "name": "Unit-II: Continuous Distributions and Sampling",
+            "topics": [
+              "Uniform Distribution",
+              "Normal Distribution",
+              "Areas under the Normal Curve",
+              "Applications of the Normal Distribution",
+              "Normal Approximation to the Binomial Distributions",
+              "Fundamental Sampling Distributions",
+              "Random Sampling and Some Important Statistics",
+              "Sampling Distributions and Sampling Distribution of Means",
+              "Central Limit Theorem"
+            ]
+          },
+          {
+            "name": "Unit-III: Estimation & Tests of Hypotheses (Large Samples)",
+            "topics": [
+              "Introduction to Statistical Inference",
+              "Classical Methods of Estimation",
+              "Single Sample: Estimating the Mean",
+              "Standard Error of a Point Estimate",
+              "Statistical Hypotheses: General Concepts & Testing a Hypothesis",
+              "Single Sample: Tests Concerning a Single Mean",
+              "Two Samples: Tests on Two Means (Unknown for equal variance)",
+              "One Sample: Test on a Single Proportion",
+              "Two Samples: Tests on Two Proportions"
+            ]
+          },
+          {
+            "name": "Unit-IV: Tests of Hypotheses (Small Samples)",
+            "topics": [
+              "Student's t-Distribution and its Properties",
+              "Test of Significance: Difference between Sample Mean and Population Mean",
+              "Difference between Means of Two Small Samples",
+              "Snedecor's F-Distribution and its Properties",
+              "Two-Sample Tests Concerning Variances (F-Distribution)"
+            ]
+          },
+          {
+            "name": "Unit-V: Stochastic Processes and Markov Chains",
+            "topics": [
+              "Introduction to Stochastic Processes",
+              "Markov Process",
+              "Transition Probability and Transition Probability Matrix",
+              "First Order and Higher Order Markov Process",
+              "n-Step Transition Probabilities",
+              "Markov Chain",
+              "Steady State Condition and Markov Analysis"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Computer Organization and Architecture",
+        "code": "A505302",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Boolean Algebra, Logic Gates and Digital Computers",
+            "topics": [
+              "Binary Codes, Binary Storage and Registers",
+              "Binary Logic and Digital Logic Gates",
+              "Data Representation: Data Types and Complements",
+              "Fixed Point Representation and Floating Point Representation",
+              "Digital Computers: Introduction and Block Diagram",
+              "Definition of Computer Organization, Computer Design and Computer Architecture"
+            ]
+          },
+          {
+            "name": "Unit-II: Combinational and Sequential Logic",
+            "topics": [
+              "Combinational Circuits: Analysis Procedure and Design Procedure",
+              "Binary Adder-Subtractor and Decimal Adder",
+              "Binary Multiplier and Magnitude Comparator",
+              "Decoders, Encoders and Multiplexers",
+              "HDL for Combinational Circuits",
+              "Sequential Logic: Sequential Circuits, Latches and Flip-Flops",
+              "Analysis of Clocked Sequential Circuits",
+              "State Reduction and State Assignment",
+              "Registers, Shift Registers, Ripple Counters and Synchronous Counters"
+            ]
+          },
+          {
+            "name": "Unit-III: Register Transfer Language, Micro-operations & Basic Computer Design",
+            "topics": [
+              "Register Transfer Language and Register Transfer",
+              "Bus and Memory Transfers",
+              "Arithmetic Micro-operations, Logic Micro-operations and Shift Micro-operations",
+              "Arithmetic Logic Shift Unit (ALSU)",
+              "Instruction Codes and Computer Registers",
+              "Computer Instructions, Timing and Control",
+              "Instruction Cycle",
+              "Memory Reference Instructions",
+              "Input-Output and Interrupt"
+            ]
+          },
+          {
+            "name": "Unit-IV: Microprogrammed Control, CPU and Computer Arithmetic",
+            "topics": [
+              "Control Memory and Address Sequencing",
+              "Microprogram Example and Design of Control Unit",
+              "Central Processing Unit: General Register Organization",
+              "Instruction Formats and Addressing Modes",
+              "Data Transfer and Manipulation, Program Control",
+              "Addition and Subtraction Algorithms",
+              "Multiplication Algorithms",
+              "Division Algorithms",
+              "Floating-Point Arithmetic Operations",
+              "Decimal Arithmetic Unit and Decimal Arithmetic Operations"
+            ]
+          },
+          {
+            "name": "Unit-V: Input-Output Organization and Memory Organization",
+            "topics": [
+              "Input-Output Interface",
+              "Asynchronous Data Transfer",
+              "Modes of Transfer",
+              "Priority Interrupt",
+              "Direct Memory Access (DMA)",
+              "Memory Hierarchy",
+              "Main Memory and Auxiliary Memory",
+              "Associative Memory",
+              "Cache Memory"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Object Oriented Programming through JAVA",
+        "code": "A505303",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Object Oriented Thinking and Java Basics",
+            "topics": [
+              "Need for OOP Paradigm and Summary of OOP Concepts",
+              "Coping with Complexity and Abstraction Mechanisms",
+              "History of Java and Java Buzzwords",
+              "Data Types, Variables, Scope and Lifetime of Variables",
+              "Arrays, Operators, Expressions and Control Statements",
+              "Type Conversion and Casting",
+              "Simple Java Program, Concepts of Classes, Objects and Methods",
+              "Constructors and Overloading Methods and Constructors",
+              "Access Control and this Keyword",
+              "Garbage Collection and Parameter Passing",
+              "Recursion and Inner Classes"
+            ]
+          },
+          {
+            "name": "Unit-II: Inheritance, Packages and Interfaces",
+            "topics": [
+              "Hierarchical Abstractions, Base Class Object and Subclass",
+              "Types of Inheritance, Benefits and Costs of Inheritance",
+              "Member Access Rules and super Keyword Uses",
+              "Using final Keyword with Inheritance",
+              "Polymorphism: Method Overriding and Dynamic Method Dispatch",
+              "Abstract Classes and the Object Class",
+              "Defining, Creating and Accessing a Package",
+              "Understanding CLASSPATH and Importing Packages",
+              "Differences between Classes and Interfaces",
+              "Defining an Interface, Implementing Interfaces, Applying Interfaces, Variables in Interface and Extending Interfaces"
+            ]
+          },
+          {
+            "name": "Unit-III: Exception Handling and Multithreading",
+            "topics": [
+              "Concepts and Benefits of Exception Handling",
+              "Termination or Resumptive Models and Exception Hierarchy",
+              "Usage of try, catch, throw, throws and finally",
+              "Built-in Exceptions and Creating Own Exception Subclasses",
+              "Differences between Multithreading and Multiprocessing",
+              "Thread Life Cycle and Creating Threads",
+              "Thread Priorities and Synchronizing Threads",
+              "Inter-Thread Communication",
+              "Thread Groups and Daemon Threads"
+            ]
+          },
+          {
+            "name": "Unit-IV: Core Java Packages and Event Handling",
+            "topics": [
+              "Exploring String Class and Object Class",
+              "Exploring java.util Package",
+              "Exploring java.io Package",
+              "Event Handling: Events, Event Sources and Event Classes",
+              "Event Listeners and Delegation Event Model",
+              "Handling Mouse and Keyboard Events",
+              "Adapter Classes",
+              "Layout Managers: Flow, Border, Grid, Card and GridBag Layout"
+            ]
+          },
+          {
+            "name": "Unit-V: Swing and Collection Framework in Java",
+            "topics": [
+              "Swing: Introduction, Limitations of AWT and MVC Architecture",
+              "Components and Containers: JFrame and JComponent",
+              "JLabel, ImageIcon, JTextField, JButton, JCheckBox, JRadioButton",
+              "JList, JComboBox, Tabbed Panes, Scroll Panes, Trees and Tables",
+              "Menu Basics: JMenuBar, JMenu, JMenuItem, JCheckBoxMenuItem, JRadioButtonMenuItem, JSeparator, Pop-up Menus",
+              "Overview of Java Collection Framework and Generics",
+              "Collection Classes: ArrayList, Vector, Hash Table, Stack, LinkedList",
+              "Enumeration, Iterator, StringTokenizer, Random, Scanner, Calendar and Properties"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Software Engineering",
+        "code": "A505304",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Introduction to Software Engineering and Process Models",
+            "topics": [
+              "The Evolving Role and Changing Nature of Software",
+              "Software Myths",
+              "Software Engineering: A Layered Technology",
+              "Process Framework and CMMI (Capability Maturity Model Integration)",
+              "Waterfall Model and Spiral Model",
+              "Incremental Process Models and Concurrent Models",
+              "Component-Based Development and Agile Methodology"
+            ]
+          },
+          {
+            "name": "Unit-II: Software Requirements and Requirements Engineering Process",
+            "topics": [
+              "Functional and Non-functional Requirements",
+              "User Requirements, System Requirements and Interface Specification",
+              "The Software Requirements Document (SRS)",
+              "Requirements Engineering: Feasibility Studies",
+              "Requirements Elicitation and Analysis",
+              "Requirements Validation and Requirements Management"
+            ]
+          },
+          {
+            "name": "Unit-III: Design Engineering and Architectural Design with UML",
+            "topics": [
+              "Design Process, Design Quality and Design Concepts",
+              "The Design Model",
+              "Software Architecture and Data Design",
+              "Architectural Styles and Patterns",
+              "Conceptual Model of UML and Basic Structural Modeling",
+              "Class Diagrams, Sequence Diagrams and Collaboration Diagrams",
+              "Activity Diagrams, Use Case Diagrams and Component Diagrams"
+            ]
+          },
+          {
+            "name": "Unit-IV: Testing Strategies and Metrics for Process and Products",
+            "topics": [
+              "A Strategic Approach to Software Testing",
+              "Test Strategies for Conventional Software",
+              "Black-Box Testing and White-Box Testing",
+              "Validation Testing and System Testing",
+              "The Art of Debugging",
+              "Software Measurement and Metrics for Software Quality"
+            ]
+          },
+          {
+            "name": "Unit-V: Risk Management and Quality Management",
+            "topics": [
+              "Reactive vs Proactive Risk Strategies",
+              "Software Risks, Risk Identification, Risk Projection and Risk Refinement",
+              "RMMM (Risk Mitigation, Monitoring and Management)",
+              "Quality Concepts and Software Quality Assurance (SQA)",
+              "Software Reviews and Formal Technical Reviews (FTR)",
+              "Statistical Software Quality Assurance",
+              "Software Reliability and ISO 9000 Quality Standards"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Database Management Systems",
+        "code": "A505305",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Database System Applications and Database Design",
+            "topics": [
+              "Historical Perspective: File Systems vs DBMS",
+              "The Data Model and Levels of Abstraction in DBMS",
+              "Data Independence and Structure of a DBMS",
+              "Database Design and ER Diagrams",
+              "Entities, Attributes and Entity Sets",
+              "Relationships and Relationship Sets",
+              "Additional Features of the ER Model",
+              "Conceptual Design with the ER Model"
+            ]
+          },
+          {
+            "name": "Unit-II: Relational Model and Relational Calculus",
+            "topics": [
+              "Integrity Constraints over Relations and Enforcing Constraints",
+              "Querying Relational Data and Logical Database Design",
+              "Introduction to Views, Destroying / Altering Tables and Views",
+              "Relational Algebra",
+              "Tuple Relational Calculus (TRC)",
+              "Domain Relational Calculus (DRC)"
+            ]
+          },
+          {
+            "name": "Unit-III: SQL Queries, Constraints, Triggers and Schema Refinement",
+            "topics": [
+              "Form of Basic SQL Query, UNION, INTERSECT and EXCEPT",
+              "Nested Queries and Aggregation Operators",
+              "NULL Values and Complex Integrity Constraints in SQL",
+              "Triggers and Active Databases",
+              "Schema Refinement: Problems Caused by Redundancy and Decompositions",
+              "Reasoning about Functional Dependencies",
+              "First, Second and Third Normal Forms (1NF, 2NF, 3NF)",
+              "Boyce-Codd Normal Form (BCNF)",
+              "Lossless Join Decomposition and Multivalued Dependencies (4NF, 5NF)"
+            ]
+          },
+          {
+            "name": "Unit-IV: Transaction Concepts, Concurrency Control and Crash Recovery",
+            "topics": [
+              "Transaction Concept, Transaction State and ACID Properties",
+              "Implementation of Atomicity and Durability",
+              "Concurrent Executions, Serializability and Recoverability",
+              "Implementation of Isolation and Testing for Serializability",
+              "Lock-Based Protocols, Timestamp-Based Protocols and Validation-Based Protocols",
+              "Multiple Granularity Locking",
+              "Log-Based Recovery and Atomicity",
+              "Recovery with Concurrent Transactions (ARIES)"
+            ]
+          },
+          {
+            "name": "Unit-V: Storage, File Organization and Indexing",
+            "topics": [
+              "Data on External Storage and File Organization",
+              "Comparison of File Organizations",
+              "Cluster Indexes, Primary and Secondary Indexes",
+              "Index Data Structures",
+              "Hash-Based Indexing (Static and Extensible Hashing)",
+              "Tree-Based Indexing and Intuitions for Tree Indexes",
+              "Indexed Sequential Access Methods (ISAM)",
+              "B+ Trees: A Dynamic Index Structure"
+            ]
+          }
+        ]
+      }
+    ],
+    "CSM (AI & ML)": [
+      {
+        "subject": "Computer Oriented Statistical Methods",
+        "code": "A500006",
+        "category": "BSC",
+        "chapters": [
+          {
+            "name": "Unit-I: Random Variables and Probability Distributions",
+            "topics": [
+              "Concept of a Random Variable",
+              "Discrete Probability Distributions",
+              "Continuous Probability Distributions",
+              "Mean of a Random Variable",
+              "Variance of a Random Variable",
+              "Binomial Distribution",
+              "Poisson Distribution"
+            ]
+          },
+          {
+            "name": "Unit-II: Continuous Distributions and Sampling",
+            "topics": [
+              "Uniform Distribution",
+              "Normal Distribution",
+              "Areas under the Normal Curve",
+              "Applications of the Normal Distribution",
+              "Normal Approximation to the Binomial Distributions",
+              "Fundamental Sampling Distributions",
+              "Random Sampling and Some Important Statistics",
+              "Sampling Distributions and Sampling Distribution of Means",
+              "Central Limit Theorem"
+            ]
+          },
+          {
+            "name": "Unit-III: Estimation & Tests of Hypotheses (Large Samples)",
+            "topics": [
+              "Introduction to Statistical Inference",
+              "Classical Methods of Estimation",
+              "Single Sample: Estimating the Mean",
+              "Standard Error of a Point Estimate",
+              "Statistical Hypotheses: General Concepts & Testing a Hypothesis",
+              "Single Sample: Tests Concerning a Single Mean",
+              "Two Samples: Tests on Two Means (Unknown for equal variance)",
+              "One Sample: Test on a Single Proportion",
+              "Two Samples: Tests on Two Proportions"
+            ]
+          },
+          {
+            "name": "Unit-IV: Tests of Hypotheses (Small Samples)",
+            "topics": [
+              "Student's t-Distribution and its Properties",
+              "Test of Significance: Difference between Sample Mean and Population Mean",
+              "Difference between Means of Two Small Samples",
+              "Snedecor's F-Distribution and its Properties",
+              "Two-Sample Tests Concerning Variances (F-Distribution)"
+            ]
+          },
+          {
+            "name": "Unit-V: Stochastic Processes and Markov Chains",
+            "topics": [
+              "Introduction to Stochastic Processes",
+              "Markov Process",
+              "Transition Probability and Transition Probability Matrix",
+              "First Order and Higher Order Markov Process",
+              "n-Step Transition Probabilities",
+              "Markov Chain",
+              "Steady State Condition and Markov Analysis"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Computer Organization and Architecture",
+        "code": "A505302",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Boolean Algebra, Logic Gates and Digital Computers",
+            "topics": [
+              "Binary Codes, Binary Storage and Registers",
+              "Binary Logic and Digital Logic Gates",
+              "Data Representation: Data Types and Complements",
+              "Fixed Point Representation and Floating Point Representation",
+              "Digital Computers: Introduction and Block Diagram",
+              "Definition of Computer Organization, Computer Design and Computer Architecture"
+            ]
+          },
+          {
+            "name": "Unit-II: Combinational and Sequential Logic",
+            "topics": [
+              "Combinational Circuits: Analysis Procedure and Design Procedure",
+              "Binary Adder-Subtractor and Decimal Adder",
+              "Binary Multiplier and Magnitude Comparator",
+              "Decoders, Encoders and Multiplexers",
+              "HDL for Combinational Circuits",
+              "Sequential Logic: Sequential Circuits, Latches and Flip-Flops",
+              "Analysis of Clocked Sequential Circuits",
+              "State Reduction and State Assignment",
+              "Registers, Shift Registers, Ripple Counters and Synchronous Counters"
+            ]
+          },
+          {
+            "name": "Unit-III: Register Transfer Language, Micro-operations & Basic Computer Design",
+            "topics": [
+              "Register Transfer Language and Register Transfer",
+              "Bus and Memory Transfers",
+              "Arithmetic Micro-operations, Logic Micro-operations and Shift Micro-operations",
+              "Arithmetic Logic Shift Unit (ALSU)",
+              "Instruction Codes and Computer Registers",
+              "Computer Instructions, Timing and Control",
+              "Instruction Cycle",
+              "Memory Reference Instructions",
+              "Input-Output and Interrupt"
+            ]
+          },
+          {
+            "name": "Unit-IV: Microprogrammed Control, CPU and Computer Arithmetic",
+            "topics": [
+              "Control Memory and Address Sequencing",
+              "Microprogram Example and Design of Control Unit",
+              "Central Processing Unit: General Register Organization",
+              "Instruction Formats and Addressing Modes",
+              "Data Transfer and Manipulation, Program Control",
+              "Addition and Subtraction Algorithms",
+              "Multiplication Algorithms",
+              "Division Algorithms",
+              "Floating-Point Arithmetic Operations",
+              "Decimal Arithmetic Unit and Decimal Arithmetic Operations"
+            ]
+          },
+          {
+            "name": "Unit-V: Input-Output Organization and Memory Organization",
+            "topics": [
+              "Input-Output Interface",
+              "Asynchronous Data Transfer",
+              "Modes of Transfer",
+              "Priority Interrupt",
+              "Direct Memory Access (DMA)",
+              "Memory Hierarchy",
+              "Main Memory and Auxiliary Memory",
+              "Associative Memory",
+              "Cache Memory"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Object Oriented Programming through JAVA",
+        "code": "A505303",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Object Oriented Thinking and Java Basics",
+            "topics": [
+              "Need for OOP Paradigm and Summary of OOP Concepts",
+              "Coping with Complexity and Abstraction Mechanisms",
+              "History of Java and Java Buzzwords",
+              "Data Types, Variables, Scope and Lifetime of Variables",
+              "Arrays, Operators, Expressions and Control Statements",
+              "Type Conversion and Casting",
+              "Simple Java Program, Concepts of Classes, Objects and Methods",
+              "Constructors and Overloading Methods and Constructors",
+              "Access Control and this Keyword",
+              "Garbage Collection and Parameter Passing",
+              "Recursion and Inner Classes"
+            ]
+          },
+          {
+            "name": "Unit-II: Inheritance, Packages and Interfaces",
+            "topics": [
+              "Hierarchical Abstractions, Base Class Object and Subclass",
+              "Types of Inheritance, Benefits and Costs of Inheritance",
+              "Member Access Rules and super Keyword Uses",
+              "Using final Keyword with Inheritance",
+              "Polymorphism: Method Overriding and Dynamic Method Dispatch",
+              "Abstract Classes and the Object Class",
+              "Defining, Creating and Accessing a Package",
+              "Understanding CLASSPATH and Importing Packages",
+              "Differences between Classes and Interfaces",
+              "Defining an Interface, Implementing Interfaces, Applying Interfaces, Variables in Interface and Extending Interfaces"
+            ]
+          },
+          {
+            "name": "Unit-III: Exception Handling and Multithreading",
+            "topics": [
+              "Concepts and Benefits of Exception Handling",
+              "Termination or Resumptive Models and Exception Hierarchy",
+              "Usage of try, catch, throw, throws and finally",
+              "Built-in Exceptions and Creating Own Exception Subclasses",
+              "Differences between Multithreading and Multiprocessing",
+              "Thread Life Cycle and Creating Threads",
+              "Thread Priorities and Synchronizing Threads",
+              "Inter-Thread Communication",
+              "Thread Groups and Daemon Threads"
+            ]
+          },
+          {
+            "name": "Unit-IV: Core Java Packages and Event Handling",
+            "topics": [
+              "Exploring String Class and Object Class",
+              "Exploring java.util Package",
+              "Exploring java.io Package",
+              "Event Handling: Events, Event Sources and Event Classes",
+              "Event Listeners and Delegation Event Model",
+              "Handling Mouse and Keyboard Events",
+              "Adapter Classes",
+              "Layout Managers: Flow, Border, Grid, Card and GridBag Layout"
+            ]
+          },
+          {
+            "name": "Unit-V: Swing and Collection Framework in Java",
+            "topics": [
+              "Swing: Introduction, Limitations of AWT and MVC Architecture",
+              "Components and Containers: JFrame and JComponent",
+              "JLabel, ImageIcon, JTextField, JButton, JCheckBox, JRadioButton",
+              "JList, JComboBox, Tabbed Panes, Scroll Panes, Trees and Tables",
+              "Menu Basics: JMenuBar, JMenu, JMenuItem, JCheckBoxMenuItem, JRadioButtonMenuItem, JSeparator, Pop-up Menus",
+              "Overview of Java Collection Framework and Generics",
+              "Collection Classes: ArrayList, Vector, Hash Table, Stack, LinkedList",
+              "Enumeration, Iterator, StringTokenizer, Random, Scanner, Calendar and Properties"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Database Management Systems",
+        "code": "A505305",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Database System Applications and Database Design",
+            "topics": [
+              "Historical Perspective: File Systems vs DBMS",
+              "The Data Model and Levels of Abstraction in DBMS",
+              "Data Independence and Structure of a DBMS",
+              "Database Design and ER Diagrams",
+              "Entities, Attributes and Entity Sets",
+              "Relationships and Relationship Sets",
+              "Additional Features of the ER Model",
+              "Conceptual Design with the ER Model"
+            ]
+          },
+          {
+            "name": "Unit-II: Relational Model and Relational Calculus",
+            "topics": [
+              "Integrity Constraints over Relations and Enforcing Constraints",
+              "Querying Relational Data and Logical Database Design",
+              "Introduction to Views, Destroying / Altering Tables and Views",
+              "Relational Algebra",
+              "Tuple Relational Calculus (TRC)",
+              "Domain Relational Calculus (DRC)"
+            ]
+          },
+          {
+            "name": "Unit-III: SQL Queries, Constraints, Triggers and Schema Refinement",
+            "topics": [
+              "Form of Basic SQL Query, UNION, INTERSECT and EXCEPT",
+              "Nested Queries and Aggregation Operators",
+              "NULL Values and Complex Integrity Constraints in SQL",
+              "Triggers and Active Databases",
+              "Schema Refinement: Problems Caused by Redundancy and Decompositions",
+              "Reasoning about Functional Dependencies",
+              "First, Second and Third Normal Forms (1NF, 2NF, 3NF)",
+              "Boyce-Codd Normal Form (BCNF)",
+              "Lossless Join Decomposition and Multivalued Dependencies (4NF, 5NF)"
+            ]
+          },
+          {
+            "name": "Unit-IV: Transaction Concepts, Concurrency Control and Crash Recovery",
+            "topics": [
+              "Transaction Concept, Transaction State and ACID Properties",
+              "Implementation of Atomicity and Durability",
+              "Concurrent Executions, Serializability and Recoverability",
+              "Implementation of Isolation and Testing for Serializability",
+              "Lock-Based Protocols, Timestamp-Based Protocols and Validation-Based Protocols",
+              "Multiple Granularity Locking",
+              "Log-Based Recovery and Atomicity",
+              "Recovery with Concurrent Transactions (ARIES)"
+            ]
+          },
+          {
+            "name": "Unit-V: Storage, File Organization and Indexing",
+            "topics": [
+              "Data on External Storage and File Organization",
+              "Comparison of File Organizations",
+              "Cluster Indexes, Primary and Secondary Indexes",
+              "Index Data Structures",
+              "Hash-Based Indexing (Static and Extensible Hashing)",
+              "Tree-Based Indexing and Intuitions for Tree Indexes",
+              "Indexed Sequential Access Methods (ISAM)",
+              "B+ Trees: A Dynamic Index Structure"
+            ]
+          }
+        ]
+      }
+    ],
+    "CSD (Data Science)": [
+      {
+        "subject": "Computer Oriented Statistical Methods",
+        "code": "A500006",
+        "category": "BSC",
+        "chapters": [
+          {
+            "name": "Unit-I: Random Variables and Probability Distributions",
+            "topics": [
+              "Concept of a Random Variable",
+              "Discrete Probability Distributions",
+              "Continuous Probability Distributions",
+              "Mean of a Random Variable",
+              "Variance of a Random Variable",
+              "Binomial Distribution",
+              "Poisson Distribution"
+            ]
+          },
+          {
+            "name": "Unit-II: Continuous Distributions and Sampling",
+            "topics": [
+              "Uniform Distribution",
+              "Normal Distribution",
+              "Areas under the Normal Curve",
+              "Applications of the Normal Distribution",
+              "Normal Approximation to the Binomial Distributions",
+              "Fundamental Sampling Distributions",
+              "Random Sampling and Some Important Statistics",
+              "Sampling Distributions and Sampling Distribution of Means",
+              "Central Limit Theorem"
+            ]
+          },
+          {
+            "name": "Unit-III: Estimation & Tests of Hypotheses (Large Samples)",
+            "topics": [
+              "Introduction to Statistical Inference",
+              "Classical Methods of Estimation",
+              "Single Sample: Estimating the Mean",
+              "Standard Error of a Point Estimate",
+              "Statistical Hypotheses: General Concepts & Testing a Hypothesis",
+              "Single Sample: Tests Concerning a Single Mean",
+              "Two Samples: Tests on Two Means (Unknown for equal variance)",
+              "One Sample: Test on a Single Proportion",
+              "Two Samples: Tests on Two Proportions"
+            ]
+          },
+          {
+            "name": "Unit-IV: Tests of Hypotheses (Small Samples)",
+            "topics": [
+              "Student's t-Distribution and its Properties",
+              "Test of Significance: Difference between Sample Mean and Population Mean",
+              "Difference between Means of Two Small Samples",
+              "Snedecor's F-Distribution and its Properties",
+              "Two-Sample Tests Concerning Variances (F-Distribution)"
+            ]
+          },
+          {
+            "name": "Unit-V: Stochastic Processes and Markov Chains",
+            "topics": [
+              "Introduction to Stochastic Processes",
+              "Markov Process",
+              "Transition Probability and Transition Probability Matrix",
+              "First Order and Higher Order Markov Process",
+              "n-Step Transition Probabilities",
+              "Markov Chain",
+              "Steady State Condition and Markov Analysis"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Computer Organization and Architecture",
+        "code": "A505302",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Boolean Algebra, Logic Gates and Digital Computers",
+            "topics": [
+              "Binary Codes, Binary Storage and Registers",
+              "Binary Logic and Digital Logic Gates",
+              "Data Representation: Data Types and Complements",
+              "Fixed Point Representation and Floating Point Representation",
+              "Digital Computers: Introduction and Block Diagram",
+              "Definition of Computer Organization, Computer Design and Computer Architecture"
+            ]
+          },
+          {
+            "name": "Unit-II: Combinational and Sequential Logic",
+            "topics": [
+              "Combinational Circuits: Analysis Procedure and Design Procedure",
+              "Binary Adder-Subtractor and Decimal Adder",
+              "Binary Multiplier and Magnitude Comparator",
+              "Decoders, Encoders and Multiplexers",
+              "HDL for Combinational Circuits",
+              "Sequential Logic: Sequential Circuits, Latches and Flip-Flops",
+              "Analysis of Clocked Sequential Circuits",
+              "State Reduction and State Assignment",
+              "Registers, Shift Registers, Ripple Counters and Synchronous Counters"
+            ]
+          },
+          {
+            "name": "Unit-III: Register Transfer Language, Micro-operations & Basic Computer Design",
+            "topics": [
+              "Register Transfer Language and Register Transfer",
+              "Bus and Memory Transfers",
+              "Arithmetic Micro-operations, Logic Micro-operations and Shift Micro-operations",
+              "Arithmetic Logic Shift Unit (ALSU)",
+              "Instruction Codes and Computer Registers",
+              "Computer Instructions, Timing and Control",
+              "Instruction Cycle",
+              "Memory Reference Instructions",
+              "Input-Output and Interrupt"
+            ]
+          },
+          {
+            "name": "Unit-IV: Microprogrammed Control, CPU and Computer Arithmetic",
+            "topics": [
+              "Control Memory and Address Sequencing",
+              "Microprogram Example and Design of Control Unit",
+              "Central Processing Unit: General Register Organization",
+              "Instruction Formats and Addressing Modes",
+              "Data Transfer and Manipulation, Program Control",
+              "Addition and Subtraction Algorithms",
+              "Multiplication Algorithms",
+              "Division Algorithms",
+              "Floating-Point Arithmetic Operations",
+              "Decimal Arithmetic Unit and Decimal Arithmetic Operations"
+            ]
+          },
+          {
+            "name": "Unit-V: Input-Output Organization and Memory Organization",
+            "topics": [
+              "Input-Output Interface",
+              "Asynchronous Data Transfer",
+              "Modes of Transfer",
+              "Priority Interrupt",
+              "Direct Memory Access (DMA)",
+              "Memory Hierarchy",
+              "Main Memory and Auxiliary Memory",
+              "Associative Memory",
+              "Cache Memory"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Object Oriented Programming through JAVA",
+        "code": "A505303",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Object Oriented Thinking and Java Basics",
+            "topics": [
+              "Need for OOP Paradigm and Summary of OOP Concepts",
+              "Coping with Complexity and Abstraction Mechanisms",
+              "History of Java and Java Buzzwords",
+              "Data Types, Variables, Scope and Lifetime of Variables",
+              "Arrays, Operators, Expressions and Control Statements",
+              "Type Conversion and Casting",
+              "Simple Java Program, Concepts of Classes, Objects and Methods",
+              "Constructors and Overloading Methods and Constructors",
+              "Access Control and this Keyword",
+              "Garbage Collection and Parameter Passing",
+              "Recursion and Inner Classes"
+            ]
+          },
+          {
+            "name": "Unit-II: Inheritance, Packages and Interfaces",
+            "topics": [
+              "Hierarchical Abstractions, Base Class Object and Subclass",
+              "Types of Inheritance, Benefits and Costs of Inheritance",
+              "Member Access Rules and super Keyword Uses",
+              "Using final Keyword with Inheritance",
+              "Polymorphism: Method Overriding and Dynamic Method Dispatch",
+              "Abstract Classes and the Object Class",
+              "Defining, Creating and Accessing a Package",
+              "Understanding CLASSPATH and Importing Packages",
+              "Differences between Classes and Interfaces",
+              "Defining an Interface, Implementing Interfaces, Applying Interfaces, Variables in Interface and Extending Interfaces"
+            ]
+          },
+          {
+            "name": "Unit-III: Exception Handling and Multithreading",
+            "topics": [
+              "Concepts and Benefits of Exception Handling",
+              "Termination or Resumptive Models and Exception Hierarchy",
+              "Usage of try, catch, throw, throws and finally",
+              "Built-in Exceptions and Creating Own Exception Subclasses",
+              "Differences between Multithreading and Multiprocessing",
+              "Thread Life Cycle and Creating Threads",
+              "Thread Priorities and Synchronizing Threads",
+              "Inter-Thread Communication",
+              "Thread Groups and Daemon Threads"
+            ]
+          },
+          {
+            "name": "Unit-IV: Core Java Packages and Event Handling",
+            "topics": [
+              "Exploring String Class and Object Class",
+              "Exploring java.util Package",
+              "Exploring java.io Package",
+              "Event Handling: Events, Event Sources and Event Classes",
+              "Event Listeners and Delegation Event Model",
+              "Handling Mouse and Keyboard Events",
+              "Adapter Classes",
+              "Layout Managers: Flow, Border, Grid, Card and GridBag Layout"
+            ]
+          },
+          {
+            "name": "Unit-V: Swing and Collection Framework in Java",
+            "topics": [
+              "Swing: Introduction, Limitations of AWT and MVC Architecture",
+              "Components and Containers: JFrame and JComponent",
+              "JLabel, ImageIcon, JTextField, JButton, JCheckBox, JRadioButton",
+              "JList, JComboBox, Tabbed Panes, Scroll Panes, Trees and Tables",
+              "Menu Basics: JMenuBar, JMenu, JMenuItem, JCheckBoxMenuItem, JRadioButtonMenuItem, JSeparator, Pop-up Menus",
+              "Overview of Java Collection Framework and Generics",
+              "Collection Classes: ArrayList, Vector, Hash Table, Stack, LinkedList",
+              "Enumeration, Iterator, StringTokenizer, Random, Scanner, Calendar and Properties"
+            ]
+          }
+        ]
+      },
+      {
+        "subject": "Database Management Systems",
+        "code": "A505305",
+        "category": "PCC",
+        "chapters": [
+          {
+            "name": "Unit-I: Database System Applications and Database Design",
+            "topics": [
+              "Historical Perspective: File Systems vs DBMS",
+              "The Data Model and Levels of Abstraction in DBMS",
+              "Data Independence and Structure of a DBMS",
+              "Database Design and ER Diagrams",
+              "Entities, Attributes and Entity Sets",
+              "Relationships and Relationship Sets",
+              "Additional Features of the ER Model",
+              "Conceptual Design with the ER Model"
+            ]
+          },
+          {
+            "name": "Unit-II: Relational Model and Relational Calculus",
+            "topics": [
+              "Integrity Constraints over Relations and Enforcing Constraints",
+              "Querying Relational Data and Logical Database Design",
+              "Introduction to Views, Destroying / Altering Tables and Views",
+              "Relational Algebra",
+              "Tuple Relational Calculus (TRC)",
+              "Domain Relational Calculus (DRC)"
+            ]
+          },
+          {
+            "name": "Unit-III: SQL Queries, Constraints, Triggers and Schema Refinement",
+            "topics": [
+              "Form of Basic SQL Query, UNION, INTERSECT and EXCEPT",
+              "Nested Queries and Aggregation Operators",
+              "NULL Values and Complex Integrity Constraints in SQL",
+              "Triggers and Active Databases",
+              "Schema Refinement: Problems Caused by Redundancy and Decompositions",
+              "Reasoning about Functional Dependencies",
+              "First, Second and Third Normal Forms (1NF, 2NF, 3NF)",
+              "Boyce-Codd Normal Form (BCNF)",
+              "Lossless Join Decomposition and Multivalued Dependencies (4NF, 5NF)"
+            ]
+          },
+          {
+            "name": "Unit-IV: Transaction Concepts, Concurrency Control and Crash Recovery",
+            "topics": [
+              "Transaction Concept, Transaction State and ACID Properties",
+              "Implementation of Atomicity and Durability",
+              "Concurrent Executions, Serializability and Recoverability",
+              "Implementation of Isolation and Testing for Serializability",
+              "Lock-Based Protocols, Timestamp-Based Protocols and Validation-Based Protocols",
+              "Multiple Granularity Locking",
+              "Log-Based Recovery and Atomicity",
+              "Recovery with Concurrent Transactions (ARIES)"
+            ]
+          },
+          {
+            "name": "Unit-V: Storage, File Organization and Indexing",
+            "topics": [
+              "Data on External Storage and File Organization",
+              "Comparison of File Organizations",
+              "Cluster Indexes, Primary and Secondary Indexes",
+              "Index Data Structures",
+              "Hash-Based Indexing (Static and Extensible Hashing)",
+              "Tree-Based Indexing and Intuitions for Tree Indexes",
+              "Indexed Sequential Access Methods (ISAM)",
+              "B+ Trees: A Dynamic Index Structure"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,23 +1,39 @@
 {
-  "name": "Helix AI",
-  "short_name": "Helix",
-  "description": "Your ultimate AI Study Assistant.",
-  "start_url": "/",
+  "id": "/",
+  "name": "NoteEd — AI Study Partner",
+  "short_name": "NoteEd",
+  "description": "AI Study Partner — Instant syllabus, deep study notes, step-by-step math solutions, code breakdowns, quizzes and flashcards.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#f5f5f7",
-  "theme_color": "#1d1d1f",
+  "orientation": "portrait-primary",
+  "background_color": "#090d16",
+  "theme_color": "#0071e3",
+  "categories": ["education", "productivity", "study"],
   "icons": [
     {
-      "src": "/static/images/logo.png",
+      "src": "/static/images/noteedhalf.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/static/images/logo.png",
+      "src": "/static/images/noteedfull.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/static/images/noteedhalf.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/images/noteedfull.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

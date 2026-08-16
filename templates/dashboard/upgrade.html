@@ -1,161 +1,218 @@
 {% extends "base.html" %}
 
+{% block title %}Upgrade to Premium - NoteEd{% endblock %}
+
 {% block content %}
-<div class="max-w-4xl mx-auto py-12">
-    <div class="text-center mb-12 animate-fade-in-up">
-        <div
-            class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary-100 to-primary-100 border border-primary-200 text-primary-800 font-semibold text-sm mb-6 shadow-sm">
-            <i data-lucide="sparkles" class="w-4 h-4 text-primary-500"></i>
-            <h1 class="text-4xl md:text-5xl font-extrabold font-outfit text-[#1d1d1f] tracking-tight mb-4">
-                Supercharge Your <span
-                    class="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-primary-600">Study
-                    Sessions</span>
-            </h1>
-            <p class="text-lg text-gray-500 max-w-2xl mx-auto">
-                Unlock advanced AI Study Decks, Planners, and Chat. Boost your studying today.
-            </p>
+<div class="max-w-5xl mx-auto py-12 px-4 sm:px-6">
+    <div class="text-center mb-10 animate-fade-in-up">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border mb-4 shadow-sm" style="background-color: var(--accent-subtle); border-color: var(--accent); color: var(--accent);">
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+            <span class="text-xs font-bold uppercase tracking-wider">Supercharge Your Learning</span>
         </div>
+        
+        <h1 class="text-4xl md:text-5xl font-extrabold font-outfit tracking-tight mb-4" style="color: var(--text-primary);">
+            Choose the Perfect Plan for <span class="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent" style="-webkit-background-clip: text; -webkit-text-fill-color: transparent;">Your Studies</span>
+        </h1>
+        <p class="text-base md:text-lg max-w-2xl mx-auto" style="color: var(--text-secondary);">
+            Unlock unlimited AI Study Decks, automated exam planners, smart summaries, and zero-wait AI response times.
+        </p>
 
-        {% if success %}
-        <div
-            class="mb-12 bg-green-50 border border-green-200 rounded-3xl p-8 text-center shadow-lg shadow-green-900/5 animate-scale-in">
-            <div
-                class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4 text-green-600">
-                <i data-lucide="check-circle" class="w-8 h-8"></i>
-            </div>
-            <h2 class="text-2xl font-bold text-green-900 mb-2">Welcome to Premium!</h2>
-            <p class="text-green-700 mb-6">Your payment was successful and your account has been upgraded instantly.</p>
-            <a href="{{ url_for('dashboard.index') }}"
-                class="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 transition-all shadow-md shadow-green-600/20">
-                Go to Dashboard
-            </a>
-        </div>
-        {% elif current_user and current_user.subscription_tier == 'premium' %}
-        <div
-            class="mb-12 max-w-3xl mx-auto bg-gradient-to-br from-primary-50 to-primary-100 border border-primary-200 rounded-3xl p-10 text-center shadow-lg shadow-primary-900/5 animate-scale-in">
-            <div
-                class="w-20 h-20 bg-primary-200 rounded-full flex items-center justify-center mx-auto mb-6 text-primary-600 shadow-sm">
-                <i data-lucide="crown" class="w-10 h-10"></i>
-            </div>
-            <h2 class="text-3xl font-bold font-outfit text-primary-900 mb-3">You are a Premium Member!</h2>
-            <p class="text-lg text-primary-700 mb-8 max-w-lg mx-auto">Your account is fully upgraded. You have premium access to AI features, faster generation, and priority support.</p>
-            <a href="{{ url_for('dashboard.index') }}"
-                class="inline-flex items-center justify-center px-8 py-4 rounded-xl bg-primary-600 text-white text-lg font-bold hover:bg-primary-700 transition-all shadow-md shadow-primary-600/20">
-                Start Studying
-            </a>
-        </div>
-        {% else %}
-        <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto animate-fade-in-up" style="animation-delay: 100ms;">
-            <!-- Free Tier -->
-            <div
-                class="glass-card bg-white p-8 rounded-3xl border border-gray-100 shadow-[0_4px_20px_rgba(0,0,0,0.03)] opacity-80 hover:opacity-100 transition-opacity duration-300">
-                <h3 class="text-xl font-bold font-outfit text-[#1d1d1f] mb-2">Basic</h3>
-                <div class="text-3xl font-extrabold text-[#1d1d1f] mb-6">₹0<span
-                        class="text-sm font-medium text-gray-500">/forever</span></div>
-
-                <ul class="space-y-4 mb-8">
-                    <li class="flex items-start gap-3 text-sm text-gray-600">
-                        <i data-lucide="check" class="w-5 h-5 text-gray-500 shrink-0"></i>
-                        The basic free plan
-                    </li>
-                </ul>
-
-                <button class="w-full py-3 rounded-xl border-2 border-gray-200 bg-white text-gray-500 font-semibold cursor-default"
-                    disabled>
-                    Current Plan
-                </button>
-            </div>
-
-            <!-- Premium Tier -->
-            <div
-                class="glass-card bg-gradient-to-b from-white to-primary-50 p-8 rounded-3xl border-2 border-primary-500 shadow-[0_8px_30px_rgba(139,92,246,0.15)] relative transform md:-translate-y-4">
-                <div
-                    class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-primary-600 to-primary-600 text-white text-xs font-bold uppercase tracking-wider py-1 px-4 rounded-full shadow-lg">
-                    Most Popular
-                </div>
-
-                <h3 class="text-xl font-bold font-outfit text-primary-900 mb-2">Premium</h3>
-                <div class="flex items-end gap-2 mb-2">
-                    <div class="text-4xl font-extrabold text-[#1d1d1f]">₹49<span class="text-sm font-medium text-gray-500">/month</span></div>
-                    <div class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded-md mb-2">Less than ₹2/day</div>
-                </div>
-                <p class="text-sm font-semibold text-primary-700 mb-6">Advanced notes • Faster AI • Priority access</p>
-
-                <ul class="space-y-4 mb-8">
-                    <li class="flex items-start gap-3 text-sm font-medium text-gray-800">
-                        <div class="p-0.5 bg-green-100 rounded-full text-green-600 shrink-0"><i data-lucide="check"
-                                class="w-4 h-4"></i></div>
-                        50 AI chats / day
-                    </li>
-                    <li class="flex items-start gap-3 text-sm font-medium text-gray-800">
-                        <div class="p-0.5 bg-green-100 rounded-full text-green-600 shrink-0"><i data-lucide="check"
-                                class="w-4 h-4"></i></div>
-                        20 AI Study Decks / month
-                    </li>
-                    <li class="flex items-start gap-3 text-sm font-medium text-gray-800">
-                        <div class="p-0.5 bg-green-100 rounded-full text-green-600 shrink-0"><i data-lucide="check"
-                                class="w-4 h-4"></i></div>
-                        20 AI Command Bar requests / day
-                    </li>
-                </ul>
-
-                <form action="{{ url_for('billing.checkout') }}" method="POST">
-                    <div class="mb-4">
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Mobile Number <span
-                                class="text-red-500">*</span></label>
-                        <input type="tel" id="phone" name="phone" required pattern="[0-9]{10}"
-                            placeholder="10-digit mobile number"
-                            class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all text-sm">
-                    </div>
-                    <button type="submit"
-                        class="w-full py-4 rounded-xl bg-[#1d1d1f] hover:bg-black text-white font-semibold transition-all shadow-[0_4px_14px_rgba(0,0,0,0.25)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.3)] flex items-center justify-center gap-2 group">
-                        <i data-lucide="credit-card"
-                            class="w-5 h-5 text-gray-600 group-hover:text-white transition-colors"></i>
-                        Upgrade to Premium
-                    </button>
-                    
-                    <!-- Trust Badges -->
-                    <div class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs font-medium text-gray-500">
-                        <div class="flex items-center gap-1">
-                            <i data-lucide="lock" class="w-3.5 h-3.5 text-green-600"></i> Secure payment
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-primary-600"></i> Powered by Instamojo
-                        </div>
-                        <div class="flex items-center gap-1">
-                            <i data-lucide="calendar-off" class="w-3.5 h-3.5 text-gray-400"></i> Cancel anytime
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Payment Proof Upload Section -->
-        <div class="mt-16 max-w-2xl mx-auto glass-card bg-white p-8 rounded-3xl border border-gray-200 shadow-sm">
-            <div class="flex items-center gap-3 mb-4">
-                <div class="w-10 h-10 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
-                    <i data-lucide="upload-cloud" class="w-5 h-5"></i>
-                </div>
-                <div>
-                    <h3 class="text-lg font-bold text-[#1d1d1f]">Already Paid?</h3>
-                    <p class="text-sm text-gray-500">If you completed your payment but your account wasn't upgraded
-                        automatically, upload your payment screenshot here.</p>
-                </div>
-            </div>
-
-            <form action="{{ url_for('billing.upload_proof') }}" method="POST" enctype="multipart/form-data"
-                class="mt-6 flex flex-col sm:flex-row items-center gap-4">
-                <div class="flex-1 w-full relative">
-                    <input type="file" id="proof_image" name="proof_image" accept="image/*"
-                        class="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 transition-all border border-gray-200 rounded-xl bg-gray-50 p-1"
-                        required>
-                </div>
-                <button type="submit"
-                    class="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#1d1d1f] hover:bg-black text-white font-semibold transition-all shadow-md whitespace-nowrap">
-                    Submit Proof
-                </button>
-            </form>
+        {% if not (current_user and current_user.subscription_tier == 'premium') and not success %}
+        <!-- Billing Cycle Switcher -->
+        <div class="mt-8 inline-flex items-center p-1.5 rounded-2xl border" style="background-color: var(--card); border-color: var(--border);">
+            <button type="button" id="btnMonthly" onclick="setBillingCycle('monthly')" class="px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm" style="background-color: var(--accent); color: #ffffff;">
+                Monthly Billing
+            </button>
+            <button type="button" id="btnYearly" onclick="setBillingCycle('yearly')" class="px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5" style="color: var(--text-secondary);">
+                Annual Billing
+                <span class="px-2 py-0.5 rounded-full text-[11px] font-extrabold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Save 32%</span>
+            </button>
         </div>
         {% endif %}
     </div>
-    {% endblock %}
+
+    {% if success %}
+    <div class="mb-12 border rounded-3xl p-8 text-center shadow-xl animate-scale-in" style="background-color: var(--card); border-color: #10b981;">
+        <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 bg-emerald-500/20 text-emerald-400">
+            <i data-lucide="check-circle" class="w-8 h-8"></i>
+        </div>
+        <h2 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Welcome to NoteEd Premium!</h2>
+        <p class="mb-6" style="color: var(--text-secondary);">Your payment was successful and your premium membership is activated immediately.</p>
+        <a href="{{ url_for('dashboard.index') }}" class="inline-flex items-center justify-center px-6 py-3 rounded-xl text-white font-semibold transition-all shadow-lg hover:opacity-90" style="background-color: var(--accent);">
+            Go to Dashboard
+        </a>
+    </div>
+    {% elif current_user and current_user.subscription_tier == 'premium' %}
+    <div class="mb-12 max-w-2xl mx-auto border rounded-3xl p-10 text-center shadow-xl animate-scale-in" style="background-color: var(--card); border-color: var(--accent);">
+        <div class="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 bg-blue-500/20 text-blue-400 shadow-sm">
+            <i data-lucide="crown" class="w-10 h-10"></i>
+        </div>
+        <h2 class="text-3xl font-bold font-outfit mb-3" style="color: var(--text-primary);">You are a Premium Member!</h2>
+        <p class="text-base mb-8 max-w-lg mx-auto" style="color: var(--text-secondary);">
+            Your account has full unrestricted access to all NoteEd AI features, priority cloud inference, and instant question answering.
+        </p>
+        <a href="{{ url_for('dashboard.index') }}" class="inline-flex items-center justify-center px-8 py-3.5 rounded-xl text-white text-base font-bold transition-all shadow-lg hover:opacity-90" style="background-color: var(--accent);">
+            Return to Study Dashboard
+        </a>
+    </div>
+    {% else %}
+    <div class="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-4xl mx-auto items-stretch overflow-hidden">
+        <!-- Free Tier -->
+        <div class="p-6 sm:p-8 rounded-3xl border flex flex-col justify-between transition-all" style="background-color: var(--card); border-color: var(--border);">
+            <div>
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">Starter</h3>
+                    <span class="px-3 py-1 rounded-full text-xs font-semibold" style="background-color: var(--bg-hover); color: var(--text-secondary);">Current</span>
+                </div>
+                <div class="text-4xl font-extrabold mb-4" style="color: var(--text-primary);">
+                    ₹0<span class="text-sm font-normal" style="color: var(--text-muted);"> / forever</span>
+                </div>
+                <p class="text-sm mb-6" style="color: var(--text-secondary);">Essential tools to try out AI note-taking and revision.</p>
+
+                <ul class="space-y-3.5 mb-8 text-sm" style="color: var(--text-secondary);">
+                    <li class="flex items-center gap-3">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+                        <span>10 AI chat queries per day</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+                        <span>3 AI Study Decks</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-500 shrink-0"></i>
+                        <span>Standard response speed</span>
+                    </li>
+                    <li class="flex items-center gap-3 opacity-60">
+                        <i data-lucide="x" class="w-4 h-4 text-rose-500 shrink-0"></i>
+                        <span>Limited syllabus upload size</span>
+                    </li>
+                </ul>
+            </div>
+
+            <button class="w-full py-3.5 rounded-xl border text-sm font-semibold cursor-default" style="background-color: var(--bg-hover); border-color: var(--border); color: var(--text-muted);" disabled>
+                Active on Free Plan
+            </button>
+        </div>
+
+        <!-- Premium Tier -->
+        <div class="p-6 sm:p-8 rounded-3xl border-2 flex flex-col justify-between relative shadow-2xl transition-all" style="background-color: var(--card); border-color: var(--accent);">
+            <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] font-extrabold uppercase tracking-wider py-1 px-4 rounded-full shadow-md" style="background-color: var(--accent);">
+                Recommended
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-2xl font-bold font-outfit" style="color: var(--text-primary);">NoteEd Pro</h3>
+                    <span class="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+                        <i data-lucide="zap" class="w-5 h-5"></i>
+                    </span>
+                </div>
+
+                <div class="flex items-baseline gap-2 mb-2">
+                    <div id="priceDisplay" class="text-4xl font-extrabold" style="color: var(--text-primary);">₹49</div>
+                    <span id="periodDisplay" class="text-sm font-medium" style="color: var(--text-muted);">/ month</span>
+                    <span id="tagDisplay" class="ml-2 px-2 py-0.5 rounded text-xs font-bold bg-emerald-500/20 text-emerald-400">Less than ₹2/day</span>
+                </div>
+                <p class="text-xs font-medium mb-6" style="color: var(--accent);">Full unlock • Ultra-fast AI • Priority exam decks</p>
+
+                <ul class="space-y-3.5 mb-8 text-sm" style="color: var(--text-primary);">
+                    <li class="flex items-center gap-3 font-medium">
+                        <div class="p-1 rounded-full bg-emerald-500/20 text-emerald-400 shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>
+                        <span><strong>Unlimited</strong> AI Study Decks & Quizzes</span>
+                    </li>
+                    <li class="flex items-center gap-3 font-medium">
+                        <div class="p-1 rounded-full bg-emerald-500/20 text-emerald-400 shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>
+                        <span><strong>50+ AI chats</strong> / day with vision support</span>
+                    </li>
+                    <li class="flex items-center gap-3 font-medium">
+                        <div class="p-1 rounded-full bg-emerald-500/20 text-emerald-400 shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>
+                        <span>Automated Exam Schedule Planner</span>
+                    </li>
+                    <li class="flex items-center gap-3 font-medium">
+                        <div class="p-1 rounded-full bg-emerald-500/20 text-emerald-400 shrink-0"><i data-lucide="check" class="w-3.5 h-3.5"></i></div>
+                        <span>Priority AI Inference & 24/7 Support</span>
+                    </li>
+                </ul>
+            </div>
+
+            <form id="checkoutForm" action="{{ url_for('billing.checkout') }}" method="POST">
+                <input type="hidden" id="planTypeInput" name="plan_type" value="monthly">
+                
+                <div class="mb-4">
+                    <label for="phone" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--text-secondary);">
+                        Mobile Number (for receipt)
+                    </label>
+                    <input type="tel" id="phone" name="phone" pattern="[0-9]{10}" placeholder="10-digit mobile number" class="w-full px-4 py-3 rounded-xl border text-sm font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-blue-500" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                </div>
+
+                <button type="submit" class="w-full py-3.5 rounded-xl text-white font-bold transition-all shadow-lg flex items-center justify-center gap-2 hover:opacity-95" style="background-color: var(--accent);">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    <span id="btnPayText">Upgrade to NoteEd Pro (₹49)</span>
+                </button>
+
+                <div class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 text-xs" style="color: var(--text-muted);">
+                    <span class="flex items-center gap-1"><i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-500"></i> Secure Instant Checkout</span>
+                    <span class="flex items-center gap-1"><i data-lucide="shield-check" class="w-3.5 h-3.5 text-blue-500"></i> UPI / Card / NetBanking</span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Manual Proof Upload & Support Option -->
+    <div class="mt-12 max-w-3xl mx-auto p-6 rounded-3xl border shadow-sm flex flex-col md:flex-row items-center justify-between gap-6" style="background-color: var(--card); border-color: var(--border);">
+        <div class="flex items-start gap-4">
+            <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0" style="background-color: var(--accent-subtle); color: var(--accent);">
+                <i data-lucide="upload-cloud" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold font-outfit" style="color: var(--text-primary);">Paid via UPI QR or having issues?</h3>
+                <p class="text-xs" style="color: var(--text-secondary);">Upload your payment screenshot or transaction ID and our support will activate your plan instantly.</p>
+            </div>
+        </div>
+
+        <form action="{{ url_for('billing.upload_proof') }}" method="POST" enctype="multipart/form-data" class="flex items-center gap-3 w-full md:w-auto">
+            <input type="file" id="proof_image" name="proof_image" accept="image/*" class="text-xs file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-500/20 file:text-blue-400 hover:file:opacity-80 transition-all border rounded-xl p-1 w-full md:w-56" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-secondary);" required>
+            <button type="submit" class="px-4 py-2.5 rounded-xl text-xs font-bold text-white whitespace-nowrap transition-all hover:opacity-90" style="background-color: var(--accent);">
+                Upload Proof
+            </button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function setBillingCycle(cycle) {
+    const btnMonthly = document.getElementById('btnMonthly');
+    const btnYearly = document.getElementById('btnYearly');
+    const priceDisplay = document.getElementById('priceDisplay');
+    const periodDisplay = document.getElementById('periodDisplay');
+    const tagDisplay = document.getElementById('tagDisplay');
+    const planTypeInput = document.getElementById('planTypeInput');
+    const btnPayText = document.getElementById('btnPayText');
+
+    if (cycle === 'yearly') {
+        btnMonthly.style.backgroundColor = 'transparent';
+        btnMonthly.style.color = 'var(--text-secondary)';
+        btnYearly.style.backgroundColor = 'var(--accent)';
+        btnYearly.style.color = '#ffffff';
+
+        priceDisplay.innerText = '₹399';
+        periodDisplay.innerText = '/ year';
+        tagDisplay.innerText = 'Save ₹189 (32% off)';
+        planTypeInput.value = 'yearly';
+        btnPayText.innerText = 'Upgrade to NoteEd Pro Annual (₹399)';
+    } else {
+        btnYearly.style.backgroundColor = 'transparent';
+        btnYearly.style.color = 'var(--text-secondary)';
+        btnMonthly.style.backgroundColor = 'var(--accent)';
+        btnMonthly.style.color = '#ffffff';
+
+        priceDisplay.innerText = '₹49';
+        periodDisplay.innerText = '/ month';
+        tagDisplay.innerText = 'Less than ₹2/day';
+        planTypeInput.value = 'monthly';
+        btnPayText.innerText = 'Upgrade to NoteEd Pro (₹49)';
+    }
+}
+</script>
+{% endblock %}

@@ -1,58 +1,194 @@
 {% extends "base.html" %}
 
-{% block title %}Settings - Helix AI{% endblock %}
+{% block title %}Settings - NoteEd{% endblock %}
 
 {% block content %}
-<div class="max-w-3xl mx-auto space-y-8 animate-fade-in">
+<div class="max-w-3xl mx-auto space-y-8 animate-fade-in py-6 px-4">
     <div>
-        <h1 class="text-3xl font-extrabold mb-2 font-outfit text-[#1d1d1f]">Settings</h1>
-        <p class="text-gray-500 text-sm">Manage your account preferences and API connections.</p>
+        <h1 class="text-3xl font-extrabold mb-2 font-outfit" style="color: var(--text-primary);">Settings</h1>
+        <p class="text-sm" style="color: var(--text-secondary);">Manage your interface theme, account preferences, and subscription.</p>
+    </div>
+
+    <!-- Appearance & Theme Section -->
+    <div class="p-6 rounded-2xl border shadow-sm" style="background-color: var(--card); border-color: var(--border);">
+        <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="palette" class="w-5 h-5 text-blue-500"></i>
+            <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">Appearance</h2>
+        </div>
+        <p class="text-xs mb-4" style="color: var(--text-secondary);">Customize how NoteEd looks on your device.</p>
+        
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <button type="button" onclick="applyTheme('dark'); updateActiveThemeBtn();" id="themeBtnDark" class="p-4 rounded-xl border flex flex-col items-center gap-2 transition-all hover:opacity-90" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                <i data-lucide="moon" class="w-5 h-5 text-blue-400"></i>
+                <span class="text-xs font-bold">Dark Mode</span>
+            </button>
+            <button type="button" onclick="applyTheme('light'); updateActiveThemeBtn();" id="themeBtnLight" class="p-4 rounded-xl border flex flex-col items-center gap-2 transition-all hover:opacity-90" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                <i data-lucide="sun" class="w-5 h-5 text-amber-500"></i>
+                <span class="text-xs font-bold">Light Mode</span>
+            </button>
+            <button type="button" onclick="applySystemTheme(); updateActiveThemeBtn();" id="themeBtnSystem" class="p-4 rounded-xl border flex flex-col items-center gap-2 transition-all hover:opacity-90 col-span-2 sm:col-span-1" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                <i data-lucide="monitor" class="w-5 h-5 text-purple-400"></i>
+                <span class="text-xs font-bold">System Sync</span>
+            </button>
+        </div>
     </div>
 
     <!-- Subscription Section -->
-    <div class="glass-card bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div class="p-6 rounded-2xl border shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4" style="background-color: var(--card); border-color: var(--border);">
         <div>
-            <div class="flex items-center gap-2 mb-1 text-[#1d1d1f]">
-                <i data-lucide="sparkles" class="w-5 h-5 {% if current_user.subscription_tier == 'premium' %}text-primary-500{% else %}text-gray-500{% endif %}"></i>
-                <h2 class="text-xl font-bold font-outfit">Subscription Plan</h2>
+            <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="sparkles" class="w-5 h-5 {% if current_user.subscription_tier == 'premium' %}text-yellow-400{% else %}text-gray-400{% endif %}"></i>
+                <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">Subscription Plan</h2>
             </div>
-            <p class="text-sm text-gray-500">
-                Current Plan: <span class="font-bold {% if current_user.subscription_tier == 'premium' %}text-primary-600{% else %}text-gray-700{% endif %} capitalize">{{ current_user.subscription_tier }}</span>
+            <p class="text-sm" style="color: var(--text-secondary);">
+                Current Plan: <span class="font-bold uppercase text-xs px-2.5 py-0.5 rounded-full border {% if current_user.subscription_tier == 'premium' %}bg-yellow-500/20 text-yellow-300 border-yellow-500/30{% else %}bg-gray-500/20 text-gray-300 border-gray-500/30{% endif %}">{{ current_user.subscription_tier }}</span>
             </p>
         </div>
-        {% if current_user.subscription_tier != 'premium' %}
-        <a href="{{ url_for('billing.upgrade_page') }}" class="px-5 py-2.5 rounded-full bg-gradient-to-r from-primary-600 to-primary-600 text-white text-sm font-semibold hover:opacity-90 transition-all shadow-md shadow-primary-500/20 whitespace-nowrap text-center">
-            Upgrade to Premium
+        <div>
+            <a href="{{ url_for('billing.upgrade_page') }}" class="inline-flex px-5 py-2.5 rounded-xl text-white text-xs font-bold transition-all shadow-md hover:opacity-90 whitespace-nowrap" style="background-color: var(--accent);">
+                {% if current_user.subscription_tier == 'premium' %}Manage Subscription{% else %}Upgrade to Pro (₹49){% endif %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Install NoteEd as App (PWA) Section -->
+    <div class="p-6 rounded-2xl border shadow-sm" style="background-color: var(--card); border-color: var(--border);">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="download" class="w-5 h-5 text-indigo-400"></i>
+                    <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">Install NoteEd App</h2>
+                </div>
+                <p class="text-xs" style="color: var(--text-secondary);">Install NoteEd on your phone or computer for offline study, instant access, and full-screen experience.</p>
+            </div>
+            <div>
+                <button type="button" onclick="installNoteEdApp()" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-xs font-bold transition-all shadow-md hover:opacity-90 whitespace-nowrap bg-indigo-600 hover:bg-indigo-500">
+                    <i data-lucide="smartphone" class="w-4 h-4"></i>
+                    <span>Install App</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Guidebook & Interactive Walkthrough -->
+    <div class="p-6 rounded-2xl border shadow-sm space-y-4" style="background-color: var(--card); border-color: var(--border);">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <i data-lucide="book-open" class="w-5 h-5 text-blue-400"></i>
+                    <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">User Guidebook & Tour</h2>
+                </div>
+                <p class="text-xs" style="color: var(--text-secondary);">Learn how to get the most out of NoteEd's AI study tools and features.</p>
+            </div>
+            <div>
+                <button type="button" onclick="startNoteEdTour(true)" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition-all hover:opacity-90" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                    <i data-lucide="compass" class="w-4 h-4 text-blue-400"></i>
+                    <span>Restart Walkthrough Tour</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Accordion Guidebook Topics -->
+        <div class="space-y-2 pt-2">
+            <details class="group rounded-xl border p-3.5 transition-all" style="background-color: var(--bg-elevated); border-color: var(--border);">
+                <summary class="flex items-center justify-between font-bold text-xs cursor-pointer select-none" style="color: var(--text-primary);">
+                    <span class="flex items-center gap-2.5">
+                        <span class="text-blue-500">🎓</span> 1. Setting up Course & Syllabus (Standard or Custom Degree)
+                    </span>
+                    <span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="mt-3 text-xs leading-relaxed space-y-1.5 pl-6" style="color: var(--text-secondary);">
+                    <p>• <strong>Pre-configured Branches:</strong> In Syllabus Setup, choose your standard degree branch (e.g. B.Tech CSE, IT, ECE) and semester to get official curriculum topics.</p>
+                    <p>• <strong>MBA / Degree / Any Course:</strong> Switch to the "MBA / Degree / Other" tab to specify your exact degree, semester, and course names. NoteEd automatically creates a 5-unit curriculum with foundational topics for each custom subject!</p>
+                </div>
+            </details>
+
+            <details class="group rounded-xl border p-3.5 transition-all" style="background-color: var(--bg-elevated); border-color: var(--border);">
+                <summary class="flex items-center justify-between font-bold text-xs cursor-pointer select-none" style="color: var(--text-primary);">
+                    <span class="flex items-center gap-2.5">
+                        <span class="text-emerald-500">📝</span> 2. Generating Notes & Solved Math Problems
+                    </span>
+                    <span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="mt-3 text-xs leading-relaxed space-y-1.5 pl-6" style="color: var(--text-secondary);">
+                    <p>• <strong>Step-by-Step Worked Calculations:</strong> Quantitative and mathematics topics automatically generate 6+ fully worked numerical problems with given data, formulas in MathJax LaTeX, and zero skipped arithmetic steps.</p>
+                    <p>• <strong>Study Mode:</strong> Toggle between <em>Learning Mode</em> (in-depth textbook coverage) and <em>Exam Prep Mode</em> (rapid high-yield formulas and cheat sheets).</p>
+                    <p>• <strong>Stop Generation Anytime:</strong> If you are satisfied with generated notes, tap <em>"🛑 Stop & Show Generated Content"</em> to immediately save and read your notes without waiting for quizzes.</p>
+                </div>
+            </details>
+
+            <details class="group rounded-xl border p-3.5 transition-all" style="background-color: var(--bg-elevated); border-color: var(--border);">
+                <summary class="flex items-center justify-between font-bold text-xs cursor-pointer select-none" style="color: var(--text-primary);">
+                    <span class="flex items-center gap-2.5">
+                        <span class="text-amber-500">⚡</span> 3. Flashcards, Quizzes & Viva Voce
+                    </span>
+                    <span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="mt-3 text-xs leading-relaxed space-y-1.5 pl-6" style="color: var(--text-secondary);">
+                    <p>• <strong>Active Recall Flashcards:</strong> Flip cards and rate your confidence (Easy, Medium, Hard) to optimize your revision schedule.</p>
+                    <p>• <strong>Interactive Quizzes:</strong> Test your knowledge with timed 5-question exam MCQs and view detailed answer explanations.</p>
+                    <p>• <strong>🎙️ Viva Voce & Oral Q&A:</strong> Master tough viva questions, tricky edge cases, and conceptual oral interview inquiries.</p>
+                </div>
+            </details>
+
+            <details class="group rounded-xl border p-3.5 transition-all" style="background-color: var(--bg-elevated); border-color: var(--border);">
+                <summary class="flex items-center justify-between font-bold text-xs cursor-pointer select-none" style="color: var(--text-primary);">
+                    <span class="flex items-center gap-2.5">
+                        <span class="text-purple-500">💬</span> 4. AI Tutor Chat & Document Q&A
+                    </span>
+                    <span class="text-gray-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <div class="mt-3 text-xs leading-relaxed space-y-1.5 pl-6" style="color: var(--text-secondary);">
+                    <p>• Click the <strong>"💬 AI Chat"</strong> button in any topic to ask specific questions, request extra practice problems, or clarify formulas with your dedicated AI tutor.</p>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- Help & Support Shortcut -->
+    <div class="p-6 rounded-2xl border shadow-sm flex items-center justify-between gap-4" style="background-color: var(--card); border-color: var(--border);">
+        <div>
+            <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="life-buoy" class="w-5 h-5 text-emerald-400"></i>
+                <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">Help & Support</h2>
+            </div>
+            <p class="text-xs" style="color: var(--text-secondary);">Need help or want to talk to AI Support / Admins?</p>
+        </div>
+        <a href="{{ url_for('dashboard.support') }}" class="px-4 py-2 rounded-xl text-xs font-bold border transition-all hover:opacity-90" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+            Open Support Center
         </a>
-        {% endif %}
     </div>
 
     <!-- Profile Section -->
-    <div class="glass-card bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100">
-        <div class="flex items-center gap-2 mb-4 text-[#1d1d1f]">
-            <i data-lucide="user" class="w-5 h-5 text-gray-500"></i>
-            <h2 class="text-xl font-bold font-outfit">Profile</h2>
+    <div class="p-6 rounded-2xl border shadow-sm" style="background-color: var(--card); border-color: var(--border);">
+        <div class="flex items-center gap-2 mb-4">
+            <i data-lucide="user" class="w-5 h-5 text-blue-400"></i>
+            <h2 class="text-xl font-bold font-outfit" style="color: var(--text-primary);">Profile Information</h2>
         </div>
         <form action="/settings/profile" method="POST" class="space-y-4">
-            <div>
-                <label for="full_name" class="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
-                <input type="text" id="full_name" name="full_name" value="{{ profile.full_name }}" class="w-full px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all text-[#1d1d1f]" placeholder="John Doe" required>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label for="first_name" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--text-secondary);">First Name</label>
+                    <input type="text" id="first_name" name="first_name" value="{{ (profile.full_name or '').split(' ')[0] if profile and profile.full_name else '' }}" class="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);" placeholder="First Name" required>
+                </div>
+                <div>
+                    <label for="last_name" class="block text-xs font-bold uppercase tracking-wider mb-1.5" style="color: var(--text-secondary);">Last Name</label>
+                    <input type="text" id="last_name" name="last_name" value="{{ (profile.full_name or '').split(' ')[1:]|join(' ') if profile and profile.full_name else '' }}" class="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);" placeholder="Last Name">
+                </div>
             </div>
-            <button type="submit" class="px-5 py-2.5 rounded-full bg-[#1d1d1f] hover:bg-black text-white text-sm font-semibold transition-all">
-                Save Profile
+            <button type="submit" class="px-5 py-2.5 rounded-xl text-white text-xs font-bold transition-all hover:opacity-90" style="background-color: var(--accent);">
+                Save Changes
             </button>
         </form>
     </div>
 
-
-
     <!-- Danger Zone Section -->
-    <div class="glass-card bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-red-100">
-        <div class="flex items-center gap-2 mb-4 text-red-600">
+    <div class="p-6 rounded-2xl border shadow-sm border-red-500/30 bg-red-500/5">
+        <div class="flex items-center gap-2 mb-2 text-rose-400">
             <i data-lucide="alert-triangle" class="w-5 h-5"></i>
             <h2 class="text-xl font-bold font-outfit">Danger Zone</h2>
         </div>
-        <p class="text-sm text-gray-600 mb-4">Resetting your account data will permanently delete all your study plans, bookmarks, and generated content. This action cannot be undone.</p>
+        <p class="text-xs mb-4" style="color: var(--text-secondary);">Resetting your account data will permanently delete all your study plans, bookmarks, and generated content. This action cannot be undone.</p>
         <form action="/settings/reset" method="POST" onsubmit="
             const confirmation = prompt('Are you sure you want to completely reset your account data? This cannot be undone. Please type \'reset my account\' to confirm.');
             if (confirmation !== 'reset my account') {
@@ -61,21 +197,58 @@
             }
             return true;
         ">
-            <button type="submit" class="px-5 py-2.5 rounded-full bg-red-50 hover:bg-red-100 border border-red-200 text-red-600 text-sm font-semibold transition-all">
+            <button type="submit" class="px-4 py-2 rounded-xl border border-rose-500/40 bg-rose-500/20 text-rose-300 text-xs font-bold hover:bg-rose-500/30 transition-all">
                 Reset Account Data
             </button>
         </form>
     </div>
 
     <!-- Account Actions -->
-    <div class="glass-card bg-white p-6 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 flex items-center justify-between">
+    <div class="p-6 rounded-2xl border shadow-sm flex items-center justify-between" style="background-color: var(--card); border-color: var(--border);">
         <div>
-            <h2 class="text-xl font-bold font-outfit text-[#1d1d1f]">Sign Out</h2>
-            <p class="text-sm text-gray-500">Sign out of your account on this device.</p>
+            <h2 class="text-lg font-bold font-outfit" style="color: var(--text-primary);">Sign Out</h2>
+            <p class="text-xs" style="color: var(--text-secondary);">Sign out of your account on this device.</p>
         </div>
-        <a href="{{ url_for('auth.logout') }}" class="px-5 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 text-[#1d1d1f] text-sm font-semibold transition-all">
+        <a href="{{ url_for('auth.logout') }}" class="px-5 py-2.5 rounded-xl border text-xs font-bold transition-all hover:opacity-90" style="background-color: var(--bg-hover); border-color: var(--border); color: var(--text-primary);">
             Logout
         </a>
     </div>
 </div>
+
+<script>
+function applySystemTheme() {
+    localStorage.removeItem('noteed_theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+}
+
+function updateActiveThemeBtn() {
+    const saved = localStorage.getItem('noteed_theme');
+    const darkBtn = document.getElementById('themeBtnDark');
+    const lightBtn = document.getElementById('themeBtnLight');
+    const sysBtn = document.getElementById('themeBtnSystem');
+
+    [darkBtn, lightBtn, sysBtn].forEach(b => {
+        if (b) {
+            b.style.borderColor = 'var(--border)';
+            b.style.boxShadow = 'none';
+        }
+    });
+
+    if (!saved && sysBtn) {
+        sysBtn.style.borderColor = 'var(--accent)';
+        sysBtn.style.boxShadow = '0 0 0 2px var(--accent)';
+    } else if (saved === 'dark' && darkBtn) {
+        darkBtn.style.borderColor = 'var(--accent)';
+        darkBtn.style.boxShadow = '0 0 0 2px var(--accent)';
+    } else if (saved === 'light' && lightBtn) {
+        lightBtn.style.borderColor = 'var(--accent)';
+        lightBtn.style.boxShadow = '0 0 0 2px var(--accent)';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateActiveThemeBtn();
+});
+</script>
 {% endblock %}

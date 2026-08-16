@@ -1,71 +1,240 @@
 {% extends "base.html" %}
 
-{% block title %}Support Chat - Helix AI{% endblock %}
+{% block title %}Help & Support - NoteEd{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto h-[calc(100vh-100px)] flex flex-col py-4">
-    <!-- Header -->
-    <div class="glass-card flex items-center justify-between p-4 rounded-t-3xl border-b border-gray-100 shrink-0 shadow-sm z-10">
-        <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-100 to-primary-100 flex items-center justify-center text-primary-600 shadow-sm shrink-0">
-                <i data-lucide="bot" class="w-6 h-6"></i>
-            </div>
+<div class="max-w-6xl mx-auto px-3 sm:px-6 h-[calc(100vh-6.2rem)] flex flex-col pb-2 sm:pb-3">
+    <!-- Header & Mobile View Switcher -->
+    <div class="mb-2 sm:mb-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center justify-between">
             <div>
-                <h1 class="text-xl font-bold font-outfit text-[#1d1d1f]">Support AI</h1>
-                <p class="text-xs text-gray-500 font-medium flex items-center gap-1">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Online and ready to help
-                </p>
+                <h1 class="text-lg sm:text-2xl font-extrabold font-outfit" style="color: var(--text-primary);">Help &
+                    Support Center</h1>
+                <p class="text-[10px] sm:text-xs" style="color: var(--text-secondary);">Support AI assistance, quick
+                    FAQs, and ticket desk.</p>
+            </div>
+            <div class="sm:hidden inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border text-[10px] font-semibold"
+                style="background-color: var(--card); border-color: var(--border); color: var(--text-primary);">
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>24/7 AI</span>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <!-- Mobile Tab Toggle (Visible only on <lg screens) -->
+            <div class="lg:hidden flex items-center p-1 rounded-xl border w-full sm:w-auto"
+                style="background-color: var(--card); border-color: var(--border);">
+                <button type="button" id="tabChatBtn" onclick="switchSupportTab('chat')"
+                    class="flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-bold transition-all shadow-sm"
+                    style="background-color: var(--accent); color: #ffffff;">
+                    <i data-lucide="message-square" class="w-3.5 h-3.5 inline mr-1"></i> AI Chat
+                </button>
+                <button type="button" id="tabFaqBtn" onclick="switchSupportTab('faq')"
+                    class="flex-1 sm:flex-none px-3 py-1 rounded-lg text-xs font-medium transition-all"
+                    style="color: var(--text-secondary);">
+                    <i data-lucide="help-circle" class="w-3.5 h-3.5 inline mr-1"></i> FAQs & Help
+                </button>
+            </div>
+
+            <!-- Desktop Status Badge -->
+            <div class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[11px] font-semibold"
+                style="background-color: var(--card); border-color: var(--border); color: var(--text-primary);">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Support AI Online 24/7</span>
             </div>
         </div>
     </div>
 
-    <!-- Chat History -->
-    <div id="chatBox" class="flex-1 overflow-y-auto p-6 space-y-6 bg-gray-50/50 flex flex-col custom-scrollbar">
-        <!-- Initial Greeting -->
-        <div class="flex justify-start">
-            <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3 shrink-0 shadow-sm mt-1">
-                <i data-lucide="bot" class="w-4 h-4"></i>
+    <!-- Main Content Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 flex-1 min-h-0 overflow-hidden">
+
+        <!-- Left: Quick FAQs & Guides (Hidden on mobile when chat tab is active) -->
+        <div id="faqSection"
+            class="hidden lg:flex lg:col-span-4 rounded-2xl border p-3.5 sm:p-4 flex-col justify-between overflow-hidden shadow-sm h-full"
+            style="background-color: var(--card); border-color: var(--border);">
+            <div class="flex flex-col flex-1 min-h-0 overflow-hidden">
+                <div class="flex items-center gap-2 mb-2.5 shrink-0">
+                    <i data-lucide="help-circle" class="w-4 h-4 text-blue-500"></i>
+                    <h2 class="text-xs sm:text-sm font-bold font-outfit" style="color: var(--text-primary);">Frequently
+                        Asked</h2>
+                </div>
+
+                <div class="space-y-2 text-xs overflow-y-auto custom-scrollbar flex-1 pr-1">
+                    <!-- FAQ 1 -->
+                    <div class="p-2.5 rounded-xl border transition-all cursor-pointer hover:opacity-90"
+                        style="background-color: var(--bg-elevated); border-color: var(--border);"
+                        onclick="toggleFaq(this)">
+                        <div class="flex items-center justify-between font-bold text-[11px]"
+                            style="color: var(--text-primary);">
+                            <span>How do I upgrade to Premium?</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+                        </div>
+                        <div class="hidden mt-1.5 pt-1.5 border-t text-[11px] leading-relaxed"
+                            style="border-color: var(--border); color: var(--text-secondary);">
+                            Visit the <a href="{{ url_for('billing.upgrade_page') }}"
+                                class="text-blue-500 underline font-semibold">Upgrade Page</a>, select Monthly or Annual
+                            plan, and pay via UPI, Cards, or NetBanking.
+                        </div>
+                    </div>
+
+                    <!-- FAQ 2 -->
+                    <div class="p-2.5 rounded-xl border transition-all cursor-pointer hover:opacity-90"
+                        style="background-color: var(--bg-elevated); border-color: var(--border);"
+                        onclick="toggleFaq(this)">
+                        <div class="flex items-center justify-between font-bold text-[11px]"
+                            style="color: var(--text-primary);">
+                            <span>Can I import syllabus PDFs?</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+                        </div>
+                        <div class="hidden mt-1.5 pt-1.5 border-t text-[11px] leading-relaxed"
+                            style="border-color: var(--border); color: var(--text-secondary);">
+                            Yes! Go to the "Import" tab in the top navigation bar and paste or upload your syllabus text
+                            to automatically generate subjects and topics.
+                        </div>
+                    </div>
+
+                    <!-- FAQ 3 -->
+                    <div class="p-2.5 rounded-xl border transition-all cursor-pointer hover:opacity-90"
+                        style="background-color: var(--bg-elevated); border-color: var(--border);"
+                        onclick="toggleFaq(this)">
+                        <div class="flex items-center justify-between font-bold text-[11px]"
+                            style="color: var(--text-primary);">
+                            <span>How does AI Tutor help in tests?</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+                        </div>
+                        <div class="hidden mt-1.5 pt-1.5 border-t text-[11px] leading-relaxed"
+                            style="border-color: var(--border); color: var(--text-secondary);">
+                            The AI Tutor explains tricky math equations, breaks down lecture concepts into step-by-step
+                            guides, and generates custom quiz decks.
+                        </div>
+                    </div>
+
+                    <!-- FAQ 4 -->
+                    <div class="p-2.5 rounded-xl border transition-all cursor-pointer hover:opacity-90"
+                        style="background-color: var(--bg-elevated); border-color: var(--border);"
+                        onclick="toggleFaq(this)">
+                        <div class="flex items-center justify-between font-bold text-[11px]"
+                            style="color: var(--text-primary);">
+                            <span>How to switch Light / Dark theme?</span>
+                            <i data-lucide="chevron-down" class="w-3.5 h-3.5 transition-transform duration-200"></i>
+                        </div>
+                        <div class="hidden mt-1.5 pt-1.5 border-t text-[11px] leading-relaxed"
+                            style="border-color: var(--border); color: var(--text-secondary);">
+                            Click the Sun / Moon icon in the top navbar or select your theme preference inside <a
+                                href="/settings" class="text-blue-500 underline font-semibold">Settings</a>.
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="p-4 rounded-2xl rounded-tl-sm bg-white border border-gray-100 text-[#1d1d1f] text-sm max-w-[85%] shadow-sm">
-                Hi {{ current_user.full_name }}! 👋 I'm the Helix Support AI. How can I help you today with your account, billing, or technical issues?
+
+            <!-- Compact Direct Contact Box -->
+            <div class="mt-2 pt-2 border-t shrink-0" style="border-color: var(--border);">
+                <div class="p-2.5 rounded-xl text-xs flex items-center gap-2.5"
+                    style="background-color: var(--bg-elevated); border: 1px solid var(--border);">
+                    <div
+                        class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-blue-500/20 text-blue-400">
+                        <i data-lucide="mail" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <div class="font-bold text-[11px]" style="color: var(--text-primary);">Direct Email Support
+                        </div>
+                        <div class="text-[10px] truncate" style="color: var(--text-secondary);">
+                            noteed.aistudypatner@gmail.com</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Render History -->
-        {% if history %}
-            {% for req in history %}
-                <!-- User Message -->
-                <div class="flex justify-end">
-                    <div class="p-4 rounded-2xl rounded-tr-sm bg-[#0071e3] text-gray-900 text-sm max-w-[85%] shadow-sm whitespace-pre-wrap">
-                        {{ req.message }}
+        <!-- Right: Interactive Support AI & Ticket Chat -->
+        <div id="chatSection"
+            class="col-span-1 lg:col-span-8 rounded-2xl border flex flex-col overflow-hidden shadow-sm h-full"
+            style="background-color: var(--card); border-color: var(--border);">
+
+            <!-- Chat Messages Container -->
+            <div id="chatBox" class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 flex flex-col custom-scrollbar min-h-0"
+                style="background-color: var(--bg);">
+                <!-- Initial Greeting -->
+                <div class="flex justify-start items-start gap-2">
+                    <div
+                        class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-blue-500/20 text-blue-400">
+                        <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div class="p-2.5 px-3.5 rounded-2xl rounded-tl-sm border text-xs sm:text-sm max-w-[85%] sm:max-w-[75%] shadow-sm leading-relaxed"
+                        style="background-color: var(--card); border-color: var(--border); color: var(--text-primary);">
+                        Hi {{ current_user.full_name or 'there' }}! 👋 I'm NoteEd Support AI. How can I help you with
+                        your account, notes, billing, or features today?
                     </div>
                 </div>
 
-                <!-- AI Response -->
+                <!-- Existing History -->
+                {% if history %}
+                {% for req in history %}
+                <!-- User Message (Clean tight fit bubble) -->
+                <div class="flex justify-end">
+                    <div class="p-2.5 px-4 rounded-2xl rounded-tr-sm text-white text-xs sm:text-sm max-w-[85%] sm:max-w-[75%] shadow-sm whitespace-pre-line break-words leading-relaxed inline-block"
+                        style="background-color: var(--accent);">{{ req.message.strip() }}</div>
+                </div>
+
+                <!-- AI / Admin Response -->
                 {% if req.ai_response %}
-                <div class="flex justify-start">
-                    <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3 shrink-0 shadow-sm mt-1">
-                        <i data-lucide="bot" class="w-4 h-4"></i>
+                <div class="flex justify-start items-start gap-2">
+                    <div
+                        class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-blue-500/20 text-blue-400">
+                        <i data-lucide="bot" class="w-3.5 h-3.5"></i>
                     </div>
-                    <div class="p-4 rounded-2xl rounded-tl-sm bg-white border border-gray-100 text-[#1d1d1f] text-sm prose prose-sm max-w-[85%] shadow-sm">
+                    <div class="p-2.5 px-3.5 rounded-2xl rounded-tl-sm border text-xs sm:text-sm prose prose-sm max-w-[85%] sm:max-w-[75%] shadow-sm leading-relaxed"
+                        style="background-color: var(--card); border-color: var(--border); color: var(--text-primary);">
                         {{ req.ai_response | safe }}
                     </div>
                 </div>
                 {% endif %}
-            {% endfor %}
-        {% endif %}
-    </div>
-
-    <!-- Input Area -->
-    <div class="glass-card p-4 rounded-b-3xl border-t border-gray-100 shrink-0">
-        <form id="supportForm" class="flex items-end gap-3 max-w-4xl mx-auto relative" onsubmit="event.preventDefault(); sendSupportMessage();">
-            <div class="flex-1 bg-white rounded-2xl border border-gray-200 shadow-inner overflow-hidden focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 transition-all flex items-center p-2">
-                <textarea id="messageInput" rows="1" class="w-full px-4 py-2 bg-transparent text-sm focus:outline-none text-[#1d1d1f] resize-none max-h-32 custom-scrollbar" placeholder="Describe your issue here..." required></textarea>
-                <button type="submit" id="sendBtn" class="w-10 h-10 rounded-xl bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center shrink-0 transition-colors shadow-md shadow-primary-500/25 ml-2 disabled:opacity-50">
-                    <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
-                </button>
+                {% endfor %}
+                {% endif %}
             </div>
-        </form>
+
+            <!-- Quick Category Chips -->
+            <div class="px-3 py-1.5 border-t flex items-center gap-1.5 overflow-x-auto text-[11px] shrink-0"
+                style="background-color: var(--card); border-color: var(--border);">
+                <span class="font-bold whitespace-nowrap text-[10px] uppercase tracking-wider"
+                    style="color: var(--text-muted);">Topic:</span>
+                <button type="button" onclick="setSupportTopic('Billing inquiry: I need help with my payment/upgrade.')"
+                    class="px-2.5 py-1 rounded-full border whitespace-nowrap transition hover:opacity-80 text-[11px]"
+                    style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-secondary);">💳
+                    Billing</button>
+                <button type="button" onclick="setSupportTopic('AI Notes: How do I generate more practice decks?')"
+                    class="px-2.5 py-1 rounded-full border whitespace-nowrap transition hover:opacity-80 text-[11px]"
+                    style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-secondary);">📚
+                    AI Decks</button>
+                <button type="button" onclick="setSupportTopic('Bug report: I encountered an error while studying.')"
+                    class="px-2.5 py-1 rounded-full border whitespace-nowrap transition hover:opacity-80 text-[11px]"
+                    style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-secondary);">🐛
+                    Bug Report</button>
+                <button type="button" onclick="setSupportTopic('Feature request: Could you add support for...')"
+                    class="px-2.5 py-1 rounded-full border whitespace-nowrap transition hover:opacity-80 text-[11px]"
+                    style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-secondary);">💡
+                    Feature Idea</button>
+            </div>
+
+            <!-- Input Area (Always pinned and visible across all viewport sizes) -->
+            <div class="p-2.5 sm:p-3 border-t shrink-0"
+                style="background-color: var(--card); border-color: var(--border);">
+                <form id="supportForm" class="flex items-center gap-2 max-w-4xl mx-auto"
+                    onsubmit="event.preventDefault(); sendSupportMessage();">
+                    <div class="flex-1 rounded-xl border overflow-hidden transition-all flex items-center p-1 focus-within:ring-2 focus-within:ring-blue-500"
+                        style="background-color: var(--bg-elevated); border-color: var(--border);">
+                        <textarea id="messageInput" rows="1"
+                            class="w-full px-2.5 py-1 bg-transparent text-xs sm:text-sm focus:outline-none resize-none max-h-24 custom-scrollbar"
+                            placeholder="Ask a question or explain your problem..." style="color: var(--text-primary);"
+                            required></textarea>
+                    </div>
+                    <button type="submit" id="sendBtn"
+                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-white flex items-center justify-center shrink-0 transition-all shadow-sm hover:opacity-90 disabled:opacity-50"
+                        style="background-color: var(--accent);">
+                        <i data-lucide="send" class="w-4 h-4 ml-0.5"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -73,36 +242,84 @@
     const chatBox = document.getElementById('chatBox');
     const messageInput = document.getElementById('messageInput');
     const sendBtn = document.getElementById('sendBtn');
-    
+
     // Auto-scroll to bottom on load
-    chatBox.scrollTop = chatBox.scrollHeight;
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+
+    function switchSupportTab(tab) {
+        const chatSection = document.getElementById('chatSection');
+        const faqSection = document.getElementById('faqSection');
+        const tabChatBtn = document.getElementById('tabChatBtn');
+        const tabFaqBtn = document.getElementById('tabFaqBtn');
+
+        if (tab === 'faq') {
+            chatSection.classList.add('hidden');
+            chatSection.classList.remove('flex');
+            faqSection.classList.remove('hidden');
+            faqSection.classList.add('flex');
+
+            tabFaqBtn.style.backgroundColor = 'var(--accent)';
+            tabFaqBtn.style.color = '#ffffff';
+            tabChatBtn.style.backgroundColor = 'transparent';
+            tabChatBtn.style.color = 'var(--text-secondary)';
+        } else {
+            faqSection.classList.add('hidden');
+            faqSection.classList.remove('flex');
+            chatSection.classList.remove('hidden');
+            chatSection.classList.add('flex');
+
+            tabChatBtn.style.backgroundColor = 'var(--accent)';
+            tabChatBtn.style.color = '#ffffff';
+            tabFaqBtn.style.backgroundColor = 'transparent';
+            tabFaqBtn.style.color = 'var(--text-secondary)';
+            if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    }
+
+    function toggleFaq(card) {
+        const answer = card.querySelector('div:last-child');
+        const icon = card.querySelector('i');
+        if (answer) {
+            answer.classList.toggle('hidden');
+            if (icon) icon.classList.toggle('rotate-180');
+        }
+    }
+
+    function setSupportTopic(text) {
+        if (messageInput) {
+            messageInput.value = text;
+            messageInput.focus();
+            if (window.innerWidth < 1024) {
+                switchSupportTab('chat');
+            }
+        }
+    }
 
     // Auto-resize textarea
-    messageInput.addEventListener('input', function() {
-        this.style.height = 'auto';
-        this.style.height = (this.scrollHeight) + 'px';
-        if (this.value.trim() === '') {
+    if (messageInput) {
+        messageInput.addEventListener('input', function () {
             this.style.height = 'auto';
-        }
-    });
+            this.style.height = (this.scrollHeight) + 'px';
+        });
 
-    // Handle Enter to submit (Shift+Enter for new line)
-    messageInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendSupportMessage();
-        }
-    });
+        // Handle Enter to submit (Shift+Enter for new line)
+        messageInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendSupportMessage();
+            }
+        });
+    }
 
     async function sendSupportMessage() {
         const message = messageInput.value.trim();
         if (!message) return;
 
-        // Add user message to UI
+        // Add user message to UI (Tight natural-wrap pill)
         const userWrapper = document.createElement('div');
         userWrapper.className = 'flex justify-end';
         userWrapper.innerHTML = `
-            <div class="p-4 rounded-2xl rounded-tr-sm bg-[#0071e3] text-gray-900 text-sm max-w-[85%] shadow-sm whitespace-pre-wrap">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+            <div class="p-2.5 px-4 rounded-2xl rounded-tr-sm text-white text-xs sm:text-sm max-w-[85%] sm:max-w-[75%] shadow-sm whitespace-pre-line break-words leading-relaxed inline-block" style="background-color: var(--accent);">${message.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
         `;
         chatBox.appendChild(userWrapper);
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -115,18 +332,19 @@
 
         // Add typing indicator
         const typingWrapper = document.createElement('div');
-        typingWrapper.className = 'flex justify-start';
+        typingWrapper.className = 'flex justify-start items-start gap-2';
         typingWrapper.innerHTML = `
-            <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3 shrink-0 shadow-sm mt-1">
-                <i data-lucide="bot" class="w-4 h-4"></i>
+            <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-blue-500/20 text-blue-400">
+                <i data-lucide="bot" class="w-3.5 h-3.5"></i>
             </div>
-            <div class="p-4 rounded-2xl rounded-tl-sm bg-white border border-gray-100 shadow-sm flex items-center gap-1.5 h-[52px]">
-                <div class="w-2 h-2 rounded-full bg-primary-400 animate-bounce" style="animation-delay: 0ms"></div>
-                <div class="w-2 h-2 rounded-full bg-primary-400 animate-bounce" style="animation-delay: 150ms"></div>
-                <div class="w-2 h-2 rounded-full bg-primary-400 animate-bounce" style="animation-delay: 300ms"></div>
+            <div class="p-2.5 px-4 rounded-2xl rounded-tl-sm border shadow-sm flex items-center gap-1.5 h-[38px]" style="background-color: var(--card); border-color: var(--border);">
+                <div class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 0ms"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 150ms"></div>
+                <div class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-bounce" style="animation-delay: 300ms"></div>
             </div>
         `;
         chatBox.appendChild(typingWrapper);
+        if (window.lucide) lucide.createIcons();
         chatBox.scrollTop = chatBox.scrollHeight;
 
         try {
@@ -135,7 +353,7 @@
 
             const response = await fetch('/support', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
@@ -143,7 +361,6 @@
             });
 
             const data = await response.json();
-            
             typingWrapper.remove();
 
             if (data.error) {
@@ -153,29 +370,28 @@
 
             // Append AI Response
             const aiWrapper = document.createElement('div');
-            aiWrapper.className = 'flex justify-start';
+            aiWrapper.className = 'flex justify-start items-start gap-2';
             aiWrapper.innerHTML = `
-                <div class="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center text-primary-600 mr-3 shrink-0 shadow-sm mt-1">
-                    <i data-lucide="bot" class="w-4 h-4"></i>
+                <div class="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-blue-500/20 text-blue-400">
+                    <i data-lucide="bot" class="w-3.5 h-3.5"></i>
                 </div>
-                <div class="p-4 rounded-2xl rounded-tl-sm bg-white border border-gray-100 text-[#1d1d1f] text-sm prose prose-sm max-w-[85%] shadow-sm">
+                <div class="p-2.5 px-3.5 rounded-2xl rounded-tl-sm border text-xs sm:text-sm prose prose-sm max-w-[85%] sm:max-w-[75%] shadow-sm leading-relaxed" style="background-color: var(--card); border-color: var(--border); color: var(--text-primary);">
                     ${data.response}
                 </div>
             `;
             chatBox.appendChild(aiWrapper);
 
             if (data.is_genuine) {
-                // Show a subtle toast or banner for genuine requests
                 const noticeWrapper = document.createElement('div');
-                noticeWrapper.className = 'flex justify-center mt-2 mb-2';
+                noticeWrapper.className = 'flex justify-center mt-1 mb-1';
                 noticeWrapper.innerHTML = `
-                    <span class="px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-medium rounded-full border border-emerald-100">
-                        <i data-lucide="check-circle-2" class="w-3 h-3 inline mr-1"></i> Forwarded to Admin Team
+                    <span class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-semibold border bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
+                        <i data-lucide="check-circle-2" class="w-3 h-3 inline mr-1"></i> Ticket logged for admin review
                     </span>
                 `;
                 chatBox.appendChild(noticeWrapper);
-                lucide.createIcons();
             }
+            if (window.lucide) lucide.createIcons();
 
         } catch (error) {
             console.error("Support chat error:", error);
@@ -191,17 +407,17 @@
 
     function appendAIError(errorMsg) {
         const wrapper = document.createElement('div');
-        wrapper.className = 'flex justify-start';
+        wrapper.className = 'flex justify-start items-start gap-2';
         wrapper.innerHTML = `
-            <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3 shrink-0 shadow-sm mt-1">
-                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+            <div class="w-7 h-7 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center shrink-0 mt-0.5">
+                <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>
             </div>
-            <div class="p-4 rounded-2xl rounded-tl-sm bg-red-50 border border-red-100 text-red-700 text-sm max-w-[85%] shadow-sm">
+            <div class="p-2.5 px-3.5 rounded-2xl rounded-tl-sm border text-[11px] max-w-[85%] shadow-sm bg-red-500/10 border-red-500/30 text-red-300">
                 ${errorMsg}
             </div>
         `;
         chatBox.appendChild(wrapper);
-        lucide.createIcons();
+        if (window.lucide) lucide.createIcons();
     }
 </script>
 {% endblock %}

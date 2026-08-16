@@ -6,18 +6,49 @@ from datetime import datetime
 from flask import Blueprint, request, session, redirect, url_for, render_template, flash
 from werkzeug.security import generate_password_hash, check_password_hash
 from services.db_service import db_service
+from services.email_service import EmailService
+from services.security import (
+    check_auth_rate_limit, check_otp_rate_limit,
+    check_password_reset_rate_limit, sanitize_string,
+    validate_email, validate_password_strength,
+    generate_oauth_state, verify_oauth_state
+)
 
 auth_bp = Blueprint("auth", __name__)
+
+# Instantiate email service once
+email_service = EmailService()
 
 @auth_bp.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
-        email = request.form.get("email")
+        # [M2] Rate limiting on signup
+        is_limited, remaining = check_auth_rate_limit()
+        if is_limited:
+            flash("Too many signup attempts. Please try again later.", "error")
+            return redirect(url_for("auth.signup"))
+
+        email = sanitize_string(request.form.get("email"), max_length=254)
         password = request.form.get("password")
-        full_name = request.form.get("full_name")
+        first_name = sanitize_string(request.form.get("first_name"), max_length=50)
+        last_name = sanitize_string(request.form.get("last_name"), max_length=50)
+        full_name_raw = sanitize_string(request.form.get("full_name"), max_length=100)
+        
+        full_name = f"{first_name or ''} {last_name or ''}".strip() or full_name_raw
         
         if not email or not password or not full_name:
             flash("All fields are required.", "error")
+            return redirect(url_for("auth.signup"))
+
+        # [L4] Validate email format
+        if not validate_email(email):
+            flash("Please enter a valid email address.", "error")
+            return redirect(url_for("auth.signup"))
+
+        # Validate password strength
+        pw_valid, pw_error = validate_password_strength(password)
+        if not pw_valid:
+            flash(pw_error, "error")
             return redirect(url_for("auth.signup"))
             
         # Check if user exists
@@ -29,20 +60,32 @@ def signup():
         # Generate OTP
         otp_code = f"{random.randint(100000, 999999)}"
         
-        # Store in session (temp)
+        # [H8] Hash password before storing in session — never store plaintext
         session["temp_signup"] = {
             "email": email,
-            "password": password,
+            "password_hash": generate_password_hash(password),
             "full_name": full_name,
             "otp": otp_code,
-            "expires_at": datetime.now().timestamp() + 900 # 15 minutes
+            "otp_attempts": 0,
+            "expires_at": datetime.now().timestamp() + 900  # 15 minutes
         }
         
         # Send Email
-        success = email_service.send_signup_verification_otp(email, otp_code)
-        if not success:
-            flash("Failed to send verification email. Please try again.", "error")
-            return redirect(url_for("auth.signup"))
+        success = False
+        try:
+            success = email_service.send_signup_verification_otp(email, otp_code)
+        except Exception as e:
+            print(f"Exception sending signup OTP email: {e}")
+        
+        if success:
+            flash("A verification code has been sent to your email.", "success")
+        else:
+            # [L1] Log OTP to server console only — never expose to user in production
+            print(f"[DEV] Signup OTP for {email}: {otp_code}")
+            if not os.environ.get("VERCEL"):
+                flash("Email service unavailable. Check server console for OTP.", "warning")
+            else:
+                flash("Failed to send verification email. Please try again.", "error")
             
         return redirect(url_for("auth.verify_signup"))
         
@@ -62,13 +105,33 @@ def verify_signup():
             # Generate new OTP
             otp_code = f"{random.randint(100000, 999999)}"
             temp_user["otp"] = otp_code
+            temp_user["otp_attempts"] = 0  # Reset attempts on resend
             temp_user["expires_at"] = datetime.now().timestamp() + 900
             session["temp_signup"] = temp_user
-            
-            email_service.send_signup_verification_otp(temp_user["email"], otp_code)
-            flash("A new verification code has been sent.", "success")
+
+            success = False
+            try:
+                success = email_service.send_signup_verification_otp(temp_user["email"], otp_code)
+            except Exception as e:
+                print(f"Exception resending OTP email: {e}")
+
+            if success:
+                flash("A new verification code has been sent.", "success")
+            else:
+                print(f"[DEV] Resend OTP for {temp_user['email']}: {otp_code}")
+                if not os.environ.get("VERCEL"):
+                    flash("Email service unavailable. Check server console for OTP.", "warning")
+                else:
+                    flash("Failed to send verification email. Please try again.", "error")
             return redirect(url_for("auth.verify_signup"))
             
+        # [M5] Check OTP attempt counter — max 5 attempts
+        otp_attempts = temp_user.get("otp_attempts", 0)
+        if otp_attempts >= 5:
+            session.pop("temp_signup", None)
+            flash("Too many failed attempts. Please sign up again.", "error")
+            return redirect(url_for("auth.signup"))
+
         # Validate OTP
         entered_otp = request.form.get("otp_code")
         
@@ -77,12 +140,16 @@ def verify_signup():
             return redirect(url_for("auth.verify_signup"))
             
         if entered_otp != temp_user.get("otp"):
-            flash("Invalid verification code. Please try again.", "error")
+            temp_user["otp_attempts"] = otp_attempts + 1
+            session["temp_signup"] = temp_user
+            remaining = 5 - temp_user["otp_attempts"]
+            flash(f"Invalid verification code. {remaining} attempt(s) remaining.", "error")
             return redirect(url_for("auth.verify_signup"))
             
         # Success! Insert into DB
         user_id = str(uuid.uuid4())
-        hashed_pw = generate_password_hash(temp_user["password"])
+        # [H8] Use pre-hashed password from session (never stored plaintext)
+        hashed_pw = temp_user["password_hash"]
         
         db_service.execute(
             "INSERT INTO profiles (id, email, full_name, study_streak, password_hash, last_active) VALUES (?, ?, ?, 0, ?, ?)",
@@ -113,7 +180,7 @@ def verify_signup():
         session["email"] = temp_user["email"]
         session["full_name"] = temp_user["full_name"]
         
-        flash("Email verified! Welcome to Helix AI!", "success")
+        flash("Email verified! Welcome to NoteEd!", "success")
         return redirect(url_for("dashboard.index"))
         
     return render_template("auth/verify_signup.html", email=temp_user["email"])
@@ -121,7 +188,13 @@ def verify_signup():
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        email = request.form.get("email")
+        # [M2] Rate limiting on login
+        is_limited, remaining = check_auth_rate_limit()
+        if is_limited:
+            flash("Too many login attempts. Please try again in 15 minutes.", "error")
+            return redirect(url_for("auth.login"))
+
+        email = sanitize_string(request.form.get("email"), max_length=254)
         password = request.form.get("password")
         
         if not email or not password:
@@ -172,18 +245,28 @@ def google_login():
     redirect_uri = url_for("auth.google_callback", _external=True)
     scope = "openid email profile"
     
+    # [L3] Generate state parameter for OAuth CSRF protection
+    state = generate_oauth_state()
+    
     auth_url = (
         "https://accounts.google.com/o/oauth2/v2/auth?"
         f"client_id={client_id}&"
         f"redirect_uri={redirect_uri}&"
         "response_type=code&"
         f"scope={scope}&"
+        f"state={state}&"
         "access_type=online"
     )
     return redirect(auth_url)
 
 @auth_bp.route("/google/callback")
 def google_callback():
+    # [L3] Verify OAuth state parameter
+    received_state = request.args.get("state")
+    if not verify_oauth_state(received_state):
+        flash("Authentication request expired or was tampered with. Please try again.", "error")
+        return redirect(url_for("auth.login"))
+
     code = request.args.get("code")
     if not code:
         flash("Google authentication failed or was cancelled.", "error")
@@ -295,12 +378,21 @@ from services.email_service import email_service
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
 def forgot_password():
     if request.method == 'POST':
-        email = request.form.get('email')
+        # [M2] Rate limiting on password reset
+        is_limited, _ = check_password_reset_rate_limit()
+        if is_limited:
+            flash('Too many reset attempts. Please try again in 1 hour.', 'error')
+            return redirect(url_for('auth.forgot_password'))
+
+        email = sanitize_string(request.form.get('email'), max_length=254)
         if not email:
             flash('Email is required.', 'error')
             return redirect(url_for('auth.forgot_password'))
         user = db_service.query('SELECT id FROM profiles WHERE email = ?', (email,), one=True)
         if user:
+            # [M6] Clean up old/expired OTPs for this email before creating a new one
+            db_service.execute('DELETE FROM password_reset_otps WHERE email = ?', (email,))
+
             otp_code = ''.join([str(secrets.randbelow(10)) for _ in range(6)])
             otp_hash = generate_password_hash(otp_code)
             expires_at = (datetime.now() + timedelta(minutes=15)).isoformat()
@@ -308,7 +400,10 @@ def forgot_password():
                 'INSERT INTO password_reset_otps (id, email, otp_hash, expires_at) VALUES (?, ?, ?, ?)',
                 (str(uuid.uuid4()), email, otp_hash, expires_at)
             )
-            email_service.send_password_reset_otp(email, otp_code)
+            success = email_service.send_password_reset_otp(email, otp_code)
+            if not success:
+                flash('Failed to send password reset email. Please try again.', 'error')
+                return redirect(url_for('auth.forgot_password'))
         session['reset_email'] = email
         flash('If an account exists with that email, a 6-digit OTP has been sent.', 'success')
         return redirect(url_for('auth.verify_otp'))
@@ -320,6 +415,12 @@ def verify_otp():
     if not email:
         return redirect(url_for('auth.forgot_password'))
     if request.method == 'POST':
+        # [M5] Rate limit OTP verification attempts
+        is_limited, remaining = check_otp_rate_limit(email)
+        if is_limited:
+            flash('Too many OTP attempts. Please request a new code.', 'error')
+            return redirect(url_for('auth.forgot_password'))
+
         otp_code = request.form.get('otp')
         record = db_service.query(
             'SELECT * FROM password_reset_otps WHERE email = ? ORDER BY created_at DESC LIMIT 1',

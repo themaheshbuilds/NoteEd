@@ -1,4 +1,4 @@
-// Theme Toggle
+﻿// Theme Toggle
 function initTheme() {
   const theme = localStorage.getItem('theme') || 'dark';
   document.body.className = theme;
@@ -76,3 +76,4 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggleBtn.addEventListener('click', toggleTheme);
   }
 });
+

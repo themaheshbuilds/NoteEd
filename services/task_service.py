@@ -9,13 +9,14 @@ class TaskService:
     def __init__(self):
         pass
         
-    def start_generate_materials_task(self, user_id, topics_to_generate, run_sync=False):
+    def start_generate_materials_task(self, user_id, topics_to_generate, run_sync=False, archive_old=False, delete_chats=False):
         """
         Spawns a background thread (or runs synchronously) to generate materials for a list of topics.
         Returns the task_id.
         """
         task_id = str(uuid.uuid4())
-        total_items = len(topics_to_generate)
+        # 4 generation sub-items per topic: Notes & Summary, Flashcards, MCQ Quiz, Viva Qs
+        total_items = max(1, len(topics_to_generate) * 4)
         
         # Insert initial task record
         db_service.execute(
@@ -25,109 +26,77 @@ class TaskService:
         )
         
         if run_sync:
-            self._generate_materials_worker(task_id, topics_to_generate)
+            self._generate_materials_worker(task_id, topics_to_generate, archive_old, delete_chats)
         else:
             # Start thread
             thread = threading.Thread(
                 target=self._generate_materials_worker,
-                args=(task_id, topics_to_generate)
+                args=(task_id, topics_to_generate, archive_old, delete_chats)
             )
             thread.daemon = True
             thread.start()
             
         return task_id
         
-    def _generate_materials_worker(self, task_id, topics_to_generate):
+    def _generate_materials_worker(self, task_id, topics_to_generate, archive_old=False, delete_chats=False):
         try:
             # Update status to processing
             db_service.execute(
                 "UPDATE background_tasks SET status = 'processing', message = 'Generating materials...', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                 (task_id,)
             )
-            
+
             # Fetch user_id from task
             task = db_service.query("SELECT user_id FROM background_tasks WHERE id = ?", (task_id,), one=True)
             user_id = task["user_id"] if task else None
-            
-            # Retrieve API key and config from profiles table
-            key = None
-            base_url = None
-            chat_model = None
+
+            # ── All AI traffic goes through OmniRoute ────────────────────────
+            # Provider selection, fallback, and rate-limit handling are all
+            # managed by the OmniRoute gateway — no per-user key mapping needed.
+            key, base_url, chat_model, _ = ai_service._get_omni_config()
             custom_instr = ""
-            
+            study_purpose = "learning"
+            is_premium = False
+
             if user_id:
-                profile = db_service.query("SELECT api_keys, ai_platform, custom_instructions, math_learning_level, is_premium FROM profiles WHERE id = ?", (user_id,), one=True)
+                profile = db_service.query(
+                    "SELECT custom_instructions, math_learning_level, experience_level, "
+                    "is_premium, study_purpose FROM profiles WHERE id = ?",
+                    (user_id,), one=True
+                )
                 if profile:
                     profile = dict(profile)
-                if profile and profile["api_keys"]:
-                    key = profile["api_keys"]
-                    platform = profile["ai_platform"] or "custom"
-                    custom_instr = profile["custom_instructions"] or ""
-                    math_learning_level = dict(profile).get("math_learning_level") or ""
-                    is_premium = bool(dict(profile).get("is_premium"))
-                    
-                    import os
-                    if platform == "openai":
-                        base_url = "https://api.openai.com/v1"
-                        chat_model = "gpt-4o-mini"
-                    elif platform == "gemini":
-                        base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
-                        chat_model = "gemini-1.5-flash"
-                    elif platform == "groq":
-                        base_url = "https://api.groq.com/openai/v1"
-                        chat_model = "llama-3.3-70b-versatile"
-                    elif platform == "xai":
-                        base_url = "https://api.x.ai/v1"
-                        chat_model = "grok-beta"
-                    elif platform == "custom":
-                        base_url = os.getenv("CUSTOM_AI_BASE_URL", "http://127.0.0.1:8000/v1")
-                        chat_model = os.getenv("CUSTOM_AI_MODEL", "Qwen-1.5-4B-Chat-GGUF")
-                    else:
-                        base_url = "https://integrate.api.nvidia.com/v1"
-                        chat_model = "meta/llama-3.1-8b-instruct"
-                else:
-                    # Fallback to system default config
-                    key, base_url, chat_model, _ = ai_service._get_config()
-                    if profile and dict(profile).get("custom_instructions"):
-                        custom_instr = profile["custom_instructions"]
-                    is_premium = bool(dict(profile).get("is_premium")) if profile else False
-            else:
-                is_premium = False
-            
+                    custom_instr  = profile.get("custom_instructions") or ""
+                    study_purpose = profile.get("study_purpose") or "learning"
+                    is_premium    = bool(profile.get("is_premium"))
+            # ─────────────────────────────────────────────────────────────────
+
             completed = 0
-            
+
             import time
-            for topic_data in topics_to_generate:
-                # API Limit Queue logic for free users
-                if not is_premium and completed > 0 and completed % 15 == 0:
-                    db_service.execute(
-                        "UPDATE background_tasks SET status = 'processing', message = 'Waiting 15 minutes due to API rate limits (15 topics generated). Please do not close this window.', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                        (task_id,)
-                    )
-                    time.sleep(900)  # Wait 15 minutes
-                    db_service.execute(
-                        "UPDATE background_tasks SET status = 'processing', message = 'Resuming generation...', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                        (task_id,)
-                    )
-                
-                # Dynamic Key Rotation for Premium Users using Admin Pool
-                if is_premium and (not profile or not dict(profile).get("api_keys")):
-                    key, base_url, chat_model, _ = ai_service._get_config()
+            for topic_idx, topic_data in enumerate(topics_to_generate):
                 if isinstance(topic_data, (tuple, list)):
                     tid = topic_data[0]
                     tname = topic_data[1]
                     sname = topic_data[2] if len(topic_data) > 2 else ""
+                    exp_level = topic_data[3] if len(topic_data) > 3 else "intermediate"
                 else:
                     topic_dict = dict(topic_data) if not isinstance(topic_data, dict) else topic_data
                     tid = topic_dict.get("id")
                     tname = topic_dict.get("name")
                     sname = topic_dict.get("subject_name", "")
+                    exp_level = topic_dict.get("experience_level", "intermediate")
                 
                 # Check if task was cancelled by user
                 task_status = db_service.query("SELECT status FROM background_tasks WHERE id = ?", (task_id,), one=True)
                 if task_status and task_status["status"] == "cancelled":
                     print(f"Task {task_id} cancelled by user, aborting worker.")
                     return
+                
+                db_service.execute(
+                    "UPDATE background_tasks SET status = 'processing', completed_items = ?, message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    (topic_idx * 4, f"Generating Notes & Worked Problems for '{tname}' (0/4)...", task_id)
+                )
                     
                 try:
                     topic_custom_instr = custom_instr
@@ -139,6 +108,35 @@ class TaskService:
                             topic_custom_instr += "\n[MATH STUDENT LEVEL: INTERMEDIATE] Skip only obvious basics. Focus on conceptual understanding. Explain formulas and their derivations. Include standard exam questions. Provide medium-difficulty practice. Point out common mistakes."
                         elif level == "advanced":
                             topic_custom_instr += "\n[MATH STUDENT LEVEL: ADVANCED] Keep explanations concise but complete. Include mathematical proofs where appropriate. Show multiple solving methods. Teach shortcuts after the standard method. Include higher-order thinking questions. Add Olympiad/competitive-level problems. Explain links to other mathematical topics."
+                    
+                    # Add general experience level instructions
+                    if exp_level == "beginner":
+                        topic_custom_instr += "\n[EXPERIENCE LEVEL: BEGINNER] Use extremely simple language, explain every concept from scratch, assume no prior knowledge, use many examples, avoid jargon, provide step-by-step explanations for everything."
+                    elif exp_level == "intermediate":
+                        topic_custom_instr += "\n[EXPERIENCE LEVEL: INTERMEDIATE] Skip only very basic concepts, focus on conceptual understanding, use standard examples and explanations, include common exam-style questions."
+                    elif exp_level == "topper":
+                        topic_custom_instr += "\n[EXPERIENCE LEVEL: TOPPER/ADVANCED] Keep explanations concise but thorough, include advanced topics and proofs, add competitive/Olympiad-level questions, show multiple solving approaches, focus on higher-order thinking and application."
+                    
+                    # Add subject-specific generation rules
+                    subject_lower = sname.lower()
+                    if any(m in subject_lower for m in ["math", "calculus", "algebra", "geometry", "trigonometr", "discrete", "probability", "statistics", "physics", "circuit", "thermodynamics"]):
+                        topic_custom_instr += (
+                            "\n[MANDATORY MATH & QUANTITATIVE RULES] You MUST include at least 3 to 5 fully worked, "
+                            "step-by-step solved numerical practice problems with zero skipped steps. Show Given, Governing Formula, "
+                            "Substitution, Intermediate Derivations, and Final Answer. Format ALL equations in LaTeX MathJax ($$...$$ and $...$). "
+                            "Include core theorem statements and formal proofs."
+                        )
+                    elif any(s in subject_lower for s in ["programming", "computer science", "cs", "coding", "python", "java", "c++", "c language", "javascript", "sql", "dbms", "database", "data structure", "dsa", "algorithm", "operating system", "os", "network", "web", "software"]):
+                        topic_custom_instr += (
+                            "\n[MANDATORY PROGRAMMING & CS RULES] You MUST provide complete, runnable, production-ready code examples "
+                            "in Markdown code blocks (```python, ```java, ```cpp, ```sql, etc.). Never use pseudocode placeholders. "
+                            "Explain syntax line-by-line, provide a full execution trace / dry run with input & output, and state Time and Space Complexity ($O(n)$)."
+                        )
+                    else:
+                        topic_custom_instr += (
+                            "\n[SUBJECT RULES: COMPREHENSIVE ACADEMIC] Provide exhaustive explanations, structured comparative tables, "
+                            "step-by-step mechanisms, practical real-world applications, and key exam revision points."
+                        )
 
                     materials = ai_service.generate_topic_materials_for_name(
                         tname, 
@@ -146,7 +144,10 @@ class TaskService:
                         key=key, 
                         base_url=base_url, 
                         chat_model=chat_model, 
-                        custom_instr=topic_custom_instr
+                        custom_instr=topic_custom_instr,
+                        task_id=task_id,
+                        study_purpose=study_purpose,
+                        base_completed=topic_idx * 4
                     )
                     
                     # Check if generation failed
@@ -158,6 +159,25 @@ class TaskService:
                         print(f"Generation failed for topic: {tname}")
                         completed += 1
                         continue
+                    
+                    # Archive old materials only after successful generation
+                    if archive_old:
+                        db_service.execute(
+                            "UPDATE notes SET is_archived = 1 WHERE topic_id = ? AND is_archived = 0",
+                            (tid,)
+                        )
+                        db_service.execute(
+                            "UPDATE flashcards SET is_archived = 1 WHERE topic_id = ? AND is_archived = 0",
+                            (tid,)
+                        )
+                        db_service.execute(
+                            "UPDATE quizzes SET is_archived = 1 WHERE topic_id = ? AND is_archived = 0",
+                            (tid,)
+                        )
+                        
+                    if delete_chats:
+                        db_service.execute("DELETE FROM chat_messages WHERE topic_id = ?", (tid,))
+                        db_service.execute("DELETE FROM chat_sessions WHERE topic_id = ?", (tid,))
                     
                     # Save notes
                     if materials.get("notes"):
@@ -196,11 +216,29 @@ class TaskService:
                                VALUES (?, ?, ?, ?, 0)""",
                             (quiz_id, tid, f"AI MCQ Quiz: {tname}", json.dumps(quiz_data))
                         )
+
+                    # Save Viva Voce / Oral Technical Questions
+                    viva_data = materials.get("viva_questions", materials.get("viva", []))
+                    if viva_data:
+                        viva_md = "## 🎙️ Viva Voce & Technical Oral Exam Q&A\n\n"
+                        viva_md += "Master these high-yield oral exam and technical interview questions to test your depth of understanding:\n\n"
+                        for idx, v in enumerate(viva_data, 1):
+                            q_text = v.get("question", "")
+                            a_text = v.get("answer", "")
+                            viva_md += f"### Q{idx}. {q_text}\n\n"
+                            viva_md += f"**Answer:** {a_text}\n\n---\n\n"
+
+                        viva_id = str(uuid.uuid4())
+                        db_service.execute(
+                            """INSERT INTO notes (id, topic_id, title, content, is_ai_generated, is_archived)
+                               VALUES (?, ?, ?, ?, 1, 0)""",
+                            (viva_id, tid, f"🎙️ Viva Voce & Oral Q&A: {tname}", viva_md)
+                        )
                 except Exception as e:
                     print(f"Error generating material for topic {tname}: {e}")
                     # Continue with other topics
                 
-                completed += 1
+                completed = (topic_idx + 1) * 4
                 db_service.execute(
                     "UPDATE background_tasks SET completed_items = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                     (completed, task_id)
@@ -222,3 +260,4 @@ class TaskService:
             )
 
 task_service = TaskService()
+

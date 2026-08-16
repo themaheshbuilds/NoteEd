@@ -1,4 +1,4 @@
-import sys
+﻿import sys
 import os
 import json
 import uuid
@@ -365,3 +365,4 @@ def add_syllabus():
 if __name__ == '__main__':
     add_syllabus()
     print("Syllabus added successfully.")
+

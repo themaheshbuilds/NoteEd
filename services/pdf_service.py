@@ -1,4 +1,4 @@
-import io
+﻿import io
 # pyrefly: ignore [missing-import]
 import fitz
 
@@ -30,3 +30,4 @@ class PDFService:
             print(f"Error extracting PDF pages: {e}")
         
         return pages
+

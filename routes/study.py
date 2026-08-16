@@ -1,4 +1,5 @@
 import uuid
+import os
 import json
 from datetime import datetime
 # pyrefly: ignore [missing-import]
@@ -39,16 +40,24 @@ def chat_with_topic(topic_id):
     notes = db_service.query("SELECT content FROM notes WHERE topic_id = ?", (topic_id,))
     # Fetch topic details for subject context
     topic_data = db_service.query("""
-        SELECT t.name as topic_name, s.name as subject_name 
+        SELECT t.name as topic_name, u.name as unit_name, s.name as subject_name 
         FROM topics t 
         JOIN units u ON t.unit_id = u.id 
         JOIN subjects s ON u.subject_id = s.id 
         WHERE t.id = ?
     """, (topic_id,), one=True)
     
+    # Fetch user's experience level
+    profile = db_service.query("SELECT experience_level FROM profiles WHERE id = ?", (user_id,), one=True)
+    experience_level = profile["experience_level"] if profile and profile["experience_level"] else "intermediate"
+    
     context = ""
     if topic_data:
-        context += f"Context:\nSubject: {topic_data['subject_name']}\nTopic: {topic_data['topic_name']}\n\n"
+        context += f"Context:\n"
+        context += f"Subject: {topic_data['subject_name']}\n"
+        context += f"Unit: {topic_data['unit_name']}\n"
+        context += f"Topic: {topic_data['topic_name']}\n"
+        context += f"User's Experience Level: {experience_level}\n\n"
 
     for f in files:
         context += f"\nFile Excerpt:\n{f['ocr_text']}"
@@ -77,12 +86,12 @@ def chat_with_topic(topic_id):
         (user_msg_id, topic_id, session_id, user_id, "user", user_message)
     )
         
-    # Connect to NVIDIA NIM API with history
     ai_response = ai_service.generate_chat_response(
         user_message, 
         context, 
         chat_history=chat_history, 
-        image_base64=image_base64
+        image_base64=image_base64,
+        topic_id=topic_id
     )
     
     # Save AI response to DB
@@ -93,6 +102,67 @@ def chat_with_topic(topic_id):
     )
     
     return jsonify({"response": ai_response, "session_id": session_id})
+
+@study_bp.route("/topic/<topic_id>/chat-sessions", methods=["GET"])
+def get_chat_sessions(topic_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    sessions = db_service.query(
+        "SELECT id, title, created_at, updated_at FROM chat_sessions WHERE user_id = ? AND topic_id = ? ORDER BY updated_at DESC",
+        (user_id, topic_id)
+    )
+    return jsonify({"sessions": sessions})
+
+@study_bp.route("/chat-session/<session_id>/messages", methods=["GET"])
+def get_chat_messages(session_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    messages = db_service.query(
+        "SELECT role, content, created_at FROM chat_messages WHERE session_id = ? ORDER BY created_at ASC",
+        (session_id,)
+    )
+    return jsonify({"messages": messages})
+
+@study_bp.route("/chat-session/<session_id>", methods=["DELETE"])
+def delete_chat_session(session_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    # Verify ownership
+    session = db_service.query("SELECT * FROM chat_sessions WHERE id = ? AND user_id = ?", (session_id, user_id), one=True)
+    if not session:
+        return jsonify({"error": "Session not found"}), 404
+    
+    db_service.execute("DELETE FROM chat_messages WHERE session_id = ?", (session_id,))
+    db_service.execute("DELETE FROM chat_sessions WHERE id = ?", (session_id,))
+    return jsonify({"success": True})
+
+@study_bp.route("/chat-session/<session_id>", methods=["PUT"])
+def rename_chat_session(session_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    # Verify ownership
+    session = db_service.query("SELECT * FROM chat_sessions WHERE id = ? AND user_id = ?", (session_id, user_id), one=True)
+    if not session:
+        return jsonify({"error": "Session not found"}), 404
+    
+    data = request.json
+    title = data.get("title")
+    if not title:
+        return jsonify({"error": "Title required"}), 400
+    
+    db_service.execute(
+        "UPDATE chat_sessions SET title = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+        (title, session_id)
+    )
+    return jsonify({"success": True})
 
 @study_bp.route("/topic/<topic_id>/explain", methods=["GET"])
 def explain_topic_ai(topic_id):
@@ -164,57 +234,166 @@ def math_level_prompt(topic_id):
 def generate_resources(topic_id):
     user_id = get_current_user_id()
     if not user_id:
-        return redirect(url_for("auth.login"))
+        return jsonify({"error": "Unauthorized"}), 401
         
     topic = db_service.query("""
-        SELECT t.*, s.name as subject_name 
+        SELECT t.*, s.name as subject_name, u.name as unit_name, sem.name as semester_name
         FROM topics t 
         JOIN units u ON t.unit_id = u.id 
         JOIN subjects s ON u.subject_id = s.id 
+        JOIN semesters sem ON s.semester_id = sem.id
         WHERE t.id = ?
     """, (topic_id,), one=True)
     if not topic:
-        flash("Topic not found", "error")
-        return redirect(url_for("dashboard.index"))
+        return jsonify({"error": "Topic not found"}), 404
+    
+    # Get user's experience level and study purpose
+    data = (request.get_json() or {}) if request.is_json else (request.form or {})
+    study_purpose = data.get("study_purpose", "learning")
+    db_service.execute("UPDATE profiles SET study_purpose = ? WHERE id = ?", (study_purpose, user_id))
+    
+    profile = db_service.query("SELECT experience_level FROM profiles WHERE id = ?", (user_id,), one=True)
+    experience_level = profile["experience_level"] if profile and profile["experience_level"] else "intermediate"
+    
+    # Check for global caching across users
+    cached_topic = db_service.query("""
+        SELECT t.id 
+        FROM topics t
+        JOIN units u ON t.unit_id = u.id
+        JOIN subjects s ON u.subject_id = s.id
+        JOIN semesters sem ON s.semester_id = sem.id
+        WHERE t.name = ? 
+          AND u.name = ? 
+          AND s.name = ? 
+          AND sem.name = ?
+          AND t.id != ?
+          AND t.is_completed = 1
+        LIMIT 1
+    """, (topic['name'], topic['unit_name'], topic['subject_name'], topic['semester_name'], topic_id), one=True)
+    
+    if cached_topic:
+        import uuid
+        other_id = cached_topic['id']
         
-    if topic["subject_name"] and "math" in topic["subject_name"].lower():
-        profile = db_service.query("SELECT math_learning_level FROM profiles WHERE id = ?", (user_id,), one=True)
-        if not profile or not dict(profile).get("math_learning_level"):
-            return redirect(url_for("study.math_level_prompt", topic_id=topic_id))
-            
+        # Archive existing materials for current user's topic
+        db_service.execute("UPDATE notes SET is_archived = 1 WHERE topic_id = ?", (topic_id,))
+        db_service.execute("UPDATE flashcards SET is_archived = 1 WHERE topic_id = ?", (topic_id,))
+        db_service.execute("UPDATE quizzes SET is_archived = 1 WHERE topic_id = ?", (topic_id,))
+
+        # Copy notes
+        notes = db_service.query("SELECT * FROM notes WHERE topic_id = ? AND is_archived = 0", (other_id,))
+        for note in notes:
+            db_service.execute("INSERT INTO notes (id, topic_id, title, content, is_ai_generated, is_archived) VALUES (?, ?, ?, ?, ?, ?)",
+                               (str(uuid.uuid4()), topic_id, note['title'], note['content'], note['is_ai_generated'], 0))
+                               
+        # Copy flashcards
+        cards = db_service.query("SELECT * FROM flashcards WHERE topic_id = ? AND is_archived = 0", (other_id,))
+        for c in cards:
+            db_service.execute("INSERT INTO flashcards (id, topic_id, question, answer, difficulty, box_number, is_archived) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                               (str(uuid.uuid4()), topic_id, c['question'], c['answer'], c['difficulty'], c['box_number'], 0))
+                               
+        # Copy quizzes
+        quizzes = db_service.query("SELECT * FROM quizzes WHERE topic_id = ? AND is_archived = 0", (other_id,))
+        for q in quizzes:
+            db_service.execute("INSERT INTO quizzes (id, topic_id, title, quiz_data, is_archived) VALUES (?, ?, ?, ?, ?)",
+                               (str(uuid.uuid4()), topic_id, q['title'], q['quiz_data'], 0))
+                               
+        # Mark current topic as completed
+        db_service.execute("UPDATE topics SET is_completed = 1 WHERE id = ?", (topic_id,))
+        
+        return jsonify({"status": "completed"})
+    
     if not usage_service.can_generate_deck(user_id):
-        flash("You have reached your free AI Study Deck generation limit. Please upgrade to Premium to generate more!", "error")
-        return redirect(url_for("dashboard.view_topic", topic_id=topic_id))
-        
+        return jsonify({"error": "You have reached your free AI Study Deck generation limit. Please upgrade to Premium to generate more!"}), 403
+    
     usage_service.increment_deck(user_id)
         
-    # If the user clicks Generate again, we want to cancel any existing generation tasks
-    # and start from scratch. We'll mark them as 'cancelled' so the worker can abort.
+    # Cancel existing tasks
     db_service.execute("""
         UPDATE background_tasks 
         SET status = 'cancelled', message = 'Cancelled by user'
         WHERE user_id = ? AND task_type = 'generate_study_materials' AND status IN ('pending', 'processing')
     """, (user_id,))
     
-    # Archive existing AI-generated materials so the UI clears immediately
-    db_service.execute(
-        "UPDATE notes SET is_archived = 1 WHERE topic_id = ? AND is_ai_generated = 1 AND is_archived = 0",
-        (topic_id,)
-    )
-    db_service.execute(
-        "UPDATE flashcards SET is_archived = 1 WHERE topic_id = ? AND is_archived = 0",
-        (topic_id,)
-    )
-    db_service.execute(
-        "UPDATE quizzes SET is_archived = 1 WHERE topic_id = ? AND is_archived = 0",
-        (topic_id,)
+    # Start async task with delayed archiving/deletion parameters
+    task_id = task_service.start_generate_materials_task(
+        user_id, 
+        [(topic_id, topic["name"], topic["subject_name"], experience_level)], 
+        run_sync=False,
+        archive_old=True,
+        delete_chats=True
     )
     
-    # Run synchronously on Vercel to prevent thread termination
-    task_service.start_generate_materials_task(user_id, [(topic_id, topic["name"], topic["subject_name"])], run_sync=True)
+    return jsonify({"task_id": task_id, "status": "started"})
+
+
+@study_bp.route("/topic/<topic_id>/regenerate-resources", methods=["POST"])
+def regenerate_resources(topic_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    topic = db_service.query("""
+        SELECT t.*, s.name as subject_name, u.name as unit_name 
+        FROM topics t 
+        JOIN units u ON t.unit_id = u.id 
+        JOIN subjects s ON u.subject_id = s.id 
+        WHERE t.id = ?
+    """, (topic_id,), one=True)
+    if not topic:
+        return jsonify({"error": "Topic not found"}), 404
     
-    flash("AI Study Deck generated successfully!", "success")
-    return redirect(url_for("dashboard.view_topic", topic_id=topic_id, generated=1))
+    # Get user's experience level and study purpose
+    data = (request.get_json() or {}) if request.is_json else (request.form or {})
+    study_purpose = data.get("study_purpose", "learning")
+    db_service.execute("UPDATE profiles SET study_purpose = ? WHERE id = ?", (study_purpose, user_id))
+    
+    profile = db_service.query("SELECT experience_level FROM profiles WHERE id = ?", (user_id,), one=True)
+    experience_level = profile["experience_level"] if profile and profile["experience_level"] else "intermediate"
+    
+    if not usage_service.can_generate_deck(user_id):
+        return jsonify({"error": "You have reached your free AI Study Deck generation limit. Please upgrade to Premium to generate more!"}), 403
+    
+    usage_service.increment_deck(user_id)
+        
+    # Always delete chats on regeneration
+    delete_chats = True
+    
+    # Cancel existing tasks
+    db_service.execute("""
+        UPDATE background_tasks 
+        SET status = 'cancelled', message = 'Cancelled by user'
+        WHERE user_id = ? AND task_type = 'generate_study_materials' AND status IN ('pending', 'processing')
+    """, (user_id,))
+    
+    # Start async task with archiving/deletion parameters passed to background task
+    task_id = task_service.start_generate_materials_task(
+        user_id, 
+        [(topic_id, topic["name"], topic["subject_name"], experience_level)], 
+        run_sync=False,
+        archive_old=True,
+        delete_chats=delete_chats
+    )
+    
+    return jsonify({"task_id": task_id, "status": "started"})
+
+
+@study_bp.route("/api/topic/<topic_id>/generation-status/<task_id>", methods=["GET"])
+def get_generation_status(topic_id, task_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    task = db_service.query("SELECT status, message, total_items, completed_items FROM background_tasks WHERE id = ? AND user_id = ?", (task_id, user_id), one=True)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+    
+    return jsonify({
+        "status": task["status"],
+        "message": task["message"],
+        "total_items": task["total_items"],
+        "completed_items": task["completed_items"]
+    })
 
 from datetime import datetime, timezone, timedelta
 
@@ -287,7 +466,7 @@ def mini_quiz(topic_id):
         data = request.get_json(silent=True) or {}
         context_text = data.get("context", "")
         
-        profile = db_service.query("SELECT api_keys, ai_platform, is_premium FROM profiles WHERE id = ?", (user_id,), one=True)
+        profile = db_service.query("SELECT api_keys, ai_platform, is_premium, email FROM profiles WHERE id = ?", (user_id,), one=True)
         if profile:
             profile = dict(profile)
         key = profile["api_keys"] if profile else None
@@ -295,6 +474,9 @@ def mini_quiz(topic_id):
         chat_model = None
         
         is_premium = bool(dict(profile).get("is_premium")) if profile else False
+        # [M7] Admin email from environment variable
+        admin_email = os.getenv("ADMIN_EMAIL", "")
+        is_admin_email = admin_email and profile and profile["email"] == admin_email
         
         if key:
             # User has their own key, infer platform and model
@@ -317,7 +499,7 @@ def mini_quiz(topic_id):
                 base_url = "https://integrate.api.nvidia.com/v1"
                 chat_model = "meta/llama-3.1-8b-instruct"
         else:
-            if is_premium:
+            if is_premium or is_admin_email:
                 key, base_url, chat_model, _ = ai_service._get_config()
             else:
                 return jsonify({"error": "Upgrade to Premium to generate mini quizzes."}), 403
@@ -371,15 +553,20 @@ def delete_archived_item(topic_id, item_type, item_id):
     if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
     
-    table_map = {"note": "notes", "flashcard": "flashcards", "quiz": "quizzes"}
-    table = table_map.get(item_type)
-    if not table:
+    # [H4] Use explicit branches instead of f-string table name to prevent SQL injection risk
+    if item_type == "note":
+        db_service.execute("DELETE FROM notes WHERE id = ? AND topic_id = ? AND is_archived = 1", (item_id, topic_id))
+    elif item_type == "flashcard":
+        db_service.execute("DELETE FROM flashcards WHERE id = ? AND topic_id = ? AND is_archived = 1", (item_id, topic_id))
+    elif item_type == "quiz":
+        db_service.execute("DELETE FROM quizzes WHERE id = ? AND topic_id = ? AND is_archived = 1", (item_id, topic_id))
+    else:
         return jsonify({"error": "Invalid type"}), 400
-    
-    db_service.execute(f"DELETE FROM {table} WHERE id = ? AND topic_id = ? AND is_archived = 1", (item_id, topic_id))
     return jsonify({"success": True})
 
 @study_bp.route("/syllabus/paste", methods=["GET", "POST"])
+@study_bp.route("/paste-syllabus", methods=["GET", "POST"])
+@study_bp.route("/syllabus", methods=["GET", "POST"])
 def paste_syllabus():
     user_id = get_current_user_id()
     if not user_id:
@@ -445,7 +632,15 @@ def play_quiz(quiz_id):
         
         for idx, question in enumerate(quiz_data):
             submitted = user_answers.get(f"q_{idx}")
-            if submitted is not None and int(submitted) == question["correct_index"]:
+            correct_idx = question.get("correct_index")
+            if correct_idx is None:
+                correct_idx = question.get("correctIndex", question.get("answer", 0))
+            try:
+                correct_idx = int(correct_idx)
+            except (ValueError, TypeError):
+                correct_idx = 0
+
+            if submitted is not None and int(submitted) == correct_idx:
                 score += 1
                 
         accuracy = (score / total) * 100 if total > 0 else 0
@@ -806,4 +1001,23 @@ def get_active_tasks():
     except Exception as e:
         print(f"Error fetching active tasks: {e}")
         return jsonify([])
+
+
+@study_bp.route("/api/tasks/<task_id>/cancel", methods=["POST"])
+def cancel_task(task_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    try:
+        # Mark task as completed so UI immediately stops waiting and saves generated items
+        db_service.execute("""
+            UPDATE background_tasks 
+            SET status = 'completed', message = 'Generation stopped by user. Notes and generated items saved!', updated_at = CURRENT_TIMESTAMP 
+            WHERE id = ? AND user_id = ?
+        """, (task_id, user_id))
+        return jsonify({"success": True, "message": "Task stopped successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 

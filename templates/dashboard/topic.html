@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ topic.name }} - Helix AI
+{% block title %}{{ topic.name }} - NoteEd
 
 
 {% endblock %}
@@ -20,81 +20,259 @@
         border-radius: 4px;
     }
 
-    /* Learning Cards Styles */
-    .learning-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px;
-        padding: 24px;
-        margin-bottom: 24px;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    /* Clean Notes Article Styling - Natural Reading Format */
+    .notes-article {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 32px 36px;
+        box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+        color: var(--text-primary);
+        font-family: var(--font-sans, 'Inter', sans-serif);
     }
 
-    .learning-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+    @media (max-width: 640px) {
+        .notes-article {
+            padding: 20px 18px;
+            border-radius: 14px;
+        }
     }
 
-    .card-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-        border-bottom: 1px solid #333;
-        padding-bottom: 12px;
+    .notes-article h1, .notes-article h2, .notes-article h3, .notes-article h4 {
+        font-family: 'Outfit', 'Inter', sans-serif;
+        color: var(--text-primary);
+        letter-spacing: -0.015em;
     }
 
-    .card-icon {
-        font-size: 1.5rem;
-        padding: 8px;
-        border-radius: 12px;
-        background: #2a2a2c;
+    .notes-article p {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.7;
+        margin-bottom: 1.1rem;
     }
 
-    .card-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #1d1d1f;
-        margin: 0;
+    .notes-article strong, .notes-article b {
+        color: var(--text-primary);
+        font-weight: 600;
     }
 
-    .type-definition .card-icon {
-        color: #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
+    .notes-article ul, .notes-article ol {
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+        line-height: 1.7;
+        margin-bottom: 1.1rem;
     }
 
-    .type-formula .card-icon {
-        color: #a855f7;
-        background: rgba(168, 85, 247, 0.1);
+    .notes-article li {
+        margin-bottom: 0.35rem;
     }
 
-    .type-example .card-icon {
-        color: #10b981;
-        background: rgba(16, 185, 129, 0.1);
+    @media (max-width: 768px) {
+        .notes-article p {
+            font-size: 0.85rem !important; /* ~13.5px for crisp mobile reading */
+            line-height: 1.65 !important;
+            margin-bottom: 0.85rem !important;
+        }
+        .notes-article ul, .notes-article ol {
+            font-size: 0.85rem !important;
+            line-height: 1.6 !important;
+            margin-bottom: 0.85rem !important;
+            padding-left: 1.15rem !important;
+        }
+        .notes-article li {
+            margin-bottom: 0.3rem !important;
+        }
+        .notes-article h1 {
+            font-size: 1.2rem !important;
+            margin-top: 0.6rem !important;
+            margin-bottom: 0.45rem !important;
+        }
+        .notes-article h2 {
+            font-size: 1.05rem !important;
+            margin-top: 1.1rem !important;
+            margin-bottom: 0.35rem !important;
+        }
+        .notes-article h3 {
+            font-size: 0.92rem !important;
+            margin-top: 0.9rem !important;
+            margin-bottom: 0.3rem !important;
+        }
+        .notes-article h4 {
+            font-size: 0.85rem !important;
+            margin-top: 0.75rem !important;
+            margin-bottom: 0.25rem !important;
+        }
+        .notes-article blockquote {
+            padding: 10px 14px !important;
+            font-size: 0.85rem !important;
+            margin: 0.85rem 0 !important;
+        }
     }
 
-    .type-warning .card-icon {
-        color: #ef4444;
-        background: rgba(239, 68, 68, 0.1);
+    .notes-article blockquote {
+        background: var(--bg-elevated);
+        border-left: 4px solid var(--accent, #3b82f6);
+        border-radius: 0 12px 12px 0;
+        padding: 14px 18px;
+        margin: 1.5rem 0;
+        color: var(--text-primary);
+        font-style: normal;
     }
 
-    .type-important .card-icon {
-        color: #f59e0b;
-        background: rgba(245, 158, 11, 0.1);
+    .notes-article table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        margin: 1.5rem 0;
+        font-size: 0.95rem;
     }
 
-    .type-concept .card-icon {
-        color: #6366f1;
-        background: rgba(99, 102, 241, 0.1);
+    .notes-article th {
+        background: var(--bg-elevated);
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
     }
 
-    /* MathJax Overrides */
+    .notes-article td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.05));
+        color: var(--text-secondary);
+    }
+
+    .notes-article tr:last-child td {
+        border-bottom: none;
+    /* Premium MathJax Display - No Scrollbars & Responsive Math */
     .MathJax,
     mjx-container,
     .mjx-container {
-        color: #000 !important;
-        font-size: 110% !important;
+        font-size: clamp(0.88rem, 2.2vw, 1.02rem) !important;
+        color: var(--text-primary) !important;
+        max-width: 100% !important;
+        outline: none !important;
+    }
+
+    mjx-container[jax="CHTML"][display="true"],
+    .MathJax_Display {
+        margin: 1.25rem 0 !important;
+        padding: 12px 16px !important;
+        background: var(--bg-elevated) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 12px !important;
+        overflow-x: hidden !important;
+        overflow-y: hidden !important;
+        max-width: 100% !important;
+        display: block !important;
+        text-align: center !important;
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+    }
+
+    mjx-container[jax="CHTML"][display="true"]::-webkit-scrollbar,
+    .MathJax_Display::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    mjx-math {
+        max-width: 100% !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+    }
+
+    /* Inline math - wrap cleanly with text */
+    mjx-container:not([display="true"]) {
+        display: inline-block !important;
+        vertical-align: middle !important;
+        max-width: 100% !important;
+        padding: 0 2px !important;
+    }
+
+    /* Premium Code Block Styling */
+    .notes-article pre {
+        background: #0d1117 !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 14px !important;
+        padding: 18px 20px !important;
+        margin: 1.5rem 0 !important;
+        overflow-x: auto !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
+    }
+
+    .notes-article pre code {
+        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+        font-size: 0.92rem !important;
+        line-height: 1.65 !important;
+        color: #e6edf3 !important;
+        background: transparent !important;
+        padding: 0 !important;
+        border: none !important;
+    }
+
+    .notes-article code:not(pre code) {
+        font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+        font-size: 0.88em !important;
+        background: rgba(59, 130, 246, 0.1) !important;
+        color: #3b82f6 !important;
+        border: 1px solid rgba(59, 130, 246, 0.2) !important;
+        padding: 2px 6px !important;
+        border-radius: 6px !important;
+        font-weight: 500 !important;
+    }
+
+    /* Modern Table Styles for Markdown & Math Notes */
+    .notes-article table {
+        width: 100% !important;
+        margin: 24px 0 !important;
+        border-collapse: separate !important;
+        border-spacing: 0 !important;
+        border-radius: 14px !important;
+        overflow: hidden !important;
+        border: 1px solid var(--border, #e2e8f0) !important;
+        background: var(--card, #ffffff) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+        display: table !important;
+    }
+
+    .notes-article th {
+        background: var(--bg-elevated, #f8fafc) !important;
+        color: var(--text-primary, #0f172a) !important;
+        font-weight: 700 !important;
+        font-size: 0.82rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+        padding: 12px 16px !important;
+        text-align: left !important;
+        border-bottom: 2px solid var(--border, #e2e8f0) !important;
+    }
+
+    .notes-article td {
+        padding: 12px 16px !important;
+        font-size: 0.92rem !important;
+        color: var(--text-primary, #1e293b) !important;
+        border-bottom: 1px solid var(--border, #f1f5f9) !important;
+        line-height: 1.6 !important;
+    }
+
+    .notes-article tr:last-child td {
+        border-bottom: none !important;
+    }
+
+    .notes-article tr:hover td {
+        background: var(--bg-elevated, rgba(59, 130, 246, 0.03)) !important;
+    }
+
+    /* Wrap table in scroll container on small devices */
+    .table-responsive-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        margin: 20px 0;
+        -webkit-overflow-scrolling: touch;
     }
 
     /* Hide original raw notes once JS takes over */
@@ -104,228 +282,296 @@
 
     /* Mini Quiz Styles */
     .mini-quiz {
-        background: linear-gradient(145deg, #1e1e24, #1a1a1f);
-        border: 1px solid #3b82f6;
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
         border-radius: 16px;
         padding: 20px;
         margin: 32px 0;
+        color: var(--text-primary);
     }
 
+    .print-watermark, .print-header { display: none; }
+
     @media print {
+        /* Hide all UI elements, sidebars, links, chat, flashcards, quizzes */
+        nav, aside, footer, header, button, form, a, select,
+        .sticky, .no-print, .mini-quiz, .chat-section, .files-section,
+        .print\:hidden, #chat-print-container, #mobile-chat-fab,
+        #loading-overlay, #mathjax-loading, #raw-notes-container,
+        #history-drawer, #history-drawer-backdrop { display: none !important; }
 
-        /* Hide UI elements */
-        nav,
-        aside,
-        footer,
-        .sticky,
-        button,
-        form,
-        .no-print,
-        .mini-quiz,
-        .chat-section,
-        .files-section {
-            display: none !important;
+        body, html, main, .flex-col,
+        .h-\[calc\(100vh-80px\)\], .overflow-hidden, .overflow-y-auto {
+            height: auto !important; min-height: auto !important;
+            overflow: visible !important; display: block !important;
+            background: transparent !important;
+        }
+        
+        /* Remove negative margins that cause left cropping */
+        .\-mx-4, .\-mt-6, .sm\:\-mx-6, .lg\:\-mx-8 { margin: 0 !important; }
+
+        .flex-1 { flex: none !important; width: 100% !important; }
+
+        /* Typography & layout for a premium academic look - reduced size */
+        body {
+            font-family: 'Georgia', serif !important;
+            color: #222 !important;
+            line-height: 1.4 !important;
+            font-size: 9pt !important;
+        }
+        
+        h1, h2, h3, h4, .card-title {
+            font-family: 'Inter', sans-serif !important;
+            color: #111 !important;
+            page-break-after: avoid;
         }
 
-        /* Remove height constraints to allow flowing to multiple pages */
-        body,
-        html,
-        main,
-        .flex-col,
-        .h-[calc(100vh-80px)],
-        .overflow-hidden,
-        .overflow-y-auto {
-            height: auto !important;
-            min-height: auto !important;
-            overflow: visible !important;
-            display: block !important;
+        * { box-shadow: none !important; }
+
+        /* Preserve code block styling on print */
+        pre, pre *, code {
+            font-family: 'Courier New', Courier, monospace !important;
+            background: #f8f9fa !important;
+            color: #24292e !important;
+            font-size: 8pt !important;
+        }
+        pre {
+            border: 1px solid #e1e4e8 !important;
+            border-radius: 4px !important;
+            padding: 8px !important;
+            page-break-inside: avoid;
+            overflow-x: hidden !important;
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
         }
 
-        /* Expand the main content */
-        .flex-1 {
-            flex: none !important;
-            width: 100% !important;
+        /* Show structured content, styling it elegantly */
+        #structured-content { display: block !important; }
+        #raw-notes-container { display: none !important; }
+        
+        .learning-card { 
+            border: none !important; 
+            border-bottom: 1px solid #eaeaea !important;
+            box-shadow: none !important; 
+            background: none !important; 
+            padding: 0 0 12px 0 !important;
+            margin: 0 0 16px 0 !important;
+            page-break-inside: auto;
+        }
+        .learning-card:last-child {
+            border-bottom: none !important;
+        }
+        
+        .card-icon { display: none !important; }
+        .card-header { border-bottom: none !important; padding: 0 !important; margin-bottom: 8px !important; }
+        .card-title { 
+            font-size: 1.1rem !important; 
+            margin: 0 0 6px 0 !important; 
+            font-weight: 700 !important; 
+            color: #000 !important;
+            border-bottom: 2px solid #000 !important;
+            display: inline-block !important;
+            padding-bottom: 2px !important;
+        }
+        
+        .markdown-body { 
+            padding: 0 !important; 
+            max-width: 100% !important; 
+            font-family: 'Georgia', serif !important;
+            font-size: 9pt !important;
+        }
+        
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            margin-top: 1em !important;
+            margin-bottom: 0.4em !important;
         }
 
-        /* Ensure dark text on white background for printing */
-        * {
-            color: black !important;
-            background: white !important;
-            box-shadow: none !important;
+        .markdown-body p { margin-bottom: 0.6em !important; }
+        .markdown-body ul, .markdown-body ol { margin-bottom: 0.6em !important; padding-left: 1.5em !important; }
+        
+        .print-watermark { 
+            display: block !important; 
+            position: fixed; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%) rotate(-45deg); 
+            font-size: 60px; font-weight: 800;
+            color: #000 !important;
+            opacity: 0.1 !important; 
+            z-index: 9999 !important; 
+            white-space: nowrap; 
+            pointer-events: none; 
+            font-family: 'Inter', sans-serif !important;
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
         }
+        .print-header { 
+            display: block !important; 
+            text-align: center; 
+            margin-bottom: 16px; 
+            border-bottom: 2px double #333; 
+            padding-bottom: 8px; 
+            font-family: 'Inter', sans-serif !important;
+        }
+        .print-header h1 { font-size: 16px; margin: 0 0 2px 0; font-weight: 800 !important; letter-spacing: -0.5px; }
+        .print-header p { font-size: 10px; color: #555 !important; margin: 0; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
     }
 </style>
 
-<div class="flex flex-col h-[calc(100vh-80px)] -mt-6 -mx-4 sm:-mx-6 lg:-mx-8">
+<div class="print-watermark">Generated by NoteEd AI</div>
+<div class="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-3xl overflow-hidden border shadow-sm"
+     style="background: var(--card); border-color: var(--border);">
     <!-- Top Header Bar (Sticky) -->
-    <div
-        class="sticky top-0 z-40 bg-gray-50/90 backdrop-blur-xl border-b border-gray-200 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-3 text-sm text-gray-500 mb-1">
+    <div class="sticky top-0 z-40 backdrop-blur-xl border-b px-4 py-3 sm:px-6 sm:py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 transition-all" 
+         style="background: var(--nav-bg); border-color: var(--border);">
+        <div class="min-w-0">
+            <!-- Breadcrumbs -->
+            <div class="flex items-center gap-1.5 text-[11px] sm:text-xs mb-0.5 font-medium truncate" style="color: var(--text-muted);">
                 <a href="{{ url_for('dashboard.view_subject', sub_id=topic.subject_id) }}"
-                    class="hover:text-[#1d1d1f] transition-colors">{{ topic.subject_name }}</a>
-                <span>/</span>
-                <span class="text-[#0071e3] font-semibold">{{ topic.unit_name }}</span>
+                    class="hover:text-blue-500 transition-colors truncate" style="color: var(--text-secondary);">{{ topic.subject_name }}</a>
+                <span class="opacity-40">/</span>
+                <span class="text-blue-500 font-semibold truncate">{{ topic.unit_name }}</span>
             </div>
-            <h1 class="text-2xl font-bold text-[#1d1d1f] flex items-center gap-3">
-                {{ topic.name }}
-                <span
-                    class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary-500/20 text-primary-400 border border-primary-500/30">Intermediate</span>
-            </h1>
+            <!-- Title and Mode Badge -->
+            <div class="flex items-center gap-2 flex-wrap min-w-0">
+                <h1 class="text-lg sm:text-2xl font-bold font-outfit truncate" style="color: var(--text-primary);">
+                    {{ topic.name }}
+                </h1>
+                {% if study_purpose == 'exam_prep' %}
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">Exam Prep</span>
+                {% else %}
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">Learning Mode</span>
+                {% endif %}
+            </div>
         </div>
 
-        <div class="flex items-center gap-3 flex-wrap">
-            <div class="flex items-center gap-4 mr-4 text-sm text-gray-500">
-                <div class="flex items-center gap-1.5" title="Estimated Reading Time">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <polyline points="12 6 12 12 16 14"></polyline>
-                    </svg>
-                    <span>15 min read</span>
-                </div>
-            </div>
+        <!-- Action Buttons (Compact Mobile-Friendly Row) -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5 shrink-0 max-w-full">
+            <!-- ✨ AI Chat Button right at top -->
+            <button onclick="scrollToChat()" 
+                class="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm transition-all hover:opacity-95 shrink-0 flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                style="background: var(--accent-gradient);"
+                title="Open AI Chat Assistant">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>AI Chat</span>
+            </button>
 
             <button onclick="toggleComplete('{{ topic.id }}')" id="complete-btn"
-                class="px-4 py-2 rounded-xl text-sm font-bold transition-all border {{ 'bg-emerald-500/20 text-emerald-400 border-emerald-500/50' if topic.is_completed else 'bg-gray-50 text-[#1d1d1f] border-gray-200 hover:border-gray-500' }}">
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border focus:outline-none shadow-sm shrink-0 flex items-center gap-1.5 {{ 'bg-emerald-500/10 text-emerald-500 border-emerald-500/30' if topic.is_completed else '' }}"
+                style="{{ '' if topic.is_completed else 'background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);' }}"
+                aria-label="{{ 'Mark as incomplete' if topic.is_completed else 'Mark as complete' }}">
                 <span id="complete-icon">{{ '✅' if topic.is_completed else '⭕' }}</span>
-                <span id="complete-text" class="ml-1">{{ 'Completed' if topic.is_completed else 'Mark Complete'
-                    }}</span>
+                <span id="complete-text">{{ 'Completed' if topic.is_completed else 'Mark Complete' }}</span>
             </button>
             <button onclick="toggleBookmark('{{ topic.id }}')" id="bookmark-btn"
-                class="p-2.5 rounded-xl transition-all border {{ 'bg-[#0071e3]/20 text-[#0071e3] border-[#0071e3]/50' if is_bookmarked else 'bg-gray-50 text-[#1d1d1f] border-gray-200 hover:border-gray-500' }}"
-                title="Bookmark">
+                class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all border focus:outline-none shadow-sm shrink-0 flex items-center gap-1.5 {{ 'bg-amber-500/10 text-amber-500 border-amber-500/30' if is_bookmarked else '' }}"
+                style="{{ '' if is_bookmarked else 'background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);' }}"
+                title="{{ 'Remove from bookmarks' if is_bookmarked else 'Add to bookmarks' }}"
+                aria-label="{{ 'Remove bookmark' if is_bookmarked else 'Add bookmark' }}">
                 <span id="bookmark-icon">{{ '🔖' if is_bookmarked else '📑' }}</span>
+                <span id="bookmark-text">{{ 'Bookmarked' if is_bookmarked else 'Bookmark' }}</span>
             </button>
-            <button onclick="printNotes()"
-                class="px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all border border-gray-200 hover:border-[#0071e3]/40 bg-white text-[#1d1d1f] flex items-center justify-center gap-1"
-                title="Print notes as PDF">
-                🖨️ <span class="hidden sm:inline">Print PDF</span>
+            {% if notes %}
+            <button onclick="regenerateMaterials()" id="regenerate-btn"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all border shrink-0 flex items-center gap-1.5 hover:border-blue-500/40 focus:outline-none"
+                style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);"
+                aria-label="Regenerate notes">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>Regenerate</span>
             </button>
-
-            <form action="{{ url_for('files.upload_file', topic_id=topic.id) }}" method="POST"
-                enctype="multipart/form-data" class="inline-flex">
-                <label
-                    class="p-2.5 rounded-xl bg-gray-50 text-[#1d1d1f] border border-gray-200 hover:border-gray-500 transition-all cursor-pointer"
-                    title="Upload File">
-                    📎
-                    <input type="file" name="file" class="hidden" onchange="this.form.submit()">
-                </label>
-            </form>
-
+            {% endif %}
         </div>
     </div>
 
-    <!-- 3-Column Layout -->
+    <!-- 2-Column Layout (Main Study Notes + Learning Assistant) -->
     <div class="flex flex-col xl:flex-row flex-1 overflow-y-auto xl:overflow-hidden">
 
-        <!-- Left Sidebar: Table of Contents -->
-        <aside
-            class="flex flex-col w-full xl:w-64 border-b xl:border-b-0 xl:border-r border-gray-200 bg-white xl:custom-scroll xl:overflow-y-auto p-6 shrink-0">
-            <details class="group xl:hidden">
-                <summary
-                    class="flex justify-between items-center text-xs font-bold uppercase tracking-widest text-gray-500 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
-                    <span>On This Page</span>
-                    <svg class="w-4 h-4 transition-transform group-open:rotate-180" xmlns="http://www.w3.org/2000/svg"
-                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </summary>
-                <div class="mt-6">
-                    <div class="space-y-4 mb-6">
-                        <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                            <div id="reading-progress-mobile"
-                                class="h-full bg-[#0071e3] w-0 transition-all duration-300"></div>
-                        </div>
-                        <p class="text-xs text-gray-500 text-right" id="reading-percentage-mobile">0% Read</p>
-                    </div>
-                    <nav id="toc-nav-mobile" class="space-y-1.5 text-sm flex flex-col">
-                        <!-- TOC injected by JS -->
-                        <p class="text-gray-500 text-xs italic">Loading sections...</p>
-                    </nav>
-                </div>
-            </details>
-
-            <div class="hidden xl:block">
-                <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">On This Page</h3>
-                <div class="space-y-4 mb-6">
-                    <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                        <div id="reading-progress" class="h-full bg-[#0071e3] w-0 transition-all duration-300"></div>
-                    </div>
-                    <p class="text-xs text-gray-500 text-right" id="reading-percentage">0% Read</p>
-                </div>
-                <nav id="toc-nav" class="space-y-1.5 text-sm flex flex-col">
-                    <!-- TOC injected by JS -->
-                    <p class="text-gray-500 text-xs italic">Loading sections...</p>
-                </nav>
-            </div>
-        </aside>
-
         <!-- Center: Main Learning Content -->
-        <main
-            class="flex-1 xl:custom-scroll overflow-visible xl:overflow-y-auto bg-gray-50 p-6 lg:p-10 relative scroll-smooth"
+        <div
+            class="flex-1 xl:custom-scroll overflow-visible xl:overflow-y-auto px-4 py-5 sm:px-8 sm:py-8 lg:p-10 relative scroll-smooth"
             id="main-scroll-area">
-            <div class="max-w-3xl mx-auto pb-32">
+            <div class="max-w-4xl mx-auto pb-44 sm:pb-24">
 
                 <!-- Raw Notes Container (Hidden, used as source) -->
                 <div id="raw-notes-container">
                     {% if notes %}
                     {% for note in notes %}
-                    <h2>{{ note.title }}</h2>
-                    <div class="markdown-body">{{ note.content | escape }}</div>
+                    <script type="text/plain" class="note-title-hidden" data-note-title>{{ note.title }}</script>
+                    <script type="text/plain" class="markdown-body" data-note-content>{{ note.content }}</script>
                     {% endfor %}
                     {% endif %}
                 </div>
 
                 <!-- Structured Learning Cards Container -->
-                <div id="structured-content" class="space-y-8">
+                <div id="structured-content" class="space-y-6">
                     {% if not notes %}
-                    <div class="text-center py-20 bg-white rounded-2xl border border-gray-200">
+                    <div class="text-center py-20 rounded-2xl" style="background: var(--card); border: 1px solid var(--border);">
                         <div class="text-6xl mb-4">📚</div>
-                        <h2 class="text-2xl font-bold text-[#1d1d1f] mb-2">Ready to start learning?</h2>
+                        <h2 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Ready to start learning?</h2>
                         <p class="text-gray-500 max-w-md mx-auto">Generate AI-powered notes, flashcards, and quizzes
                             customized specifically for your syllabus.</p>
-                        <form action="{{ url_for('study.generate_resources', topic_id=topic.id) }}" method="POST"
-                            class="mt-8 flex justify-center gap-3">
-                            <button type="submit"
+                        <div class="mt-8 flex justify-center gap-3">
+                            <button onclick="generateOrRegenerate(false)" id="generate-material-btn"
                                 class="px-6 py-3 rounded-xl bg-[#0071e3] hover:bg-[#0077ed] text-[#1d1d1f] font-bold shadow-lg transition-all transform hover:-translate-y-1">
                                 Generate Learning Material
                             </button>
-                        </form>
+                        </div>
                     </div>
                     {% else %}
                     <!-- JS will inject styled cards here -->
                     {% endif %}
                 </div>
 
-
-
-
-
             </div>
-        </main>
+        </div>
 
         <!-- Right Sidebar: Learning Assistant -->
+        <!-- Mobile sheet backdrop -->
+        <div id="mobile-topic-sheet-backdrop" onclick="closeMobileSheet()"></div>
+        <div id="mobile-topic-sheet" class="xl:hidden">
+            <!-- Sheet drag handle -->
+            <div class="flex items-center justify-between px-5 pt-4 pb-2 border-b shrink-0" style="border-color: var(--border);">
+                <div class="flex items-center gap-2">
+                    <div class="w-10 h-1 rounded-full mx-auto" style="background: var(--border);"></div>
+                </div>
+                <span class="text-xs font-bold uppercase tracking-wider" style="color: var(--text-muted);">Learning Assistant</span>
+                <button onclick="closeMobileSheet()" class="p-1.5 rounded-lg" style="color: var(--text-muted);">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scroll p-5 space-y-6">
+                <!-- Sheet content injected by JS -->
+            </div>
+        </div>
         <aside
-            class="flex flex-col w-full xl:w-[500px] border-t xl:border-t-0 xl:border-l border-gray-200 bg-white xl:custom-scroll xl:overflow-y-auto shrink-0">
-            <div class="p-6 space-y-8">
+            class="flex flex-col w-full xl:w-[500px] border-t xl:border-t-0 xl:border-l xl:custom-scroll xl:overflow-y-auto shrink-0"
+            style="background: var(--bg-elevated); border-color: var(--border);">
+            <div class="p-4 sm:p-6 space-y-6 sm:space-y-8">
 
                 <!-- Quick Actions -->
                 <div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">Learning Tools</h3>
-                    <form action="{{ url_for('study.generate_resources', topic_id=topic.id) }}" method="POST"
-                        class="grid grid-cols-1 gap-2"
-                        onsubmit="this.querySelector('button').innerHTML = 'Generating...'; this.querySelector('button').disabled = true;">
-                        <button type="submit"
-                            class="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-[#333] border border-gray-200 text-[#1d1d1f] font-medium flex items-center justify-between group transition-all">
+                    <h3 class="text-xs font-bold uppercase tracking-widest mb-4" style="color: var(--text-muted);">Learning Tools</h3>
+                    <div class="grid grid-cols-1 gap-2">
+                        {% if notes %}
+                        <button onclick="generateOrRegenerate(true)" id="regenerate-notes-btn"
+                            class="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-[#333] border border-gray-200 text-[#1d1d1f] font-medium flex items-center justify-between group transition-all focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:ring-offset-2"
+                            aria-label="Regenerate notes">
+                            <span class="flex items-center gap-3"><span>🔄</span> Regenerate Notes</span>
+                            <span class="opacity-0 group-hover:opacity-100 text-gray-500">→</span>
+                        </button>
+                        {% else %}
+                        <button onclick="generateOrRegenerate(false)" id="generate-notes-btn"
+                            class="w-full text-left px-4 py-3 rounded-xl bg-gray-50 hover:bg-[#333] border border-gray-200 text-[#1d1d1f] font-medium flex items-center justify-between group transition-all focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:ring-offset-2"
+                            aria-label="Generate notes">
                             <span class="flex items-center gap-3"><span>📝</span> Generate Notes</span>
                             <span class="opacity-0 group-hover:opacity-100 text-gray-500">→</span>
                         </button>
-                    </form>
+                        {% endif %}
+                    </div>
 
                     {% if flashcards %}
                     <a href="{{ url_for('study.review_flashcards', topic_id=topic.id) }}"
-                        class="mt-2 w-full text-left px-4 py-3 rounded-xl bg-primary-500/10 hover:bg-primary-500/20 border border-primary-500/30 text-primary-400 font-bold flex items-center justify-between group transition-all">
+                        class="mt-2 w-full text-left px-4 py-3 rounded-xl bg-primary-500/10 hover:bg-primary-500/20 border border-primary-500/30 text-primary-400 font-bold flex items-center justify-between group transition-all focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:ring-offset-2"
+                        aria-label="Review {{ flashcards | length }} flashcards">
                         <span class="flex items-center gap-3"><span>⚡</span> Flashcards ({{ flashcards | length
                             }})</span>
                         <span>Play</span>
@@ -336,7 +582,8 @@
                     <div class="mt-2 space-y-2">
                         {% for quiz in quizzes %}
                         <a href="{{ url_for('study.play_quiz', quiz_id=quiz.id) }}"
-                            class="w-full text-left px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold flex items-center justify-between group transition-all">
+                            class="w-full text-left px-4 py-3 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold flex items-center justify-between group transition-all focus:outline-none focus:ring-2 focus:ring-[#0071e3] focus:ring-offset-2"
+                            aria-label="Play quiz: {{ quiz.title }}">
                             <span class="flex items-center gap-3 truncate pr-2"><span>🎯</span> {{ quiz.title[:20]
                                 }}...</span>
                             <span>Play</span>
@@ -344,175 +591,343 @@
                         {% endfor %}
                     </div>
                     {% endif %}
-                </div>
 
-                <!-- Learning Mode Selector -->
-                <div>
-                    <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Experience Level</h3>
-                    <select
-                        class="w-full bg-gray-50 border border-gray-200 text-[#1d1d1f] text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#0071e3] outline-none appearance-none">
-                        <option value="beginner">👶 Beginner (Simple & Detailed)</option>
-                        <option value="intermediate" selected>🧑‍🎓 Intermediate (Standard)</option>
-                        <option value="topper">🧠 Topper (Advanced & PYQs)</option>
-                    </select>
-                </div>
-
-                <!-- AI Tutor Chat Embed -->
-                <div
-                    class="flex flex-col h-[750px] border border-gray-200 rounded-2xl overflow-hidden mt-4 shadow-sm bg-gray-50">
-                    <div class="p-4 border-b border-gray-200 bg-white flex justify-between items-center">
-                        <h3 class="font-bold text-[#1d1d1f] flex items-center gap-2"><span>💬</span> AI Assistant</h3>
-                        <a href="{{ url_for('dashboard.view_topic', topic_id=topic.id, new=1) }}"
-                            class="text-xs px-2 py-1 bg-gray-100 rounded text-[#0071e3] hover:bg-gray-200 font-semibold transition-colors">+
-                            New</a>
-                    </div>
-
-                    <div id="chat-box" class="flex-1 p-4 overflow-y-auto custom-scroll space-y-4">
-                        {% if chat_history %}
-                        {% for msg in chat_history %}
-                        {% if msg.role == 'user' %}
-                        <div class="flex justify-end">
-                            <div
-                                class="p-3 rounded-2xl rounded-br-sm bg-[#0071e3] text-gray-900 text-sm max-w-[85%] break-words shadow-sm">
-                                {{ msg.content }}</div>
-                        </div>
-                        {% else %}
-                        <div class="flex justify-start relative group">
-                            <div class="ai-message p-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 text-gray-800 text-base prose max-w-[85%] shadow-sm overflow-x-auto"
-                                data-markdown="{{ msg.content | escape }}"></div>
-                        </div>
-                        {% endif %}
-                        {% endfor %}
-                        {% else %}
-                        <div class="flex justify-start">
-                            <div
-                                class="p-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 text-gray-800 text-sm max-w-[85%] shadow-sm">
-                                Hello! Ask me anything about this topic or attached files.
+                    {% for note in notes %}
+                    {% if 'Viva' in note.title or 'Oral' in note.title %}
+                    <button onclick="document.querySelector('#structured-content')?.scrollIntoView({behavior: 'smooth', block: 'end'})"
+                        class="mt-2 w-full text-left px-4 py-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-500 font-bold flex items-center justify-between group transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2"
+                        aria-label="Jump to Viva Voce Q&A">
+                        <span class="flex items-center gap-3"><span>🎙️</span> Viva Voce & Oral Q&A</span>
+                        <span>View</span>
+                    </button>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if archived_notes %}
+                    <div class="mt-6 pt-6 border-t border-gray-200">
+                        <h3 class="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Version History</h3>
+                        <div class="space-y-2 max-h-40 overflow-y-auto custom-scroll pr-1">
+                            {% for note in archived_notes %}
+                            <div class="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors text-xs">
+                                <div class="flex-1 min-w-0">
+                                    <span class="font-semibold text-gray-700 block truncate" title="{{ note.title }}">{{ note.title }}</span>
+                                    <span class="text-[10px] text-gray-400">Archived version</span>
+                                </div>
+                                <button onclick="viewArchivedItem('notes', '{{ note.id }}')" class="px-2.5 py-1 bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 font-bold rounded-lg transition-colors shadow-sm shrink-0">View</button>
                             </div>
+                            {% endfor %}
                         </div>
-                        {% endif %}
                     </div>
+                    {% endif %}
+                </div>
 
-                    <form id="chat-form" class="p-3 bg-white border-t border-gray-200">
-                        <input type="hidden" id="chat-session-id" name="session_id"
-                            value="{{ active_session_id or '' }}">
-                        <div class="flex items-end gap-2 bg-gray-50 border border-gray-200 rounded-xl p-1">
-                            <textarea id="chat-input" rows="1" placeholder="Ask a question..." required
-                                class="flex-1 px-3 py-2 bg-transparent text-sm focus:outline-none text-[#1d1d1f] resize-none min-h-[36px] max-h-[100px]"></textarea>
-                            <button type="submit"
-                                class="p-2 rounded-lg bg-[#0071e3] hover:bg-[#0077ed] text-gray-900 transition-all shadow-sm">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
-                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                                    stroke-linejoin="round">
-                                    <line x1="22" y1="2" x2="11" y2="13"></line>
-                                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                                </svg>
+                <!-- Loading Spinner Overlay -->
+            <div id="loading-overlay" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+                <div class="bg-white p-6 rounded-2xl shadow-lg flex flex-col items-center gap-4">
+                    <svg class="animate-spin h-12 w-12 text-[#0071e3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p id="loading-status-text" class="text-[#1d1d1f] font-medium">Generating Study Materials...</p>
+                </div>
+            </div>
+
+            <!-- MathJax Initial Loading Overlay -->
+            {% if notes %}
+            <div id="mathjax-loading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-white/95 backdrop-blur-md transition-opacity duration-300">
+                <div class="bg-white p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-5 border border-gray-100">
+                    <svg class="animate-spin h-14 w-14 text-[#0071e3]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-[#1d1d1f] font-bold text-lg">Formatting Mathematics...</p>
+                    <p class="text-sm text-gray-500">Preparing beautiful notes for you</p>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Study Mode Selector -->
+            <div>
+                <h3 class="text-xs font-bold uppercase tracking-widest mb-3" style="color: var(--text-muted);">Study Mode</h3>
+                <select id="study-purpose-select"
+                    class="w-full bg-gray-50 border border-gray-200 text-[#1d1d1f] text-sm rounded-xl px-4 py-3 focus:ring-2 focus:ring-[#0071e3] focus:ring-offset-2 outline-none appearance-none"
+                    aria-label="Select study mode">
+                    <option value="learning" {% if study_purpose == 'learning' %}selected{% endif %}>📖 Learning Mode (Detailed & Simple)</option>
+                    <option value="exam_prep" {% if study_purpose == 'exam_prep' %}selected{% endif %}>📝 Exam Prep Mode (Key Points & Summaries)</option>
+                </select>
+            </div>
+
+                <!-- AI Tutor Chat Embed (Expanded Height) -->
+                <div class="flex flex-col h-[520px] sm:h-[600px] lg:h-[680px] border rounded-2xl overflow-hidden mt-4 shadow-sm relative transition-all" style="background: var(--bg-elevated); border-color: var(--border);">
+                    <div class="p-3.5 border-b flex justify-between items-center shrink-0" style="background: var(--card); border-color: var(--border);">
+                        <h3 class="font-bold flex items-center gap-2 text-sm" style="color: var(--text-primary);"><span>💬</span> AI Assistant</h3>
+                        <div class="flex gap-1.5 items-center">
+                            {% if chat_sessions %}
+                            <button onclick="openHistoryDrawer()" class="text-xs px-2 py-1.5 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 font-semibold transition-colors flex items-center gap-1" title="View chat history">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                History ({{ chat_sessions|length }})
+                            </button>
+                            {% endif %}
+                            <button onclick="printChat()" class="text-xs px-2 py-1.5 bg-gray-100 rounded-lg text-gray-600 hover:bg-gray-200 font-semibold transition-colors flex items-center gap-1" aria-label="Print chat" title="Print AI Chat">🖨️ Chat</button>
+                            <a href="{{ url_for('dashboard.view_topic', topic_id=topic.id, new=1) }}" class="text-xs px-2 py-1.5 bg-[#0071e3]/10 rounded-lg text-[#0071e3] hover:bg-[#0071e3]/20 font-semibold transition-colors" aria-label="New chat">+ New</a>
+                        </div>
+                    </div>
+                    
+                    <!-- Chat History Drawer (slide-out) -->
+                    <div id="history-drawer-backdrop" class="hidden absolute inset-0 z-30 bg-black/20" onclick="closeHistoryDrawer()"></div>
+                    <div id="history-drawer" class="absolute top-0 left-0 bottom-0 w-56 bg-white border-r border-gray-200 z-40 transform -translate-x-full transition-transform duration-200 ease-in-out flex flex-col shadow-lg" style="border-radius:0 0 0 16px">
+                        <div class="p-3 border-b border-gray-200 flex items-center justify-between">
+                            <h4 class="text-xs font-semibold text-gray-600 uppercase tracking-wider">Chat History</h4>
+                            <button onclick="closeHistoryDrawer()" class="text-gray-400 hover:text-gray-700 p-1 rounded-lg hover:bg-gray-100">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                             </button>
                         </div>
-                    </form>
-                </div>
+                        <div id="chat-sessions-list" class="flex-1 overflow-y-auto custom-scroll space-y-1 p-2">
+                            {% if chat_sessions %}
+                            {% for session in chat_sessions %}
+                            <div class="p-2.5 rounded-lg hover:bg-gray-100 cursor-pointer transition-colors flex items-center justify-between gap-2 {% if session.id == active_session_id %}bg-[#0071e3]/10 border border-[#0071e3]/20{% endif %}" data-session-id="{{ session.id }}">
+                                <div class="flex-1 min-w-0" onclick="loadSession('{{ session.id }}')">
+                                    <p class="text-sm font-medium text-[#1d1d1f] truncate">{{ session.title }}</p>
+                                    <p class="text-xs text-gray-400 mt-0.5">{{ session.created_at[:10] if session.created_at else '' }}</p>
+                                </div>
+                                <button onclick="deleteSession('{{ session.id }}', event)" class="text-gray-300 hover:text-red-500 p-1 rounded flex-shrink-0">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                </button>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p class="text-xs text-gray-400 p-2 text-center mt-4">No chat history yet.<br>Start a conversation!</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Chat Content (full width) -->
+                    <div class="flex-1 flex flex-col relative min-h-0">
+                        <div id="chat-box" class="flex-1 p-3 sm:p-4 overflow-y-auto custom-scroll space-y-4 min-h-0">
+                            {% if chat_messages %}
+                            {% for msg in chat_messages %}
+                            {% if msg.role == 'user' %}
+                            <div class="flex justify-end">
+                                <div class="p-3 rounded-2xl rounded-br-sm text-white text-sm max-w-[85%] break-words shadow-sm" style="background: var(--accent-gradient);">{{ msg.content }}</div>
+                            </div>
+                            {% else %}
+                            <div class="flex justify-start relative group">
+                                <div class="ai-message p-3 rounded-2xl rounded-bl-sm border text-sm prose max-w-[85%] shadow-sm overflow-x-auto" style="background: var(--card); border-color: var(--border); color: var(--text-primary);" data-markdown="{{ msg.content | escape }}">{{ msg.content }}</div>
+                            </div>
+                            {% endif %}
+                            {% endfor %}
+                            {% else %}
+                            <div class="flex justify-start">
+                                <div class="p-3 rounded-2xl rounded-bl-sm border text-sm max-w-[85%] shadow-sm" style="background: var(--card); border-color: var(--border); color: var(--text-primary);">
+                                    Hello! Ask me anything about this topic or attached files.
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Quick Chat Suggestion Pills -->
+                        <div class="px-2 sm:px-3 pt-2 pb-1 flex flex-wrap gap-1 sm:gap-1.5 border-t" style="background: var(--card); border-color: var(--border);">
+                            <button type="button" onclick="sendQuickPrompt('Teach me about this topic with simple examples')" class="text-[11px] px-2 sm:px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1" style="background: rgba(59,130,246,0.1); color: #3b82f6;">💡 Teach me this</button>
+                            <button type="button" onclick="sendQuickPrompt('Give me the key takeaway points for all sections of this topic')" class="text-[11px] px-2 sm:px-2.5 py-1 rounded-lg font-medium transition flex items-center gap-1" style="background: var(--bg-elevated); color: var(--text-secondary);">📝 Key points</button>
+                            <button type="button" onclick="sendQuickPrompt('What are common exam questions on this topic?')" class="text-[11px] px-2 sm:px-2.5 py-1 rounded-lg font-medium transition flex items-center gap-1" style="background: var(--bg-elevated); color: var(--text-secondary);">🎯 Exam questions</button>
+                        </div>
+                        
+                        <form id="chat-form" class="p-2 sm:p-3 border-t" style="background: var(--card); border-color: var(--border);">
+                            <input type="hidden" id="chat-session-id" name="session_id" value="{{ active_session_id or '' }}">
+                            <div class="flex items-end gap-2 rounded-xl p-1 border" style="background: var(--bg-elevated); border-color: var(--border);">
+                                <textarea id="chat-input" rows="1" placeholder="Ask a question about {{ topic.name }}..." required class="flex-1 px-3 py-2 bg-transparent text-sm focus:outline-none resize-none min-h-[36px] max-h-[100px]" style="color: var(--text-primary);"></textarea>
+                                <button type="submit" class="p-2 rounded-lg text-white transition-all shadow-sm" style="background: var(--accent-gradient);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="22" y1="2" x2="11" y2="13"></line>
+                                        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                                    </svg>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
             </div>
         </aside>
     </div>
 </div>
 
-<!-- Scripts for Content Transformation & Interactivity -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- ═══════════════════════════════════════════════
+     Mobile Floating Chat Button + S<style>
+    /* Floating Chat Logo Button (Mobile Only) */
+    #mobile-chat-fab {
+        position: fixed;
+        bottom: 88px; /* above mobile bottom nav */
+        right: 16px;
+        z-index: 60;
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #0071e3;
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(0,113,227,0.4), 0 2px 8px rgba(0,0,0,0.3);
+        transition: transform 0.2s cubic-bezier(0.16,1,0.3,1), box-shadow 0.2s;
+    }
+    #mobile-chat-fab:hover { transform: scale(1.08); }
+    #mobile-chat-fab:active { transform: scale(0.95); }
+    #mobile-chat-fab .fab-dot {
+        position: absolute;
+        top: 4px; right: 4px;
+        width: 10px; height: 10px;
+        background: #22c55e;
+        border-radius: 50%;
+        border: 2px solid #fff;
+    }
+    /* Only show FAB on mobile viewports (< 1280px) */
+    @media (min-width: 1280px) {
+        #mobile-chat-fab { display: none !important; }
+    }
+</style>
+
+<!-- Floating Chat Button (opens bottom sheet on mobile, scrolls on desktop) -->
+<button id="mobile-chat-fab" onclick="openMobileSheet()" aria-label="Open AI Chat Assistant">
+    <div class="fab-dot"></div>
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+</button>
+
 <script>
-    document.addEventListener('DOMContentLoaded', () => {
+    function openMobileSheet() {
+        if (window.innerWidth >= 1280) {
+            // Desktop: scroll to sidebar
+            const chatInput = document.getElementById('chat-input');
+            const chatTarget = document.getElementById('chat-box') || document.querySelector('aside');
+            if (chatTarget) {
+                chatTarget.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                if (chatInput) setTimeout(() => chatInput.focus(), 400);
+            }
+        } else {
+            // Mobile: open bottom sheet
+            const sheet = document.getElementById('mobile-topic-sheet');
+            const backdrop = document.getElementById('mobile-topic-sheet-backdrop');
+            if (sheet) sheet.classList.add('sheet-open');
+            if (backdrop) backdrop.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            // Clone aside content into sheet on first open
+            const sheetContent = sheet && sheet.querySelector('.flex-1.overflow-y-auto');
+            const aside = document.querySelector('aside');
+            if (sheetContent && aside && !sheetContent.dataset.loaded) {
+                sheetContent.innerHTML = aside.querySelector('.p-4') ? aside.querySelector('.p-4').innerHTML : aside.innerHTML;
+                sheetContent.dataset.loaded = '1';
+            }
+        }
+    }
+    function closeMobileSheet() {
+        const sheet = document.getElementById('mobile-topic-sheet');
+        const backdrop = document.getElementById('mobile-topic-sheet-backdrop');
+        if (sheet) sheet.classList.remove('sheet-open');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    // Keep old scrollToChat for top-bar button compatibility
+    function scrollToChat() { openMobileSheet(); }
+</script>
+
+
+
+<!-- Scripts for Content Transformation & Interactivity -->
+<script>
+    function processNotes() {
         // 1. Extract raw markdown and convert to HTML
-        const rawContainers = document.querySelectorAll('#raw-notes-container .markdown-body');
+        const rawContainers = document.querySelectorAll('#raw-notes-container script[data-note-content]');
         if (rawContainers.length === 0) return;
 
         let fullMarkdown = '';
-        rawContainers.forEach(container => {
-            fullMarkdown += '\n\n' + container.textContent;
+        rawContainers.forEach((container) => {
+            fullMarkdown += container.textContent + '\n\n';
         });
 
-        const htmlContent = window.parseMarkdownWithMath ? window.parseMarkdownWithMath(fullMarkdown) : marked.parse(fullMarkdown);
+        const htmlContent = window.parseMarkdownWithMath 
+            ? window.parseMarkdownWithMath(fullMarkdown) 
+            : (typeof marked !== 'undefined' ? marked.parse(fullMarkdown) : fullMarkdown);
 
-        // 2. Parse HTML into Learning Cards
+        // 2. Parse HTML into Clean Document Flow (Continuous, Simple & Easy to Understand)
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         const container = document.getElementById('structured-content');
+        if (container) container.innerHTML = '';
 
-        let currentCard = null;
-        let cardContent = null;
-        let sectionCount = 0;
-
-        // Helper to create a card
-        function createCard(titleText, elementType) {
-            const typeMatch = titleText.toLowerCase();
-            let typeClass = 'type-concept';
-            let icon = '💡';
-
-            if (typeMatch.includes('definition') || typeMatch.includes('what is')) { typeClass = 'type-definition'; icon = '📖'; }
-            else if (typeMatch.includes('formula') || typeMatch.includes('equation')) { typeClass = 'type-formula'; icon = '∑'; }
-            else if (typeMatch.includes('example') || typeMatch.includes('application')) { typeClass = 'type-example'; icon = '🎯'; }
-            else if (typeMatch.includes('warning') || typeMatch.includes('mistake')) { typeClass = 'type-warning'; icon = '⚠️'; }
-            else if (typeMatch.includes('important') || typeMatch.includes('note')) { typeClass = 'type-important'; icon = '⭐'; }
-
-            const card = document.createElement('div');
-            card.className = `learning-card ${typeClass}`;
-            card.id = 'section-' + sectionCount;
-
-            const header = document.createElement('div');
-            header.className = 'card-header';
-            header.innerHTML = `<span class="card-icon">${icon}</span><h3 class="card-title text-[#1d1d1f]">${titleText}</h3>`;
-
-            const contentDiv = document.createElement('div');
-            contentDiv.className = 'text-gray-600 leading-relaxed space-y-4 prose max-w-none';
-
-            card.appendChild(header);
-            card.appendChild(contentDiv);
-            return { card, contentDiv, title: titleText, id: card.id };
-        }
+        const articleWrapper = document.createElement('div');
+        articleWrapper.className = 'notes-article space-y-4';
 
         const tocList = [];
+        let sectionCount = 0;
 
         Array.from(doc.body.children).forEach(node => {
             if (node.tagName.match(/^H[1-4]$/)) {
                 sectionCount++;
-                const cardObj = createCard(node.textContent, node.tagName);
-                currentCard = cardObj.card;
-                cardContent = cardObj.contentDiv;
-                container.appendChild(currentCard);
-
-                tocList.push({ title: cardObj.title, id: cardObj.id });
-
-
-            } else if (cardContent) {
-                // Apply Tailwind prose classes to elements
-                if (node.tagName === 'P') node.classList.add('mb-4');
-                if (node.tagName === 'UL') node.classList.add('list-disc', 'list-inside', 'mb-4', 'space-y-1');
-                if (node.tagName === 'OL') node.classList.add('list-decimal', 'list-inside', 'mb-4', 'space-y-1');
-                if (node.tagName === 'PRE') node.classList.add('bg-gray-50', 'p-4', 'rounded-xl', 'overflow-x-auto', 'border', 'border-gray-200', 'my-4');
-                cardContent.appendChild(node.cloneNode(true));
-            } else {
-                // If text appears before any heading, wrap it in a generic card
-                if (node.textContent.trim()) {
-                    sectionCount++;
-                    const cardObj = createCard("Overview", "H2");
-                    currentCard = cardObj.card;
-                    cardContent = cardObj.contentDiv;
-                    cardContent.appendChild(node.cloneNode(true));
-                    container.appendChild(currentCard);
-                    tocList.push({ title: cardObj.title, id: cardObj.id });
+                const sectionId = 'section-' + sectionCount;
+                node.id = sectionId;
+                
+                // Style headings with clean, modern, well-proportioned typography
+                if (node.tagName === 'H1') {
+                    node.className = 'text-xl sm:text-2xl font-bold font-outfit tracking-tight mt-3 mb-3 text-[#1d1d1f] dark:text-zinc-100';
+                } else if (node.tagName === 'H2') {
+                    node.className = 'text-lg sm:text-xl font-bold font-outfit mt-6 mb-2.5 text-blue-600 dark:text-blue-400';
+                } else if (node.tagName === 'H3') {
+                    node.className = 'text-base sm:text-lg font-semibold font-outfit mt-4 mb-2 text-[#1d1d1f] dark:text-zinc-200';
+                } else {
+                    node.className = 'text-sm sm:text-base font-semibold font-outfit mt-3 mb-1.5 text-gray-700 dark:text-zinc-300';
                 }
+                
+                tocList.push({ title: node.textContent.trim(), id: sectionId });
+                articleWrapper.appendChild(node.cloneNode(true));
+            } else {
+                // Apply clean prose typography
+                if (node.tagName === 'P') {
+                    node.className = 'text-sm sm:text-base leading-relaxed mb-3.5 text-gray-700 dark:text-zinc-300';
+                } else if (node.tagName === 'UL') {
+                    node.className = 'list-disc list-outside pl-5 space-y-1.5 mb-4 text-sm sm:text-base text-gray-700 dark:text-zinc-300';
+                } else if (node.tagName === 'OL') {
+                    node.className = 'list-decimal list-outside pl-5 space-y-1.5 mb-4 text-sm sm:text-base text-gray-700 dark:text-zinc-300';
+                } else if (node.tagName === 'BLOCKQUOTE') {
+                    node.className = 'p-3.5 sm:p-4 rounded-xl border-l-4 my-4 text-sm sm:text-base leading-relaxed bg-blue-50/70 dark:bg-blue-950/20 border-blue-500 text-gray-800 dark:text-zinc-200';
+                } else if (node.tagName === 'PRE') {
+                    node.className = 'p-4 rounded-xl overflow-x-auto my-4 border text-xs sm:text-sm font-mono bg-zinc-900 border-zinc-800 text-zinc-100';
+                    const codeEl = node.querySelector('code');
+                    if (codeEl && typeof hljs !== 'undefined') {
+                        try { hljs.highlightElement(codeEl); } catch(e) {}
+                    }
+                } else if (node.tagName === 'TABLE') {
+                    const tableWrap = document.createElement('div');
+                    tableWrap.className = 'table-responsive-wrapper';
+                    node.className = 'w-full my-0 border-collapse rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs sm:text-sm';
+                    tableWrap.appendChild(node.cloneNode(true));
+                    articleWrapper.appendChild(tableWrap);
+                    return;
+                }
+                articleWrapper.appendChild(node.cloneNode(true));
             }
         });
 
-        // 3. Build Table of Contents
+        container.appendChild(articleWrapper);
+
+        // After all content is inserted, typeset MathJax equations and icons
+        doTypeset();
+        if (window.lucide) {
+            try { window.lucide.createIcons(); } catch(e) {}
+        }
+
+        // 3. Build Table of Contents (if container exists)
         const tocNav = document.getElementById('toc-nav');
         const tocNavMobile = document.getElementById('toc-nav-mobile');
-        if (tocList.length > 0) {
+        if (tocNav && tocList.length > 0) {
             tocNav.innerHTML = '';
             if (tocNavMobile) tocNavMobile.innerHTML = '';
 
-            tocList.forEach((item, index) => {
+            tocList.forEach((item) => {
                 const a = document.createElement('a');
                 a.href = '#' + item.id;
-                a.className = 'toc-link block px-3 py-2 rounded-lg text-gray-500 hover:bg-[#333] hover:text-[#1d1d1f] transition-all truncate';
+                a.className = 'toc-link block px-3 py-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-zinc-800 hover:text-[#1d1d1f] dark:hover:text-white transition-all truncate text-sm';
                 a.textContent = item.title;
                 a.dataset.target = item.id;
 
@@ -524,64 +939,52 @@
             });
         }
 
-        // 4. Scroll Tracking for TOC & Progress Bar
         const scrollArea = document.getElementById('main-scroll-area');
-        const progressBar = document.getElementById('reading-progress');
-        const progressText = document.getElementById('reading-percentage');
-        const progressBarMobile = document.getElementById('reading-progress-mobile');
-        const progressTextMobile = document.getElementById('reading-percentage-mobile');
 
         scrollArea.addEventListener('scroll', () => {
-            // Progress Bar
-            const scrollTop = scrollArea.scrollTop;
-            const scrollHeight = scrollArea.scrollHeight - scrollArea.clientHeight;
-            const scrollPercent = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-            const roundedPercent = Math.round(scrollPercent) + '% Read';
-
-            if (progressBar) progressBar.style.width = scrollPercent + '%';
-            if (progressText) progressText.textContent = roundedPercent;
-            if (progressBarMobile) progressBarMobile.style.width = scrollPercent + '%';
-            if (progressTextMobile) progressTextMobile.textContent = roundedPercent;
-
             const tocLinks = document.querySelectorAll('.toc-link');
 
             // Highlight TOC
             let currentActive = null;
-            const cards = document.querySelectorAll('.learning-card');
-            cards.forEach(card => {
-                const rect = card.getBoundingClientRect();
-                // If card is near top of viewport
-                if (rect.top <= 200 && rect.bottom >= 100) {
-                    currentActive = card.id;
+            const sections = articleWrapper.querySelectorAll('[id^="section-"]');
+            sections.forEach(sec => {
+                const rect = sec.getBoundingClientRect();
+                if (rect.top <= 250 && rect.bottom >= 50) {
+                    currentActive = sec.id;
                 }
             });
 
             if (currentActive) {
                 tocLinks.forEach(link => {
                     if (link.dataset.target === currentActive) {
-                        link.classList.add('bg-[#0071e3]/20', 'text-[#0071e3]', 'font-bold');
-                        link.classList.remove('text-gray-500', 'hover:bg-[#333]');
+                        link.classList.add('bg-blue-500/10', 'text-blue-500', 'font-bold');
+                        link.classList.remove('text-gray-500');
                     } else {
-                        link.classList.remove('bg-[#0071e3]/20', 'text-[#0071e3]', 'font-bold');
-                        link.classList.add('text-gray-500', 'hover:bg-[#333]');
+                        link.classList.remove('bg-blue-500/10', 'text-blue-500', 'font-bold');
+                        link.classList.add('text-gray-500');
                     }
                 });
             }
         });
 
-        // MathJax Typesetting - single-call guard prevents race conditions
-        let _typesetDone = false;
+        // MathJax Typesetting - call whenever content changes
         function doTypeset() {
-            if (_typesetDone) return;
             const sc = document.getElementById('structured-content');
-            if (!sc) return;
-            if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-                _typesetDone = true;
-                MathJax.typesetPromise([sc]).catch(err => {
-                    console.error('MathJax error:', err);
-                    _typesetDone = false;
-                });
+            if (sc && window.typesetMath) {
+                window.typesetMath(sc);
             }
+            if (window.typesetMath) {
+                window.typesetMath();
+            }
+            
+            // Hide the math loading screen
+            setTimeout(() => {
+                const loader = document.getElementById('mathjax-loading');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.remove(), 300);
+                }
+            }, 400);
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -591,52 +994,328 @@
             window.history.replaceState({}, '', newUrl);
         }
 
-        // Try immediately (works if MathJax is already cached/loaded)
+        // Trigger typesetting immediately
         doTypeset();
 
-        // Wait for MathJax async load to complete
-        document.addEventListener('mathjax-loaded', doTypeset, { once: true });
+        // Run safety checks after window load and at staggered intervals to catch any late content
+        window.addEventListener('load', () => {
+            const runCheck = () => { doTypeset(); };
+            setTimeout(runCheck, 200);
+            setTimeout(runCheck, 700);
+            setTimeout(runCheck, 1500);
+        }, { once: true });
+    }
 
-        // Final safety net after all resources load
-        window.addEventListener('load', () => { setTimeout(doTypeset, 50); }, { once: true });
-    });
+    // Initialize when DOM is ready or marked/fallback is available
+    let notesProcessed = false;
+    function initNotesProcessing() {
+        if (notesProcessed) return;
+        const rawContainers = document.querySelectorAll('#raw-notes-container script[data-note-content]');
+        if (rawContainers.length === 0) return;
+
+        if (typeof marked !== 'undefined' || typeof window.parseMarkdownWithMath === 'function') {
+            notesProcessed = true;
+            processNotes();
+        } else {
+            let attempts = 0;
+            const checkMarked = setInterval(() => {
+                attempts++;
+                if (typeof marked !== 'undefined' || typeof window.parseMarkdownWithMath === 'function' || attempts > 15) {
+                    clearInterval(checkMarked);
+                    if (!notesProcessed) {
+                        notesProcessed = true;
+                        processNotes();
+                    }
+                }
+            }, 100);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', initNotesProcessing);
+
+    // Also try after window load in case DOMContentLoaded fired early
+    window.addEventListener('load', () => {
+        setTimeout(initNotesProcessing, 100);
+    }, { once: true });
+
+    // Staggered fallbacks
+    setTimeout(initNotesProcessing, 500);
+    setTimeout(initNotesProcessing, 1500);
 </script>
 
 <script>
+    // Handle study purpose change
+    const studyPurposeSelect = document.getElementById('study-purpose-select');
+    const topicId = '{{ topic.id }}';
+    if (studyPurposeSelect) {
+        studyPurposeSelect.addEventListener('change', async (e) => {
+            try {
+                await fetch(`/api/topic/${topicId}/save-study-purpose`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ study_purpose: e.target.value })
+                });
+            } catch (err) {
+                console.error('Error saving study purpose:', err);
+            }
+        });
+    }
+
+    // Handle generate materials buttons
+    let isGenerating = false;
+    function showLoading() {
+        document.getElementById('loading-overlay').classList.remove('hidden');
+        isGenerating = true;
+        // Disable all generate buttons
+        getGenerateButtons().forEach(btn => {
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+    }
+    function hideLoading() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+        isGenerating = false;
+        // Re-enable all generate buttons
+        getGenerateButtons().forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        });
+    }
+
+    // Find all generate materials forms and buttons
+    document.querySelectorAll('form[action*="generate-resources"]').forEach(form => {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isGenerating) return;
+            await generateOrRegenerate(false);
+        });
+    });
+
+    // Helper to get all generate buttons
+    function getGenerateButtons() {
+        return [
+            document.getElementById('generate-material-btn'),
+            document.getElementById('generate-notes-btn'),
+            document.getElementById('regenerate-btn'),
+            document.getElementById('regenerate-notes-btn')
+        ].filter(btn => btn !== null);
+    }
+
+    async function generateOrRegenerate(isRegenerate) {
+        const buttons = getGenerateButtons();
+        // Store original button text and state
+        const originalStates = buttons.map(btn => ({
+            innerHTML: btn.innerHTML,
+            disabled: btn.disabled
+        }));
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.innerHTML = 'Generating...';
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+        });
+
+        showLoading();
+        try {
+            const url = isRegenerate
+                ? `/topic/${topicId}/regenerate-resources`
+                : `/topic/${topicId}/generate-resources`;
+            const studyPurposeSelect = document.getElementById('study-purpose-select');
+            const studyPurpose = studyPurposeSelect ? studyPurposeSelect.value : 'learning';
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ archive_chats: true, study_purpose: studyPurpose })
+            });
+            const data = await response.json();
+            if (data.error) {
+                alert(data.error);
+                hideLoading();
+                // Restore button state
+                buttons.forEach((btn, index) => {
+                    btn.innerHTML = originalStates[index].innerHTML;
+                    btn.disabled = originalStates[index].disabled;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                });
+                return;
+            }
+            // Poll for completion
+            let complete = false;
+            let failed = false;
+            let errorMsg = 'Our AI is currently experiencing heavy load. Please try again after some time.';
+            while (!complete && !failed) {
+                await new Promise(r => setTimeout(r, 1000));
+                const statusResponse = await fetch(`/api/topic/${topicId}/generation-status/${data.task_id}`);
+                const statusData = await statusResponse.json();
+                
+                // Update loading status message dynamically
+                if (statusData.message) {
+                    const statusTextEl = document.getElementById('loading-status-text');
+                    if (statusTextEl) {
+                        statusTextEl.textContent = statusData.message;
+                    }
+                }
+                
+                if (statusData.status === 'completed') {
+                    complete = true;
+                } else if (statusData.status === 'failed') {
+                    failed = true;
+                    if (statusData.message) {
+                        errorMsg = statusData.message;
+                    }
+                }
+            }
+            if (failed) {
+                alert(errorMsg);
+                hideLoading();
+                // Restore button state
+                buttons.forEach((btn, index) => {
+                    btn.innerHTML = originalStates[index].innerHTML;
+                    btn.disabled = originalStates[index].disabled;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                });
+            } else {
+                // Refresh the page to show new materials
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Our AI is currently experiencing heavy load. Please try again after some time.');
+            hideLoading();
+            // Restore button state
+            buttons.forEach((btn, index) => {
+                btn.innerHTML = originalStates[index].innerHTML;
+                btn.disabled = originalStates[index].disabled;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+        }
+    }
+
+    async function regenerateMaterials() {
+        if (isGenerating) return;
+        await generateOrRegenerate(true);
+    }
+
+    function printChat() {
+        const chatMessages = document.getElementById('chat-box');
+        let printContainer = document.getElementById('chat-print-container');
+        if (printContainer) {
+            printContainer.remove();
+        }
+        printContainer = document.createElement('div');
+        printContainer.id = 'chat-print-container';
+        document.body.appendChild(printContainer);
+        
+        printContainer.innerHTML = `
+            <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="border-bottom: 1px solid #eee; padding-bottom: 10px;">AI Chat: {{ topic.name }}</h1>
+                    <p style="color: #666; margin-top: 0;">{{ topic.subject_name }} - {{ topic.unit_name }}</p>
+                </div>
+                ${chatMessages.innerHTML}
+            </div>
+            <style id="chat-print-style">
+                @media print {
+                    body > *:not(#chat-print-container) { display: none !important; }
+                    #chat-print-container { display: block !important; width: 100%; background: white; }
+                }
+                @media screen {
+                    #chat-print-container { display: none; }
+                }
+            </style>
+        `;
+        
+        // First typeset MathJax
+        if (window.typesetMath) {
+            window.typesetMath(printContainer);
+        }
+        
+        setTimeout(() => {
+            window.print();
+            setTimeout(() => {
+                if (printContainer) printContainer.remove();
+            }, 500);
+        }, 500);
+    }
+    
+    // Chat history drawer functions
+    function openHistoryDrawer() {
+        document.getElementById('history-drawer').style.transform = 'translateX(0)';
+        document.getElementById('history-drawer-backdrop').classList.remove('hidden');
+    }
+    function closeHistoryDrawer() {
+        document.getElementById('history-drawer').style.transform = 'translateX(-100%)';
+        document.getElementById('history-drawer-backdrop').classList.add('hidden');
+    }
+
+    function deleteSession(sessionId, event) {
+        event.stopPropagation();
+        if (confirm('Delete this chat session?')) {
+            fetch(`{{ url_for('study.delete_chat_session', session_id='') }}${sessionId}`, { method: 'DELETE' })
+            .then(r => r.json())
+            .then(data => { if (data.success) location.reload(); });
+        }
+    }
+    
+    function loadSession(sessionId) {
+        closeHistoryDrawer();
+        window.location.href = `{{ url_for('dashboard.view_topic', topic_id=topic.id) }}?session_id=${sessionId}`;
+    }
+
+    function sendQuickPrompt(text) {
+        const inp = document.getElementById('chat-input');
+        if (inp) {
+            inp.value = text;
+            chatForm.dispatchEvent(new Event('submit'));
+        }
+    }
+    
     const chatForm = document.getElementById('chat-form');
     const chatInput = document.getElementById('chat-input');
     const chatBox = document.getElementById('chat-box');
 
-    // Set Marked.js options
+    // Set Marked.js options if available
     if (typeof marked !== 'undefined') {
         marked.setOptions({ breaks: true, gfm: true });
-
-        // Render all existing notes
-        document.querySelectorAll('.note-content').forEach(el => {
-            const md = el.getAttribute('data-markdown');
-            if (md) el.innerHTML = parseMarkdownWithMath(md);
-        });
-
-        // Render all existing chat messages
-        document.querySelectorAll('.ai-message').forEach(el => {
-            const md = el.getAttribute('data-markdown');
-            if (md) {
-                el.innerHTML = parseMarkdownWithMath(md);
-                if (typeof hljs !== 'undefined') {
-                    el.querySelectorAll('pre code').forEach((block) => hljs.highlightElement(block));
-                }
-                addCodeCopyButtons(el);
-            }
-        });
-
-        // Typeset math equations
-        if (window.typesetMath) {
-            window.typesetMath();
-        }
-
-        // Scroll to bottom on load
-        chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    // Render all existing notes
+    document.querySelectorAll('.note-content').forEach(el => {
+        const md = el.getAttribute('data-markdown');
+        if (md && window.parseMarkdownWithMath) el.innerHTML = parseMarkdownWithMath(md);
+    });
+
+    // Render all existing AI chat messages with full formatting
+    document.querySelectorAll('.ai-message[data-markdown]').forEach(el => {
+        const md = el.getAttribute('data-markdown');
+        if (md && window.parseMarkdownWithMath) {
+            try {
+                el.innerHTML = parseMarkdownWithMath(md);
+                // Style code blocks inside chat
+                el.querySelectorAll('pre').forEach(pre => {
+                    pre.style.cssText = 'background:#1a1a2e;color:#e2e8f0;padding:14px;border-radius:10px;overflow-x:auto;border-left:4px solid #4361ee;margin:8px 0;font-family:"Courier New",monospace;font-size:12.5px;line-height:1.5;';
+                    const code = pre.querySelector('code');
+                    if (code) {
+                        code.style.cssText = 'background:none;color:inherit;';
+                        if (typeof hljs !== 'undefined') { try { hljs.highlightElement(code); } catch(e) {} }
+                    }
+                });
+                el.querySelectorAll('code:not(pre code)').forEach(c => {
+                    c.style.cssText = 'background:#f0f4ff;color:#2d3a8c;padding:2px 5px;border-radius:4px;font-size:0.9em;font-family:"Courier New",monospace;';
+                });
+                if (typeof addCodeCopyButtons === 'function') addCodeCopyButtons(el);
+            } catch(e) {
+                // leave raw text as-is
+            }
+        }
+    });
+
+    // Typeset math equations
+    if (window.typesetMath) {
+        window.typesetMath();
+    }
+
+    // Scroll to bottom on load
+    if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
 
     // Auto-expand textarea
     chatInput.addEventListener('input', function () {
@@ -705,19 +1384,18 @@
                 const aiWrapper = document.createElement('div');
                 aiWrapper.className = 'flex justify-start';
                 const aiDiv = document.createElement('div');
-                aiDiv.className = 'p-3 rounded-2xl rounded-bl-sm bg-gray-100 border border-gray-200 text-[#1d1d1f] text-base prose max-w-[85%] shadow-sm overflow-x-auto';
-
-                if (data.response && typeof marked !== 'undefined') {
-                    const parsedHtml = parseMarkdownWithMath(data.response);
-                    typeWriterReveal(aiDiv, parsedHtml, 15);
-                } else {
-                    typeWriterReveal(aiDiv, data.response || data.error || 'No response received.', 15);
-                }
+                aiDiv.className = 'ai-message p-3 rounded-2xl rounded-bl-sm bg-white border border-gray-200 text-gray-800 text-base prose max-w-[85%] shadow-sm overflow-x-auto';
 
                 aiWrapper.appendChild(aiDiv);
                 chatBox.appendChild(aiWrapper);
                 chatBox.scrollTop = chatBox.scrollHeight;
-                chatBox.scrollTop = chatBox.scrollHeight;
+
+                if (data.response && typeof marked !== 'undefined') {
+                    const parsedHtml = parseMarkdownWithMath(data.response);
+                    typeWriterReveal(aiDiv, parsedHtml, 12);
+                } else {
+                    typeWriterReveal(aiDiv, data.response || data.error || 'No response received.', 12);
+                }
 
                 // Typeset new math equations
                 if (window.typesetMath) {
@@ -734,76 +1412,48 @@
 
 
 
-    function printNotes() {
-        const rawContainers = document.querySelectorAll('#raw-notes-container .markdown-body');
-        let fullMarkdown = '';
-        rawContainers.forEach(container => {
-            const txt = document.createElement('textarea');
-            txt.innerHTML = container.innerHTML;
-            fullMarkdown += txt.value + '\n\n';
-        });
-
-        let htmlContent = '';
-        if (typeof marked !== 'undefined') {
-            htmlContent = marked.parse(fullMarkdown);
-        } else {
-            htmlContent = '<pre>' + fullMarkdown + '</pre>';
+    // ── Content Protection: Disable Copy, Context Menu, and Print ──────
+    document.addEventListener('contextmenu', function(e) {
+        if (e.target.closest('#main-scroll-area, .notes-article, .learning-card, .markdown-body, #structured-content, .flashcard, .quiz-card')) {
+            e.preventDefault();
+            return false;
         }
+    });
 
-        let printContainer = document.getElementById('print-container');
-        if (!printContainer) {
-            printContainer = document.createElement('div');
-            printContainer.id = 'print-container';
-            document.body.appendChild(printContainer);
-        }
-        
-        printContainer.innerHTML = `
-            <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
-                <style>
-                    @media print {
-                        body > *:not(#print-container) { display: none !important; }
-                        #print-container { display: block !important; width: 100%; background: white; }
-                        #print-container h1, #print-container h2, #print-container h3 { color: #000; font-weight: bold; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-top: 24px; font-family: Arial, Helvetica, sans-serif; }
-                        #print-container p, #print-container li { font-family: Arial, Helvetica, sans-serif; font-size: 14px; }
-                        #print-container p { margin-bottom: 16px; }
-                        #print-container ul, #print-container ol { margin-bottom: 16px; padding-left: 20px; }
-                        #print-container pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: monospace; white-space: pre-wrap; word-wrap: break-word; }
-                        #print-container code { font-family: monospace; background: #f5f5f5; padding: 2px 4px; border-radius: 3px; }
-                        #print-container blockquote { border-left: 4px solid #ccc; margin: 0; padding-left: 16px; color: #666; }
-                        #print-container table { border-collapse: collapse; width: 100%; margin-bottom: 16px; page-break-inside: avoid; }
-                        #print-container th, #print-container td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 14px; }
-                        #print-container th { background-color: #f2f2f2; font-weight: bold; }
-                        .print-header-info { text-align: center; margin-bottom: 30px; }
-                        .print-header-info h1 { border: none !important; margin-bottom: 5px; font-size: 24px; }
-                        .print-header-info p { color: #666; margin-top: 0; }
-                        .print-watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-45deg); font-size: 8rem; color: rgba(0,0,0,0.05); z-index: -1; pointer-events: none; user-select: none; font-weight: bold; white-space: nowrap; }
-                    }
-                    @media screen {
-                        #print-container { display: none; }
-                    }
-                </style>
-                <div class="print-watermark">Helix AI</div>
-                <div class="print-header-info">
-                    <h1>{{ topic.name }}</h1>
-                    <p>{{ topic.subject_name }} - {{ topic.unit_name }}</p>
-                </div>
-                ${htmlContent}
-            </div>
-        `;
-        
-        setTimeout(() => {
-            if (typeof MathJax !== 'undefined') {
-                MathJax.typesetPromise([printContainer]).then(() => {
-                    window.print();
-                    // Clean up after printing
-                    setTimeout(() => printContainer.innerHTML = '', 1000);
-                });
-            } else {
-                window.print();
-                setTimeout(() => printContainer.innerHTML = '', 1000);
+    document.addEventListener('copy', function(e) {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            if (e.clipboardData) {
+                e.clipboardData.setData('text/plain', '');
             }
-        }, 100);
-    }
+            return false;
+        }
+    });
+
+    document.addEventListener('cut', function(e) {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+        if (!isCtrlOrCmd) return;
+
+        const key = e.key.toLowerCase();
+        // Disable Print (Ctrl+P), Save Page (Ctrl+S), View Source (Ctrl+U)
+        if (key === 'p' || key === 's' || key === 'u') {
+            e.preventDefault();
+            return false;
+        }
+
+        // Disable Copy (Ctrl+C) outside input/textarea
+        if (key === 'c' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+            return false;
+        }
+    });
 
 
     // Toggle Complete
@@ -837,13 +1487,25 @@
             const data = await response.json();
             const btn = document.getElementById('bookmark-btn');
             const icon = document.getElementById('bookmark-icon');
+            const text = document.getElementById('bookmark-text');
 
-            if (data.status === 'added') {
-                btn.className = 'p-2.5 rounded-xl transition-all border bg-[#0071e3]/20 text-[#0071e3] border-[#0071e3]/50';
-                icon.innerText = '🔖';
+            const isBookmarked = (data.bookmarked === true) || (data.status === 'added');
+            if (isBookmarked) {
+                btn.className = 'px-3.5 py-2 rounded-xl text-sm font-bold transition-all border focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm flex items-center gap-1.5 bg-amber-500/20 text-amber-500 border-amber-500/50';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+                if (icon) icon.innerText = '🔖';
+                if (text) text.innerText = 'Bookmarked';
+                btn.setAttribute('title', 'Remove from bookmarks');
             } else {
-                btn.className = 'p-2.5 rounded-xl transition-all border bg-gray-50 text-[#1d1d1f] border-gray-200 hover:border-gray-500';
-                icon.innerText = '📑';
+                btn.className = 'px-3.5 py-2 rounded-xl text-sm font-bold transition-all border focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm flex items-center gap-1.5';
+                btn.style.background = 'var(--bg-elevated)';
+                btn.style.borderColor = 'var(--border)';
+                btn.style.color = 'var(--text-primary)';
+                if (icon) icon.innerText = '📑';
+                if (text) text.innerText = 'Bookmark';
+                btn.setAttribute('title', 'Add to bookmarks');
             }
         } catch (e) {
             console.error(e);
@@ -851,7 +1513,58 @@
         }
     }
 
+    // Archived Notes Data & Handling
+    const archivedNotesData = {
+        {% for note in archived_notes %}
+        "{{ note.id }}": {
+            "title": {{ note.title | tojson }},
+            "content": {{ note.content | tojson }}
+        },
+        {% endfor %}
+    };
+    
+    function viewArchivedItem(type, id) {
+        if (type === 'notes') {
+            const note = archivedNotesData[id];
+            if (note) {
+                document.getElementById('archived-modal-title').textContent = note.title;
+                const parsed = window.parseMarkdownWithMath ? window.parseMarkdownWithMath(note.content) : marked.parse(note.content);
+                document.getElementById('archived-modal-content').innerHTML = parsed;
+                document.getElementById('archived-modal').classList.remove('hidden');
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([document.getElementById('archived-modal-content')]);
+                }
+            }
+        }
+    }
+    
+    function closeArchivedModal() {
+        document.getElementById('archived-modal').classList.add('hidden');
+    }
+
 </script>
+
+<!-- Modal for Viewing Archived Content -->
+<div id="archived-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm" onclick="closeArchivedModal()">
+    <div class="bg-white w-[90%] max-w-3xl h-[80vh] rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-gray-100" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div class="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50">
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-gray-400">Archived Version</span>
+                <h3 id="archived-modal-title" class="text-lg font-bold text-gray-800">Study Notes</h3>
+            </div>
+            <button onclick="closeArchivedModal()" class="text-gray-400 hover:text-gray-600 p-2 rounded-xl hover:bg-gray-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <!-- Body -->
+        <div class="flex-1 overflow-y-auto p-8 custom-scroll bg-white">
+            <div id="archived-modal-content" class="markdown-body prose max-w-none text-gray-800">
+                <!-- Content parsed by marked will be injected here -->
+            </div>
+        </div>
+    </div>
+</div>
 
 
 

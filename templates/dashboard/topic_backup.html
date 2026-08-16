@@ -1,6 +1,6 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
-{% block title %}{{ topic.name }} - Helix AI{% endblock %}
+{% block title %}{{ topic.name }} - NoteEd{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
@@ -215,7 +215,8 @@
                     {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-sm text-gray-500">No generated notes yet. Click the "Generate Notes" button above to get started.</p>
+                <p class="text-sm text-gray-500">No generated notes yet. Click the "Generate Notes" button above to get
+                    started.</p>
                 {% endif %}
             </div>
         </div>
@@ -493,7 +494,7 @@
                 typingWrapper.className = 'flex justify-start';
                 const typingDiv = document.createElement('div');
                 typingDiv.className = 'p-3 rounded-2xl rounded-bl-sm bg-gray-100 border border-gray-200 text-[#1d1d1f] text-sm max-w-[85%] animate-pulse';
-                typingDiv.innerText = 'AI is typing...';
+                typingDiv.innerText = 'AI is Thinking...';
                 typingWrapper.appendChild(typingDiv);
                 chatBox.appendChild(typingWrapper);
                 chatBox.scrollTop = chatBox.scrollHeight;
@@ -723,7 +724,7 @@
 
         /* Watermark that repeats on every page */
         body::before {
-            content: 'Helix';
+            content: 'NoteEd';
             position: fixed;
             top: 50%;
             left: 50%;

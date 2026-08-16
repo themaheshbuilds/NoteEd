@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 import json
 from datetime import datetime, timedelta
 from services.db_service import db_service
@@ -147,3 +147,4 @@ class WeeklyTestService:
             print(f"Error generating weekly test from bank: {e}")
 
 weekly_test_service = WeeklyTestService()
+

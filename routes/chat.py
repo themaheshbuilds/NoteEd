@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request
+﻿from flask import Blueprint, render_template, session, redirect, url_for, request
 from services.db_service import db_service
 
 chat_bp = Blueprint("chat", __name__)
@@ -61,3 +61,4 @@ def global_chat():
         chat_messages=chat_messages,
         active_session=active_session
     )
+

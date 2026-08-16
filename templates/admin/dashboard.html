@@ -1,15 +1,84 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto py-10 px-6 animate-fade-in">
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
+<div class="max-w-7xl mx-auto py-6 sm:py-10 px-3 sm:px-6 animate-fade-in">
+    <!-- Header with Live IST Time Box -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between mb-8 gap-6">
         <div>
-            <h1 class="text-3xl font-extrabold font-outfit text-[#1d1d1f]">Admin Dashboard</h1>
-            <p class="text-gray-500 text-sm mt-1">Manage users, view payment proofs, and resolve support requests.</p>
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-xs font-semibold text-blue-500 mb-2">
+                <span class="w-2 h-2 rounded-full bg-blue-500 animate-ping"></span>
+                <span class="w-2 h-2 rounded-full bg-blue-500 -ml-3"></span>
+                <span>Superadmin Control Center</span>
+            </div>
+            <h1 class="text-3xl font-extrabold font-outfit" style="color: var(--text-primary);">Admin Dashboard</h1>
+            <p class="text-sm mt-1" style="color: var(--text-secondary);">Manage users, review payment proofs, configure AI API keys, and monitor live server telemetry.</p>
         </div>
-        <a href="{{ url_for('admin.logout') }}" class="px-5 py-2.5 rounded-full bg-red-50 text-red-600 text-sm font-semibold hover:bg-red-100 transition-all border border-red-100">
-            Logout Admin
-        </a>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- 🕒 Live System Time Box (IST 12-Hour) -->
+            <div class="glass-card px-5 py-3 rounded-2xl border shadow-sm flex items-center gap-3.5" style="background: var(--bg-elevated); border-color: var(--border);">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-500/10 text-blue-500 border border-blue-500/20 shrink-0">
+                    <i data-lucide="clock" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span id="adminLiveClock" class="text-base font-black font-mono tracking-tight" style="color: var(--text-primary);">
+                            {{ ist_info.time_12h_full if ist_info else '06:00:00 PM' }}
+                        </span>
+                        <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">IST (UTC+5:30)</span>
+                    </div>
+                    <div class="text-[11px] font-medium" style="color: var(--text-muted);">
+                        <span id="adminLiveDate">{{ ist_info.date_str if ist_info else 'Sunday, 16 Aug 2026' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <a href="{{ url_for('admin.logout') }}" class="px-5 py-3 rounded-2xl bg-rose-500/10 text-rose-500 text-xs font-bold hover:bg-rose-500/20 transition-all border border-rose-500/20 flex items-center gap-2">
+                <i data-lucide="log-out" class="w-4 h-4"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Live Telemetry Mini-Cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+        <div class="glass-card p-4 rounded-2xl border flex items-center justify-between" style="background: var(--bg-elevated); border-color: var(--border);">
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider block" style="color: var(--text-muted);">Registered Users</span>
+                <span class="text-xl font-extrabold font-outfit" style="color: var(--text-primary);">{{ users|length }}</span>
+            </div>
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center bg-blue-500/10 text-blue-500">
+                <i data-lucide="users" class="w-4 h-4"></i>
+            </div>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border flex items-center justify-between" style="background: var(--bg-elevated); border-color: var(--border);">
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider block" style="color: var(--text-muted);">Pending Proofs</span>
+                <span class="text-xl font-extrabold font-outfit text-amber-500">{{ proofs|selectattr('status', 'equalto', 'pending')|list|length }}</span>
+            </div>
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center bg-amber-500/10 text-amber-500">
+                <i data-lucide="receipt" class="w-4 h-4"></i>
+            </div>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border flex items-center justify-between" style="background: var(--bg-elevated); border-color: var(--border);">
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider block" style="color: var(--text-muted);">Support Desk</span>
+                <span class="text-xl font-extrabold font-outfit text-emerald-500">{{ requests|selectattr('status', 'equalto', 'open')|list|length }} open</span>
+            </div>
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center bg-emerald-500/10 text-emerald-500">
+                <i data-lucide="message-square" class="w-4 h-4"></i>
+            </div>
+        </div>
+        <div class="glass-card p-4 rounded-2xl border flex items-center justify-between" style="background: var(--bg-elevated); border-color: var(--border);">
+            <div>
+                <span class="text-[10px] font-bold uppercase tracking-wider block" style="color: var(--text-muted);">AI Gateway Status</span>
+                <span class="text-xs font-bold uppercase {{ 'text-emerald-500' if omniroute_status == 'connected' else 'text-amber-500' }}">
+                    ● {{ omniroute_status }}
+                </span>
+            </div>
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center bg-purple-500/10 text-purple-500">
+                <i data-lucide="cpu" class="w-4 h-4"></i>
+            </div>
+        </div>
     </div>
 
     <!-- Tabs Navigation -->
@@ -30,7 +99,12 @@
         </button>
         <button onclick="switchTab('weekly-tests-tab')" id="nav-weekly-tests-tab" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-[#1d1d1f] transition-all whitespace-nowrap flex items-center gap-2">
             <i data-lucide="file-check" class="w-4 h-4"></i> Weekly Tests
-            {% if pending_tests|length > 0 %}<span class="bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full">{{ pending_tests|length }}</span>{% endif %}
+        </button>
+        <button onclick="switchTab('syllabus-tab')" id="nav-syllabus-tab" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-[#1d1d1f] transition-all whitespace-nowrap flex items-center gap-2">
+            <i data-lucide="book-open" class="w-4 h-4"></i> Syllabus Manager
+        </button>
+        <button onclick="switchTab('migration-tab')" id="nav-migration-tab" class="tab-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 hover:text-[#1d1d1f] transition-all whitespace-nowrap flex items-center gap-2">
+            <i data-lucide="database" class="w-4 h-4"></i> Migration
         </button>
     </div>
 
@@ -225,76 +299,260 @@
         </div>
     </div>
 
-    <!-- API Keys Tab -->
+    <!-- Direct AI & Gateway Config Tab -->
     <div id="api-tab" class="tab-content hidden">
-        <div class="glass-card bg-white p-8 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100">
-            <form action="{{ url_for('admin.dashboard') }}" method="POST" class="space-y-6">
-                
-                <!-- Allocation Settings -->
-                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                    <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                        <i data-lucide="sliders-horizontal" class="w-4 h-4 text-primary-500"></i> Background Task Key Allocation
-                    </label>
-                    <p class="text-xs text-gray-500 mb-4">Set the percentage of your total API keys that should be strictly reserved for background generation tasks (like building the Question Bank). The remaining keys will be reserved for Live Users. We recommend 50%.</p>
-                    <div class="flex items-center gap-4">
-                        <input type="range" name="background_key_percentage" min="0" max="100" value="{{ settings.get('BACKGROUND_KEY_PERCENTAGE', '50') }}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600" oninput="document.getElementById('alloc-val').innerText = this.value + '%'">
-                        <span id="alloc-val" class="font-bold text-primary-700 w-12 text-right">{{ settings.get('BACKGROUND_KEY_PERCENTAGE', '50') }}%</span>
+        <div class="space-y-6">
+
+            <!-- Status Banner -->
+            <div class="rounded-2xl border p-5 flex items-start gap-4
+                {% if omniroute_status == 'connected' %}bg-green-50 border-green-200
+                {% elif omniroute_status == 'offline' %}bg-red-50 border-red-200
+                {% else %}bg-gray-50 border-gray-200{% endif %}">
+                <div class="mt-0.5 flex-shrink-0">
+                    {% if omniroute_status == 'connected' %}
+                    <div class="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
+                        <i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i>
                     </div>
+                    {% elif omniroute_status == 'offline' %}
+                    <div class="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center">
+                        <i data-lucide="wifi-off" class="w-5 h-5 text-red-600"></i>
+                    </div>
+                    {% else %}
+                    <div class="w-9 h-9 rounded-full bg-gray-200 flex items-center justify-center">
+                        <i data-lucide="plug-zap" class="w-5 h-5 text-gray-500"></i>
+                    </div>
+                    {% endif %}
                 </div>
-                
-                <hr class="border-gray-100">
-
-                <!-- Gemini Keys -->
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                        <i data-lucide="sparkles" class="w-4 h-4 text-primary-500"></i> Gemini API Keys
-                    </label>
-                    <p class="text-xs text-gray-500 mb-3">Paste your Google Gemini keys here, separated by commas (e.g., <code class="bg-gray-100 px-1 rounded">AIzaSy..., AIzaSy...</code>)</p>
-                    <textarea name="gemini_keys" rows="3" class="w-full px-5 py-4 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all font-mono text-gray-600 resize-y">{{ settings.get('GEMINI_API_KEYS', '') }}</textarea>
+                <div class="flex-1 min-w-0">
+                    <h3 class="font-bold text-sm
+                        {% if omniroute_status == 'connected' %}text-green-800
+                        {% elif omniroute_status == 'offline' %}text-red-800
+                        {% else %}text-gray-700{% endif %}">
+                        AI Engine Status &mdash;
+                        {% if omniroute_status == 'connected' %}Active & Ready ✓
+                        {% elif omniroute_status == 'offline' %}Offline / Connection Error
+                        {% else %}No API Key Configured{% endif %}
+                    </h3>
+                    {% if omniroute_status_detail %}
+                    <p class="text-xs mt-1 font-mono truncate
+                        {% if omniroute_status == 'connected' %}text-green-700
+                        {% elif omniroute_status == 'offline' %}text-red-700
+                        {% else %}text-gray-500{% endif %}">
+                        {{ omniroute_status_detail }}
+                    </p>
+                    {% endif %}
+                    <p class="text-xs mt-1 text-gray-500">
+                        You can provide direct API keys (Google Gemini, OpenRouter, Groq, OpenAI) or an optional OmniRoute gateway.
+                    </p>
                 </div>
-                
-                <hr class="border-gray-100">
+            </div>
 
-                <!-- Nvidia Keys -->
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                        <i data-lucide="cpu" class="w-4 h-4 text-green-500"></i> NVIDIA NIM API Keys
-                    </label>
-                    <p class="text-xs text-gray-500 mb-3">Paste your NVIDIA NIM keys here, separated by commas (e.g., <code class="bg-gray-100 px-1 rounded">nvapi-..., nvapi-...</code>)</p>
-                    <textarea name="nvidia_keys" rows="3" class="w-full px-5 py-4 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all font-mono text-gray-600 resize-y">{{ settings.get('NVIDIA_NIM_API_KEYS', '') }}</textarea>
+            <!-- Multi-Key Pools KPI Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                <div class="p-3.5 rounded-2xl border bg-white shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-gray-500">Gemini Pool</span>
+                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                    </div>
+                    <div class="mt-2 text-xl font-extrabold text-gray-800">{{ provider_pools.gemini.count if provider_pools else 0 }} <span class="text-xs font-normal text-gray-400">keys</span></div>
                 </div>
-
-                <hr class="border-gray-100">
-
-                <!-- Groq Keys -->
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                        <i data-lucide="zap" class="w-4 h-4 text-accent-500"></i> Groq API Keys
-                    </label>
-                    <p class="text-xs text-gray-500 mb-3">Paste your Groq keys here, separated by commas (e.g., <code class="bg-gray-100 px-1 rounded">gsk_..., gsk_...</code>)</p>
-                    <textarea name="groq_keys" rows="3" class="w-full px-5 py-4 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all font-mono text-gray-600 resize-y">{{ settings.get('GROQ_API_KEYS', '') }}</textarea>
+                <div class="p-3.5 rounded-2xl border bg-white shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-gray-500">Groq Pool</span>
+                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    </div>
+                    <div class="mt-2 text-xl font-extrabold text-gray-800">{{ provider_pools.groq.count if provider_pools else 0 }} <span class="text-xs font-normal text-gray-400">keys</span></div>
                 </div>
-
-                <hr class="border-gray-100">
-
-                <!-- OpenRouter Keys -->
-                <div>
-                    <label class="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                        <i data-lucide="globe" class="w-4 h-4 text-primary-500"></i> OpenRouter API Keys
-                    </label>
-                    <p class="text-xs text-gray-500 mb-3">Paste your OpenRouter keys here, separated by commas (e.g., <code class="bg-gray-100 px-1 rounded">sk-or-..., sk-or-...</code>)</p>
-                    <textarea name="openrouter_keys" rows="3" class="w-full px-5 py-4 rounded-xl bg-gray-50 border border-gray-200 text-sm focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all font-mono text-gray-600 resize-y">{{ settings.get('OPENROUTER_API_KEYS', '') }}</textarea>
+                <div class="p-3.5 rounded-2xl border bg-white shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-gray-500">OpenRouter</span>
+                        <span class="w-2 h-2 rounded-full bg-purple-500"></span>
+                    </div>
+                    <div class="mt-2 text-xl font-extrabold text-gray-800">{{ provider_pools.openrouter.count if provider_pools else 0 }} <span class="text-xs font-normal text-gray-400">keys</span></div>
                 </div>
-
-                <div class="pt-4">
-                    <button type="submit" class="w-full py-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-all shadow-md shadow-primary-500/25 flex items-center justify-center gap-2">
-                        <i data-lucide="save" class="w-5 h-5"></i> Save All Keys to Database
-                    </button>
+                <div class="p-3.5 rounded-2xl border bg-white shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-gray-500">OpenAI Pool</span>
+                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    </div>
+                    <div class="mt-2 text-xl font-extrabold text-gray-800">{{ provider_pools.openai.count if provider_pools else 0 }} <span class="text-xs font-normal text-gray-400">keys</span></div>
                 </div>
-            </form>
+                <div class="p-3.5 rounded-2xl border bg-white shadow-sm flex flex-col justify-between">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-gray-500">NVIDIA NIM</span>
+                        <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    </div>
+                    <div class="mt-2 text-xl font-extrabold text-gray-800">{{ provider_pools.nvidia.count if provider_pools else 0 }} <span class="text-xs font-normal text-gray-400">keys</span></div>
+                </div>
+                <div class="p-3.5 rounded-2xl border bg-white shadow-sm flex flex-col justify-between bg-gradient-to-br from-primary-50 to-blue-50">
+                    <div class="flex items-center justify-between">
+                        <span class="text-[11px] font-bold text-primary-700">Total Pooled</span>
+                        <i data-lucide="layers" class="w-3.5 h-3.5 text-primary-600"></i>
+                    </div>
+                    <div class="mt-2 text-xl font-extrabold text-primary-700">{{ provider_pools.total_keys if provider_pools else 0 }} <span class="text-xs font-normal text-primary-500">active</span></div>
+                </div>
+            </div>
+
+            <!-- Config Form -->
+            <div class="bg-white rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] border border-gray-100 p-6 sm:p-8">
+                <h2 class="text-xl font-bold font-outfit text-[#1d1d1f] flex items-center gap-2 mb-1">
+                    <i data-lucide="key" class="w-5 h-5 text-primary-500"></i> Multi-Key Provider Pools & Auto-Failover
+                </h2>
+                <p class="text-sm text-gray-500 mb-6">
+                    Enter one or multiple keys per provider (separated by newlines or commas). The system automatically pools and rotates all keys via <strong>Round-Robin</strong> and performs <strong>instant failover</strong> if any key hits rate limits (429)!
+                </p>
+
+                <form action="{{ url_for('admin.dashboard') }}" method="POST" class="space-y-6">
+                    <input type="hidden" name="form_type" value="ai_keys">
+
+                    <!-- Option 1: Google Gemini (Recommended) -->
+                    <div class="p-5 rounded-2xl border border-blue-100 bg-blue-50/30 space-y-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                                <label class="text-sm font-bold text-gray-800">Google Gemini Keys Pool</label>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-700">
+                                    {{ provider_pools.gemini.count if provider_pools else 0 }} keys active
+                                </span>
+                            </div>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-xs text-blue-600 font-semibold hover:underline flex items-center gap-1">
+                                Get Free Gemini Keys <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500">Paste multiple keys (one key per line). All keys will rotate seamlessly for high RPM.</p>
+                        <textarea name="gemini_api_key" rows="3"
+                            placeholder="AIzaSy... (Key 1)&#10;AIzaSy... (Key 2)&#10;AIzaSy... (Key 3)"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-gray-800 custom-scrollbar">{{ settings.get('GEMINI_API_KEY', '') }}</textarea>
+                    </div>
+
+                    <!-- Option 2: Groq -->
+                    <div class="p-5 rounded-2xl border border-amber-100 bg-amber-50/30 space-y-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                <label class="text-sm font-bold text-gray-800">Groq Keys Pool (Ultra-Fast Llama 3.3)</label>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-700">
+                                    {{ provider_pools.groq.count if provider_pools else 0 }} keys active
+                                </span>
+                            </div>
+                            <a href="https://console.groq.com/keys" target="_blank" class="text-xs text-amber-600 font-semibold hover:underline flex items-center gap-1">
+                                Groq Console <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500">Paste multiple Groq keys (one key per line). Instantaneous fallback if rate-limited.</p>
+                        <textarea name="groq_api_key" rows="3"
+                            placeholder="gsk_... (Key 1)&#10;gsk_... (Key 2)"
+                            class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono focus:outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 text-gray-800 custom-scrollbar">{{ settings.get('GROQ_API_KEY', '') }}</textarea>
+                    </div>
+
+                    <!-- Option 3: OpenRouter -->
+                    <div class="p-5 rounded-2xl border border-purple-100 bg-purple-50/30 space-y-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                                <label class="text-sm font-bold text-gray-800">OpenRouter Keys Pool (200+ Models)</label>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-700">
+                                    {{ provider_pools.openrouter.count if provider_pools else 0 }} keys active
+                                </span>
+                            </div>
+                            <a href="https://openrouter.ai/keys" target="_blank" class="text-xs text-purple-600 font-semibold hover:underline flex items-center gap-1">
+                                OpenRouter Keys <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500">Paste multiple OpenRouter keys (one key per line).</p>
+                        <textarea name="openrouter_api_key" rows="2"
+                            placeholder="sk-or-v1-..."
+                            class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-gray-800 custom-scrollbar">{{ settings.get('OPENROUTER_API_KEY', '') }}</textarea>
+                    </div>
+
+                    <!-- Option 4: OpenAI -->
+                    <div class="p-5 rounded-2xl border border-emerald-100 bg-emerald-50/30 space-y-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                                <label class="text-sm font-bold text-gray-800">OpenAI Keys Pool (GPT-4o / GPT-4o-mini)</label>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700">
+                                    {{ provider_pools.openai.count if provider_pools else 0 }} keys active
+                                </span>
+                            </div>
+                            <a href="https://platform.openai.com/api-keys" target="_blank" class="text-xs text-emerald-600 font-semibold hover:underline flex items-center gap-1">
+                                OpenAI Keys <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500">Paste multiple OpenAI keys (one key per line).</p>
+                        <textarea name="openai_api_key" rows="2"
+                            placeholder="sk-proj-..."
+                            class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 text-gray-800 custom-scrollbar">{{ settings.get('OPENAI_API_KEY', '') }}</textarea>
+                    </div>
+
+                    <!-- Option 5: NVIDIA NIM -->
+                    <div class="p-5 rounded-2xl border border-green-100 bg-green-50/30 space-y-2">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                                <label class="text-sm font-bold text-gray-800">NVIDIA NIM Keys Pool</label>
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-green-100 text-green-700">
+                                    {{ provider_pools.nvidia.count if provider_pools else 0 }} keys active
+                                </span>
+                            </div>
+                            <a href="https://build.nvidia.com" target="_blank" class="text-xs text-green-600 font-semibold hover:underline flex items-center gap-1">
+                                NVIDIA Build <i data-lucide="external-link" class="w-3 h-3"></i>
+                            </a>
+                        </div>
+                        <p class="text-xs text-gray-500">Paste multiple NVIDIA NIM keys (one key per line).</p>
+                        <textarea name="nvidia_api_key" rows="2"
+                            placeholder="nvapi-..."
+                            class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 text-gray-800 custom-scrollbar">{{ settings.get('NVIDIA_API_KEY', '') }}</textarea>
+                    </div>
+
+                    <!-- Optional: OmniRoute Gateway -->
+                    <details class="p-5 rounded-2xl border border-gray-200 bg-gray-50/50 space-y-4">
+                        <summary class="font-bold text-sm text-gray-700 cursor-pointer flex items-center justify-between">
+                            <span class="flex items-center gap-2"><i data-lucide="route" class="w-4 h-4 text-gray-500"></i> Advanced: Self-Hosted OmniRoute Gateway (Optional)</span>
+                            <span class="text-xs text-gray-400 font-normal">Click to expand</span>
+                        </summary>
+                        <div class="pt-4 space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">OmniRoute Base URL</label>
+                                <input type="text" name="omniroute_base_url"
+                                    value="{{ settings.get('OMNIROUTE_BASE_URL', '') }}"
+                                    placeholder="http://localhost:20128/v1"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-600 mb-1">OmniRoute API Key</label>
+                                <input type="password" name="omniroute_api_key"
+                                    value="{{ settings.get('OMNIROUTE_API_KEY', '') }}"
+                                    placeholder="omr_..."
+                                    class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono">
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">Chat Model</label>
+                                    <input type="text" name="omniroute_model"
+                                        value="{{ settings.get('OMNIROUTE_MODEL', 'openrouter/free') }}"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-600 mb-1">Vision Model</label>
+                                    <input type="text" name="omniroute_vision_model"
+                                        value="{{ settings.get('OMNIROUTE_VISION_MODEL', 'openrouter/free') }}"
+                                        class="w-full px-4 py-2.5 rounded-xl bg-white border border-gray-200 text-xs font-mono">
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <div class="pt-2">
+                        <button type="submit" class="w-full py-4 rounded-xl bg-primary-600 hover:bg-primary-700 text-white font-semibold transition-all shadow-md shadow-primary-500/25 flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-5 h-5"></i> Save & Pool All AI Keys
+                        </button>
+                    </div>
+                </form>
+            </div>
+
         </div>
     </div>
-</div>
 
 
     <!-- Weekly Tests Tab -->
@@ -305,7 +563,7 @@
                     <i data-lucide="file-check" class="w-5 h-5 text-primary-500"></i> Pending Weekly Tests
                 </h2>
             </div>
-            {% if pending_tests and pending_tests|length > 0 %}
+            {% if false %}
             <div class="overflow-x-auto">
                 <table class="w-full text-left border-collapse">
                     <thead>
@@ -352,95 +610,552 @@
         </div>
     </div>
 
-    <!-- Syllabus Tab -->
+    <!-- Syllabus Manager Tab -->
     <div id="syllabus-tab" class="tab-content hidden">
-        <div class="glass-card bg-white p-8 rounded-3xl border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Upload Syllabus PDF</h2>
-            <p class="text-gray-500 text-sm mb-6">Upload a raw syllabus PDF to automatically parse and insert it into the global database structure.</p>
+        <div class="space-y-6">
 
-            <form method="POST" action="{{ url_for('admin.upload_syllabus') }}" enctype="multipart/form-data" class="space-y-5" onsubmit="
-                const btn = document.getElementById('submitBtn');
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-wait');
-                btn.innerHTML = '⚙️ AI is processing PDF... ~20s';
-            ">
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Education Level (e.g. "Diploma")</label>
-                    <input type="text" name="education" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors" placeholder="Diploma">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Board (e.g. "SBTET TG")</label>
-                    <input type="text" name="board" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors" placeholder="SBTET TG">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Semester / Year (e.g. "c24_1st_sem")</label>
-                    <input type="text" name="year" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors" placeholder="c24_1st_sem">
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Group / Branch (e.g. "EEE")</label>
-                    <input type="text" name="group" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors" placeholder="EEE">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Upload Syllabus PDF</label>
-                    <input type="file" name="pdf_file" accept=".pdf" required class="w-full text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-600 file:text-white hover:file:bg-primary-700">
-                </div>
-
-                <button type="submit" id="submitBtn" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-colors mt-2">
-                    Upload and Parse PDF
+            <!-- Sub-tabs -->
+            <div class="flex gap-2 mb-2">
+                <button onclick="switchSyllabusTab('manual')" id="syllabus-sub-manual" class="syllabus-sub-btn px-4 py-2 rounded-xl text-sm font-semibold bg-primary-50 text-primary-700 transition-all flex items-center gap-2">
+                    <i data-lucide="pencil-line" class="w-4 h-4"></i> Manual Entry
                 </button>
-            </form>
+                <button onclick="switchSyllabusTab('pdf')" id="syllabus-sub-pdf" class="syllabus-sub-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all flex items-center gap-2">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> PDF Auto-Parse
+                </button>
+                <button onclick="switchSyllabusTab('view')" id="syllabus-sub-view" class="syllabus-sub-btn px-4 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:bg-gray-50 transition-all flex items-center gap-2">
+                    <i data-lucide="folder-open" class="w-4 h-4"></i> Browse Files
+                </button>
+            </div>
+
+            <!-- MANUAL ENTRY SUB-TAB -->
+            <div id="syllabus-manual" class="syllabus-sub-content block">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+                        <i data-lucide="pencil-line" class="w-5 h-5 text-primary-500"></i> Manual Syllabus Entry
+                    </h2>
+                    <p class="text-gray-500 text-sm mb-6">Manually define education level, board, semester, branch and add subjects with chapters and topics.</p>
+
+                    <form method="POST" action="{{ url_for('admin.add_syllabus_manual') }}" class="space-y-5" id="manual-syllabus-form">
+                        <!-- Row 1: Education + Board -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Education Level</label>
+                                <input type="text" name="education" required list="edu-suggestions"
+                                    class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                    placeholder="diploma">
+                                <datalist id="edu-suggestions">
+                                    <option value="diploma">
+                                    <option value="intermediate">
+                                    <option value="btech">
+                                </datalist>
+                                <p class="text-xs text-gray-400 mt-1">Lowercase, use underscores (e.g. diploma)</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Board / University</label>
+                                <input type="text" name="board" required list="board-suggestions"
+                                    class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                    placeholder="sbtet_tg">
+                                <datalist id="board-suggestions">
+                                    <option value="sbtet_tg">
+                                    <option value="tg">
+                                    <option value="ap">
+                                </datalist>
+                                <p class="text-xs text-gray-400 mt-1">Lowercase with underscores (e.g. sbtet_tg)</p>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Semester + Group/Branch -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Semester / Year (File ID)</label>
+                                <input type="text" name="year" required list="sem-suggestions"
+                                    class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                    placeholder="c24_1st_sem">
+                                <datalist id="sem-suggestions">
+                                    <option value="c24_1st_sem">
+                                    <option value="c24_2nd_sem">
+                                    <option value="c24_3rd_sem">
+                                    <option value="c24_4th_sem">
+                                    <option value="c24_5th_sem">
+                                    <option value="first_year">
+                                    <option value="second_year">
+                                </datalist>
+                                <p class="text-xs text-gray-400 mt-1">Used as filename (e.g. c24_1st_sem → c24_1st_sem.json)</p>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Group / Branch</label>
+                                <input type="text" name="group" required
+                                    class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                                    placeholder="AI &amp; ML">
+                                <p class="text-xs text-gray-400 mt-1">Branch name (e.g. EEE, MPC, AI &amp; ML)</p>
+                            </div>
+                        </div>
+
+                        <!-- Subjects Builder -->
+                        <div class="border border-gray-200 rounded-2xl overflow-hidden">
+                            <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between">
+                                <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                                    <i data-lucide="list" class="w-4 h-4 text-primary-500"></i> Subjects
+                                </h3>
+                                <button type="button" onclick="addSubject()" class="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1">
+                                    <i data-lucide="plus" class="w-3 h-3"></i> Add Subject
+                                </button>
+                            </div>
+                            <div id="subjects-container" class="p-5 space-y-6">
+                                <!-- subjects added dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Hidden JSON data -->
+                        <input type="hidden" name="subjects_json" id="subjects-json-input">
+
+                        <button type="submit" onclick="serializeSubjects()" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3.5 px-4 rounded-xl transition-all shadow-md shadow-primary-500/20 flex items-center justify-center gap-2">
+                            <i data-lucide="save" class="w-5 h-5"></i> Save Syllabus to JSON File
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- PDF AUTO-PARSE SUB-TAB -->
+            <div id="syllabus-pdf" class="syllabus-sub-content hidden">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-8">
+                    <h2 class="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-5 h-5 text-primary-500"></i> AI PDF Parser
+                    </h2>
+                    <p class="text-gray-500 text-sm mb-6">Upload a syllabus PDF and AI will automatically extract subjects, chapters, and topics.</p>
+
+                    <form method="POST" action="{{ url_for('admin.upload_syllabus') }}" enctype="multipart/form-data" class="space-y-5" onsubmit="
+                        const btn = document.getElementById('submitBtnPdf');
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50', 'cursor-wait');
+                        btn.innerHTML = '⚙️ AI is processing PDF... ~20s';
+                    ">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Education Level</label>
+                                <input type="text" name="education" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 transition-all" placeholder="diploma">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Board</label>
+                                <input type="text" name="board" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 transition-all" placeholder="sbtet_tg">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Semester / Year</label>
+                                <input type="text" name="year" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 transition-all" placeholder="c24_1st_sem">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Group / Branch</label>
+                                <input type="text" name="group" required class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-primary-500 transition-all" placeholder="EEE">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Syllabus PDF</label>
+                            <input type="file" name="pdf_file" accept=".pdf" required class="w-full text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary-600 file:text-white hover:file:bg-primary-700">
+                        </div>
+                        <button type="submit" id="submitBtnPdf" class="w-full bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3.5 px-4 rounded-xl transition-all shadow-md shadow-primary-500/20">
+                            Upload and Parse PDF with AI
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- BROWSE FILES SUB-TAB -->
+            <div id="syllabus-view" class="syllabus-sub-content hidden">
+                <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden">
+                    <div class="p-6 border-b border-gray-100 bg-gray-50/50">
+                        <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="folder-open" class="w-5 h-5 text-primary-500"></i> Existing Syllabus Files
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">These JSON files are in <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">data/syllabus/</code></p>
+                    </div>
+                    <div class="p-6">
+                        {% if syllabus_files %}
+                        <div class="space-y-3">
+                            {% for sf in syllabus_files %}
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-50 border border-gray-100 hover:border-primary-200 transition-all">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-primary-100 text-primary-600 flex items-center justify-center">
+                                        <i data-lucide="file-json" class="w-4 h-4"></i>
+                                    </div>
+                                    <div>
+                                        <p class="font-semibold text-gray-800 text-sm">{{ sf.path }}</p>
+                                        <p class="text-xs text-gray-400">{{ sf.groups|join(', ') }}</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs text-gray-400 font-mono">{{ sf.size_kb }}KB</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="text-center py-12">
+                            <i data-lucide="folder" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+                            <p class="text-gray-500 text-sm">No syllabus files found.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
+    <!-- Migration Tab -->
+    <div id="migration-tab" class="tab-content hidden">
+        <div class="space-y-6">
+
+            <!-- Format Reference Card -->
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden">
+                <div class="p-6 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="file-code" class="w-5 h-5 text-[#0071e3]"></i> JSON Format Reference
+                        </h2>
+                        <p class="text-sm text-gray-500 mt-1">The file must be a <strong>JSON array</strong> of question objects.</p>
+                    </div>
+                    <button onclick="copyExampleJson()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0071e3]/10 hover:bg-[#0071e3]/20 text-[#0071e3] text-sm font-semibold transition-all border border-[#0071e3]/20">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                        <span id="copy-btn-text">Copy Example</span>
+                    </button>
+                </div>
+
+                <div class="p-6 space-y-5">
+
+                    <!-- Schema Table -->
+                    <div class="overflow-x-auto rounded-xl border border-gray-100">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100">
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-40">Field</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-24">Type</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600 w-24">Required</th>
+                                    <th class="py-3 px-4 font-bold text-gray-600">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-50 font-mono text-xs">
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">id</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-[10px]">REQUIRED</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">Unique UUID for the question (used for deduplication — ON CONFLICT DO NOTHING)</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">subject_id</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-[10px]">REQUIRED</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">Subject UUID from the <code class="bg-gray-100 px-1 rounded">subjects</code> table</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">unit_id</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-[10px]">REQUIRED</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">Unit / Chapter UUID from the <code class="bg-gray-100 px-1 rounded">units</code> table</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">topic_id</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-[10px]">REQUIRED</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">Topic UUID from the <code class="bg-gray-100 px-1 rounded">topics</code> table</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">difficulty</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold text-[10px]">OPTIONAL</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">One of: <code class="bg-gray-100 px-1 rounded">easy</code> / <code class="bg-gray-100 px-1 rounded">medium</code> / <code class="bg-gray-100 px-1 rounded">hard</code></td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">question</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-[10px]">REQUIRED</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">The question text (supports LaTeX math in <code class="bg-gray-100 px-1 rounded">$...$</code>)</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">options</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-[10px]">REQUIRED</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">JSON-stringified array of 4 choices, e.g. <code class="bg-gray-100 px-1 rounded">"[\"A\",\"B\",\"C\",\"D\"]"</code></td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">correct_answer</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold text-[10px]">REQUIRED</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">Exact text of the correct option (must match one of the options)</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">explanation</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold text-[10px]">OPTIONAL</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">Why the correct answer is correct</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50">
+                                    <td class="py-3 px-4 text-[#0071e3] font-bold">created_at</td>
+                                    <td class="py-3 px-4 text-gray-500">string</td>
+                                    <td class="py-3 px-4"><span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 font-semibold text-[10px]">OPTIONAL</span></td>
+                                    <td class="py-3 px-4 text-gray-600 font-sans">ISO timestamp, e.g. <code class="bg-gray-100 px-1 rounded">2025-01-01T00:00:00</code></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Example JSON -->
+                    <div>
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold uppercase tracking-widest text-gray-500">Example JSON (1 question)</span>
+                        </div>
+                        <pre id="example-json" class="bg-gray-950 text-gray-100 rounded-2xl p-5 text-xs font-mono overflow-x-auto leading-relaxed border border-gray-800"><span class="text-gray-500">[</span>
+  <span class="text-gray-500">{</span>
+    <span class="text-blue-400">"id"</span><span class="text-gray-400">:</span>              <span class="text-green-400">"550e8400-e29b-41d4-a716-446655440000"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"subject_id"</span><span class="text-gray-400">:</span>    <span class="text-green-400">"&lt;uuid from subjects table&gt;"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"unit_id"</span><span class="text-gray-400">:</span>       <span class="text-green-400">"&lt;uuid from units table&gt;"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"topic_id"</span><span class="text-gray-400">:</span>      <span class="text-green-400">"&lt;uuid from topics table&gt;"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"difficulty"</span><span class="text-gray-400">:</span>    <span class="text-green-400">"medium"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"question"</span><span class="text-gray-400">:</span>      <span class="text-green-400">"What is the value of $2^{10}$?"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"options"</span><span class="text-gray-400">:</span>       <span class="text-green-400">"[\"512\", \"1024\", \"2048\", \"256\"]"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"correct_answer"</span><span class="text-gray-400">:</span> <span class="text-green-400">"1024"</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"explanation"</span><span class="text-gray-400">:</span>   <span class="text-green-400">"$2^{10} = 1024$. Powers of 2 double each step."</span><span class="text-gray-500">,</span>
+    <span class="text-blue-400">"created_at"</span><span class="text-gray-400">:</span>    <span class="text-green-400">"2025-01-01T00:00:00"</span>
+  <span class="text-gray-500">}</span>
+<span class="text-gray-500">]</span></pre>
+                    </div>
+
+                    <!-- How to generate -->
+                    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                        <h4 class="font-bold text-amber-800 text-sm flex items-center gap-2 mb-2">
+                            <i data-lucide="terminal" class="w-4 h-4"></i> How to generate the export from local SQLite
+                        </h4>
+                        <p class="text-amber-700 text-xs mb-2">Run this from the project root to generate <code class="bg-amber-100 px-1.5 py-0.5 rounded font-mono">question_bank_export.json</code>:</p>
+                        <pre class="bg-amber-900/10 border border-amber-200 rounded-xl p-3 text-xs font-mono text-amber-800 select-all">python export_qb.py</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Card -->
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-[0_8px_30px_rgba(0,0,0,0.04)] p-8">
+                <h2 class="text-xl font-bold text-gray-900 mb-1 flex items-center gap-2">
+                    <i data-lucide="upload" class="w-5 h-5 text-[#0071e3]"></i> Upload & Import
+                </h2>
+                <p class="text-gray-500 text-sm mb-6">Upload a <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs font-mono">question_bank_export.json</code> file matching the format above to bulk-import into the production database.</p>
+
+                <form method="POST" action="{{ url_for('admin.import_questions') }}" enctype="multipart/form-data" class="space-y-5" onsubmit="
+                    const btn = this.querySelector('button[type=submit]');
+                    btn.innerHTML = '<svg class=\'animate-spin w-5 h-5\' xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\'><circle class=\'opacity-25\' cx=\'12\' cy=\'12\' r=\'10\' stroke=\'currentColor\' stroke-width=\'4\'></circle><path class=\'opacity-75\' fill=\'currentColor\' d=\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z\'></path></svg> Importing... Please wait';
+                    btn.disabled = true;
+                ">
+                    <div class="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center hover:border-[#0071e3]/40 transition-colors">
+                        <i data-lucide="file-json" class="w-10 h-10 text-gray-300 mx-auto mb-3"></i>
+                        <p class="text-sm font-semibold text-gray-600 mb-1">Drop your JSON file here or click to browse</p>
+                        <p class="text-xs text-gray-400 mb-4">Only <code class="bg-gray-100 px-1 rounded">.json</code> files are accepted</p>
+                        <input type="file" name="json_file" id="json-file-input" accept=".json" required
+                            class="hidden" onchange="updateFileName(this)">
+                        <label for="json-file-input" class="cursor-pointer inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#0071e3] hover:bg-[#0077ed] text-white text-sm font-semibold transition-all shadow-md shadow-blue-500/20">
+                            <i data-lucide="folder-open" class="w-4 h-4"></i> Choose File
+                        </label>
+                        <p id="file-name-display" class="mt-3 text-xs text-gray-500 font-mono">No file selected</p>
+                    </div>
+
+                    <button type="submit" class="w-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                        <i data-lucide="upload" class="w-5 h-5"></i> Start Import
+                    </button>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+
 <script>
 function switchTab(tabId) {
-    // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(el => {
         el.classList.add('hidden');
         el.classList.remove('block');
     });
-    
-    // Reset all tab buttons
     document.querySelectorAll('.tab-btn').forEach(el => {
-        el.classList.remove('bg-primary-50', 'text-primary-700');
+        el.classList.remove('bg-primary-50', 'text-primary-700', 'active');
         el.classList.add('text-gray-500', 'hover:bg-gray-50', 'hover:text-[#1d1d1f]');
     });
-    
-    // Show selected tab
     const target = document.getElementById(tabId);
     if(target) {
         target.classList.remove('hidden');
         target.classList.add('block');
     }
-    
-    // Highlight selected button
     const btn = document.getElementById('nav-' + tabId);
     if(btn) {
         btn.classList.add('bg-primary-50', 'text-primary-700');
         btn.classList.remove('text-gray-500', 'hover:bg-gray-50', 'hover:text-[#1d1d1f]');
     }
 }
+
+function switchSyllabusTab(name) {
+    document.querySelectorAll('.syllabus-sub-content').forEach(el => {
+        el.classList.add('hidden');
+        el.classList.remove('block');
+    });
+    document.querySelectorAll('.syllabus-sub-btn').forEach(el => {
+        el.classList.remove('bg-primary-50', 'text-primary-700');
+        el.classList.add('text-gray-500', 'hover:bg-gray-50');
+    });
+    const t = document.getElementById('syllabus-' + name);
+    if(t) { t.classList.remove('hidden'); t.classList.add('block'); }
+    const b = document.getElementById('syllabus-sub-' + name);
+    if(b) { b.classList.add('bg-primary-50', 'text-primary-700'); b.classList.remove('text-gray-500', 'hover:bg-gray-50'); }
+}
+
+// ===== MANUAL SYLLABUS BUILDER =====
+let subjectCount = 0;
+
+function addSubject() {
+    subjectCount++;
+    const idx = subjectCount;
+    const container = document.getElementById('subjects-container');
+    const div = document.createElement('div');
+    div.id = 'subject-' + idx;
+    div.className = 'border border-gray-200 rounded-2xl overflow-hidden';
+    div.innerHTML = `
+        <div class="bg-gray-50 px-5 py-3 border-b border-gray-200 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3 flex-1">
+                <span class="w-6 h-6 rounded-full bg-primary-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">${idx}</span>
+                <input type="text" placeholder="Subject Name (e.g. Engineering Mathematics)" id="subj-name-${idx}"
+                    class="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-primary-500 transition-all font-semibold">
+                <input type="text" placeholder="Code (e.g. SC-102)" id="subj-code-${idx}"
+                    class="w-36 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-600 focus:outline-none focus:border-primary-500 transition-all font-mono">
+            </div>
+            <button type="button" onclick="removeSubject(${idx})" class="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors flex-shrink-0" title="Remove subject">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-5 space-y-4">
+            <div id="chapters-${idx}" class="space-y-3"></div>
+            <button type="button" onclick="addChapter(${idx})" class="w-full py-2 border border-dashed border-gray-300 hover:border-primary-400 text-gray-500 hover:text-primary-600 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                Add Chapter / Unit
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+}
+
+function removeSubject(idx) {
+    const el = document.getElementById('subject-' + idx);
+    if (el) el.remove();
+}
+
+let chapterCounters = {};
+function addChapter(subjectIdx) {
+    if (!chapterCounters[subjectIdx]) chapterCounters[subjectIdx] = 0;
+    chapterCounters[subjectIdx]++;
+    const chapIdx = chapterCounters[subjectIdx];
+    const key = `chap-${subjectIdx}-${chapIdx}`;
+    const container = document.getElementById('chapters-' + subjectIdx);
+    const div = document.createElement('div');
+    div.id = key;
+    div.className = 'border border-gray-100 rounded-xl overflow-hidden';
+    div.innerHTML = `
+        <div class="bg-gray-50/80 px-4 py-2.5 border-b border-gray-100 flex items-center gap-3">
+            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Chapter</span>
+            <input type="text" placeholder="Chapter name (e.g. Algebra)" id="${key}-name"
+                class="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-900 focus:outline-none focus:border-primary-500 transition-all">
+            <button type="button" onclick="removeChapter('${key}')" class="text-red-300 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-4 space-y-2">
+            <label class="block text-xs font-semibold text-gray-500 mb-1">Topics <span class="font-normal">(one per line)</span></label>
+            <textarea id="${key}-topics" rows="4" placeholder="Topic 1&#10;Topic 2&#10;Topic 3"
+                class="w-full bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-primary-500 transition-all resize-y font-mono"></textarea>
+        </div>
+    `;
+    container.appendChild(div);
+}
+
+function removeChapter(key) {
+    const el = document.getElementById(key);
+    if (el) el.remove();
+}
+
+function serializeSubjects() {
+    const subjects = [];
+    document.querySelectorAll('[id^="subject-"]').forEach(subEl => {
+        const idx = subEl.id.replace('subject-', '');
+        const name = document.getElementById(`subj-name-${idx}`)?.value.trim();
+        const code = document.getElementById(`subj-code-${idx}`)?.value.trim();
+        if (!name) return;
+        const chapters = [];
+        subEl.querySelectorAll('[id^="chap-"]').forEach(chapEl => {
+            const key = chapEl.id;
+            if (!key.includes(`chap-${idx}-`)) return;
+            const chapName = document.getElementById(`${key}-name`)?.value.trim();
+            const topicsText = document.getElementById(`${key}-topics`)?.value.trim();
+            if (!chapName) return;
+            const topics = topicsText ? topicsText.split('\n').map(t => t.trim()).filter(t => t) : [];
+            chapters.push({ name: chapName, topics });
+        });
+        subjects.push({ subject: name, code: code || '', chapters });
+    });
+    document.getElementById('subjects-json-input').value = JSON.stringify(subjects);
+    return subjects.length > 0;
+}
+
+// ===== MIGRATION TAB HELPERS =====
+function copyExampleJson() {
+    const example = `[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "subject_id": "<uuid from subjects table>",
+    "unit_id": "<uuid from units table>",
+    "topic_id": "<uuid from topics table>",
+    "difficulty": "medium",
+    "question": "What is the value of $2^{10}$?",
+    "options": "[\\\"512\\\", \\\"1024\\\", \\\"2048\\\", \\\"256\\\"]",
+    "correct_answer": "1024",
+    "explanation": "$2^{10} = 1024$. Powers of 2 double each step.",
+    "created_at": "2025-01-01T00:00:00"
+  }
+]`;
+    navigator.clipboard.writeText(example).then(() => {
+        const btn = document.getElementById('copy-btn-text');
+        if (btn) {
+            btn.textContent = '✓ Copied!';
+            setTimeout(() => { btn.textContent = 'Copy Example'; }, 2000);
+        }
+    }).catch(() => {
+        alert('Could not copy to clipboard. Please copy manually from the code block.');
+    });
+}
+
+function updateFileName(input) {
+    const display = document.getElementById('file-name-display');
+    if (display) {
+        display.textContent = input.files[0] ? input.files[0].name : 'No file selected';
+    }
+}
+
+// Live Admin IST Clock Updater
+function updateAdminLiveClock() {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000;
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60 * 1000);
+    const istDate = new Date(utc + istOffset);
+    
+    let hours = istDate.getHours();
+    const minutes = String(istDate.getMinutes()).padStart(2, '0');
+    const seconds = String(istDate.getSeconds()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    
+    const timeString = `${hours}:${minutes}:${seconds} ${ampm}`;
+    const clockEl = document.getElementById('adminLiveClock');
+    if (clockEl) {
+        clockEl.textContent = timeString;
+    }
+}
+setInterval(updateAdminLiveClock, 1000);
+updateAdminLiveClock();
 </script>
 
-    <!-- Migration Tab -->
-    <div id="migration-tab" class="tab-content hidden">
-        <div class="glass-card bg-white p-8 rounded-3xl border border-gray-200 shadow-[0_8px_30px_rgba(0,0,0,0.04)]">
-            <h2 class="text-2xl font-bold text-gray-900 mb-2">Migrate Question Bank</h2>
-            <p class="text-gray-500 text-sm mb-6">Upload a JSON export of the local SQLite question_bank to insert it directly into the production database.</p>
-
-            <form method="POST" action="{{ url_for('admin.import_questions') }}" enctype="multipart/form-data" class="space-y-5" onsubmit="this.querySelector('button').innerHTML = 'Importing... Please wait'; this.querySelector('button').disabled = true;">
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-2">Upload question_bank_export.json</label>
-                    <input type="file" name="json_file" accept=".json" required class="w-full text-gray-900 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#0071e3] file:text-white hover:file:bg-[#0077ed]">
-                </div>
-                <button type="submit" class="w-full bg-[#0071e3] hover:bg-[#0077ed] text-white font-bold py-3 px-4 rounded-xl shadow-lg transition-all transform hover:-translate-y-1 mt-2">
-                    Start Import
-                </button>
-            </form>
-        </div>
-    </div>
+</div>
 {% endblock %}
+
+

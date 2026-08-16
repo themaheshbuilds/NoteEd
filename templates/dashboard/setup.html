@@ -1,134 +1,267 @@
 {% extends "base.html" %}
-{% block title %}Setup Your Syllabus - Study AI{% endblock %}
+{% block title %}Setup Your Syllabus - NoteEd{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto mt-12 bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
-    <h2 class="text-3xl font-semibold mb-2 text-gray-900">Let's set up your syllabus</h2>
-    <p class="text-gray-500 mb-8">Select your course details to automatically load your entire syllabus, subjects, and
-        topics.</p>
+<div class="max-w-2xl mx-auto my-8 sm:my-12 p-6 sm:p-8 rounded-3xl shadow-xl border"
+     style="background: var(--card); border-color: var(--border);">
+    
+    <div class="flex items-center gap-3 mb-3">
+        <div class="w-10 h-10 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center text-xl">
+            📚
+        </div>
+        <div>
+            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight" style="color: var(--text-primary);">Set Up Your Syllabus</h2>
+            <p class="text-xs sm:text-sm text-gray-500">Pick from verified curriculum or specify any custom degree/MBA course.</p>
+        </div>
+    </div>
 
-    <form method="POST" action="{{ url_for('dashboard.setup') }}" class="space-y-6" onsubmit="
+    <!-- Mode Selector Tabs -->
+    <div class="grid grid-cols-2 gap-2 p-1.5 rounded-2xl mb-6 border" style="background: var(--bg-elevated); border-color: var(--border);">
+        <button type="button" id="tab-verified" onclick="switchSetupMode('verified')"
+            class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 bg-blue-600 text-white">
+            <span>🏛️</span>
+            <span>Standard Syllabus</span>
+        </button>
+        <button type="button" id="tab-custom" onclick="switchSetupMode('custom')"
+            class="py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 text-gray-400 hover:text-gray-200">
+            <span>🎓</span>
+            <span>MBA / Degree / Other</span>
+        </button>
+    </div>
+
+    <form method="POST" action="{{ url_for('dashboard.setup') }}" id="setup-form" class="space-y-5" onsubmit="
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.classList.add('opacity-50', 'cursor-wait');
-        btn.innerHTML = '⚙️ Importing Syllabus... ~5s';
-        
-        const toast = document.createElement('div');
-        toast.className = 'fixed bottom-4 right-4 bg-primary-600 text-gray-900 px-6 py-4 rounded-xl shadow-lg flex flex-col gap-1 z-50 animate-bounce';
-        toast.innerHTML = '<div class=\\'font-bold text-sm flex items-center gap-2\\'><svg class=\\'animate-spin h-4 w-4\\' viewBox=\\'0 0 24 24\\'><circle class=\\'opacity-25\\' cx=\\'12\\' cy=\\'12\\' r=\\'10\\' stroke=\\'currentColor\\' stroke-width=\\'4\\' fill=\\'none\\'></circle><path class=\\'opacity-75\\' fill=\\'currentColor\\' d=\\'M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z\\'></path></svg> Importing Syllabus...</div><div class=\\'text-xs opacity-80\\'>Estimated time: ~5s</div>';
-        document.body.appendChild(toast);
+        btn.innerHTML = '⚙️ Importing Syllabus...';
     ">
 
-        <div>
-            <label class="block text-sm font-medium text-gray-600 mb-2">Education Level</label>
-            <select id="education" name="education" required
-                class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors appearance-none">
-                <option value="">Select Education</option>
-                {% for edu in educations %}
-                <option value="{{ edu.id }}">{{ edu.name }}</option>
-                {% endfor %}
-            </select>
+        <!-- STANDARD VERIFIED SYLLABUS SECTION -->
+        <div id="verified-section" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: var(--text-muted);">Education Level</label>
+                <select id="education" name="education"
+                    class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors appearance-none"
+                    style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                    <option value="">Select Education Level</option>
+                    {% for edu in educations %}
+                    <option value="{{ edu.id }}">{{ edu.name }}</option>
+                    {% endfor %}
+                    <option value="custom">🎓 Other / Custom Degree (MBA, B.Com, B.Sc, MCA, etc.)</option>
+                </select>
+            </div>
+
+            <div id="verified-board-div">
+                <label class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: var(--text-muted);">Board / University</label>
+                <select id="board" name="board" disabled
+                    class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-40 appearance-none"
+                    style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                    <option value="">Select Board / University</option>
+                </select>
+            </div>
+
+            <div id="verified-year-div">
+                <label class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: var(--text-muted);">Year / Semester</label>
+                <select id="year" name="year" disabled
+                    class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-40 appearance-none"
+                    style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                    <option value="">Select Year / Semester</option>
+                </select>
+            </div>
+
+            <div id="verified-group-div">
+                <label class="block text-xs font-bold uppercase tracking-wider mb-2" style="color: var(--text-muted);">Group / Branch</label>
+                <select id="group" name="group" disabled
+                    class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:opacity-40 appearance-none"
+                    style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                    <option value="">Select Group / Branch</option>
+                </select>
+            </div>
         </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-600 mb-2">Board / University</label>
-            <select id="board" name="board" required disabled
-                class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors disabled:opacity-50 appearance-none">
-                <option value="">Select Board</option>
-            </select>
-        </div>
+        <!-- CUSTOM / SPECIFY YOUR OWN DEGREE SECTION -->
+        <div id="custom-section" class="hidden space-y-4 p-5 rounded-2xl border"
+             style="background: var(--bg-elevated); border-color: var(--border);">
+            <div class="flex items-center gap-2 text-xs font-bold text-blue-500 uppercase tracking-wider mb-1">
+                <span>✨</span> Custom Course Builder (Any Degree / MBA / University)
+            </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-600 mb-2">Year / Semester</label>
-            <select id="year" name="year" required disabled
-                class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors disabled:opacity-50 appearance-none">
-                <option value="">Select Year</option>
-            </select>
-        </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-400 mb-1.5">Course / Degree Title <span class="text-red-400">*</span></label>
+                <input type="text" id="custom_course_name" name="custom_course_name"
+                    placeholder="e.g. MBA, B.Com, B.Sc Computer Science, BBA, MCA, BA"
+                    class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style="background: var(--card); border-color: var(--border); color: var(--text-primary);">
+            </div>
 
-        <div>
-            <label class="block text-sm font-medium text-gray-600 mb-2">Group / Branch</label>
-            <select id="group" name="group" required disabled
-                class="w-full bg-gray-50 text-gray-900 border border-gray-200 rounded-lg px-4 py-3 focus:outline-none focus:border-primary-500 transition-colors disabled:opacity-50 appearance-none">
-                <option value="">Select Group</option>
-            </select>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1.5">University / College</label>
+                    <input type="text" id="custom_board_name" name="custom_board_name"
+                        placeholder="e.g. Osmania Univ, Delhi Univ, Autonomous"
+                        class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style="background: var(--card); border-color: var(--border); color: var(--text-primary);">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1.5">Year / Semester</label>
+                    <input type="text" id="custom_year_name" name="custom_year_name"
+                        placeholder="e.g. 1st Year Sem 1, 2nd Year, Final Year"
+                        class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        style="background: var(--card); border-color: var(--border); color: var(--text-primary);">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 mb-1.5">Branch / Specialization</label>
+                <input type="text" id="custom_group_name" name="custom_group_name"
+                    placeholder="e.g. Finance & Marketing, General, Business Analytics"
+                    class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    style="background: var(--card); border-color: var(--border); color: var(--text-primary);">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-400 mb-1.5">
+                    Subjects (One per line or comma-separated) <span class="text-red-400">*</span>
+                </label>
+                <textarea id="custom_subjects" name="custom_subjects" rows="4"
+                    placeholder="Financial Management&#10;Marketing Research & Strategy&#10;Human Resource Management&#10;Business Statistics&#10;Operations Management"
+                    class="w-full text-sm rounded-xl px-4 py-3 border focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-xs"
+                    style="background: var(--card); border-color: var(--border); color: var(--text-primary);"></textarea>
+                <p class="text-[11px] text-gray-500 mt-1">NoteEd will automatically structure 5 comprehensive study units for each subject so you can start learning immediately!</p>
+            </div>
         </div>
 
         <button type="submit" id="submitBtn" disabled
-            class="w-full bg-primary-600 hover:bg-primary-700 text-white font-medium py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            Load My Syllabus
+            class="w-full py-3.5 px-4 rounded-xl text-sm font-bold text-white transition-all shadow-md flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
+            <span>🚀</span>
+            <span id="submit-btn-text">Load My Syllabus</span>
         </button>
     </form>
 </div>
 
 <script>
+    let currentMode = 'verified';
+
+    function switchSetupMode(mode) {
+        currentMode = mode;
+        const verifiedSec = document.getElementById("verified-section");
+        const customSec = document.getElementById("custom-section");
+        const tabVerified = document.getElementById("tab-verified");
+        const tabCustom = document.getElementById("tab-custom");
+        const eduSelect = document.getElementById("education");
+        const submitBtnText = document.getElementById("submit-btn-text");
+
+        if (mode === 'custom') {
+            verifiedSec.classList.add("hidden");
+            customSec.classList.remove("hidden");
+            tabCustom.className = "py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 bg-blue-600 text-white";
+            tabVerified.className = "py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 text-gray-400 hover:text-gray-200";
+            eduSelect.value = "custom";
+            submitBtnText.textContent = "Create Custom Course Syllabus";
+        } else {
+            verifiedSec.classList.remove("hidden");
+            customSec.classList.add("hidden");
+            tabVerified.className = "py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 bg-blue-600 text-white";
+            tabCustom.className = "py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-2 text-gray-400 hover:text-gray-200";
+            if (eduSelect.value === "custom") eduSelect.value = "";
+            submitBtnText.textContent = "Load My Syllabus";
+        }
+        checkSubmit();
+    }
+
     document.addEventListener("DOMContentLoaded", function () {
         const eduSelect = document.getElementById("education");
         const boardSelect = document.getElementById("board");
         const yearSelect = document.getElementById("year");
         const groupSelect = document.getElementById("group");
+        const customCourseInput = document.getElementById("custom_course_name");
+        const customSubsInput = document.getElementById("custom_subjects");
         const submitBtn = document.getElementById("submitBtn");
 
-        function checkSubmit() {
-            submitBtn.disabled = !(eduSelect.value && boardSelect.value && yearSelect.value && groupSelect.value);
-        }
+        window.checkSubmit = function() {
+            if (currentMode === 'custom' || eduSelect.value === 'custom') {
+                submitBtn.disabled = !(customCourseInput.value.trim() && customSubsInput.value.trim());
+            } else {
+                submitBtn.disabled = !(eduSelect.value && boardSelect.value && yearSelect.value && groupSelect.value);
+            }
+        };
+
+        customCourseInput.addEventListener("input", checkSubmit);
+        customSubsInput.addEventListener("input", checkSubmit);
 
         eduSelect.addEventListener("change", async function () {
-            boardSelect.innerHTML = '<option value="">Select Board</option>';
-            yearSelect.innerHTML = '<option value="">Select Year</option>';
-            groupSelect.innerHTML = '<option value="">Select Group</option>';
+            if (this.value === "custom") {
+                switchSetupMode('custom');
+                return;
+            }
+
+            boardSelect.innerHTML = '<option value="">Select Board / University</option>';
+            yearSelect.innerHTML = '<option value="">Select Year / Semester</option>';
+            groupSelect.innerHTML = '<option value="">Select Group / Branch</option>';
             boardSelect.disabled = true;
             yearSelect.disabled = true;
             groupSelect.disabled = true;
 
             if (this.value) {
-                const res = await fetch(`/api/syllabus/boards/${this.value}`);
-                const boards = await res.json();
-                boards.forEach(b => {
-                    const opt = document.createElement('option');
-                    opt.value = b.id;
-                    opt.textContent = b.name;
-                    boardSelect.appendChild(opt);
-                });
-                boardSelect.disabled = false;
+                try {
+                    const res = await fetch(`/api/syllabus/boards/${this.value}`);
+                    const boards = await res.json();
+                    boards.forEach(b => {
+                        const opt = document.createElement('option');
+                        opt.value = b.id;
+                        opt.textContent = b.name;
+                        boardSelect.appendChild(opt);
+                    });
+                    boardSelect.disabled = false;
+                } catch(e) {
+                    console.error("Failed to load boards", e);
+                }
             }
             checkSubmit();
         });
 
         boardSelect.addEventListener("change", async function () {
-            yearSelect.innerHTML = '<option value="">Select Year</option>';
-            groupSelect.innerHTML = '<option value="">Select Group</option>';
+            yearSelect.innerHTML = '<option value="">Select Year / Semester</option>';
+            groupSelect.innerHTML = '<option value="">Select Group / Branch</option>';
             yearSelect.disabled = true;
             groupSelect.disabled = true;
 
             if (this.value) {
-                const res = await fetch(`/api/syllabus/years/${eduSelect.value}/${this.value}`);
-                const years = await res.json();
-                years.forEach(y => {
-                    const opt = document.createElement('option');
-                    opt.value = y.id;
-                    opt.textContent = y.name;
-                    yearSelect.appendChild(opt);
-                });
-                yearSelect.disabled = false;
+                try {
+                    const res = await fetch(`/api/syllabus/years/${eduSelect.value}/${this.value}`);
+                    const years = await res.json();
+                    years.forEach(y => {
+                        const opt = document.createElement('option');
+                        opt.value = y.id;
+                        opt.textContent = y.name;
+                        yearSelect.appendChild(opt);
+                    });
+                    yearSelect.disabled = false;
+                } catch(e) {
+                    console.error("Failed to load years", e);
+                }
             }
             checkSubmit();
         });
 
         yearSelect.addEventListener("change", async function () {
-            groupSelect.innerHTML = '<option value="">Select Group</option>';
+            groupSelect.innerHTML = '<option value="">Select Group / Branch</option>';
             groupSelect.disabled = true;
 
             if (this.value) {
-                const res = await fetch(`/api/syllabus/groups/${eduSelect.value}/${boardSelect.value}/${this.value}`);
-                const groups = await res.json();
-                groups.forEach(g => {
-                    const opt = document.createElement('option');
-                    opt.value = g;
-                    opt.textContent = g;
-                    groupSelect.appendChild(opt);
-                });
-                groupSelect.disabled = false;
+                try {
+                    const res = await fetch(`/api/syllabus/groups/${eduSelect.value}/${boardSelect.value}/${this.value}`);
+                    const groups = await res.json();
+                    groups.forEach(g => {
+                        const opt = document.createElement('option');
+                        opt.value = g;
+                        opt.textContent = g;
+                        groupSelect.appendChild(opt);
+                    });
+                    groupSelect.disabled = false;
+                } catch(e) {
+                    console.error("Failed to load groups", e);
+                }
             }
             checkSubmit();
         });

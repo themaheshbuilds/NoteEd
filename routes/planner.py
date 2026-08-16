@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 from datetime import datetime, timedelta
 from flask import Blueprint, render_template, request, session, redirect, url_for, flash, jsonify
 from services.db_service import db_service
@@ -52,3 +52,4 @@ def toggle_event(event_id):
         db_service.execute("UPDATE planner_events SET is_completed = ? WHERE id = ?", (new_status, event_id))
         return jsonify({"success": True, "is_completed": bool(new_status)})
     return jsonify({"error": "Event not found"}), 404
+

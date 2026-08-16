@@ -14,16 +14,28 @@ class SyllabusService:
     PRETTY_NAMES = {
         "intermediate": "Intermediate",
         "diploma": "Diploma",
+        "btech": "B.Tech Engineering",
         "tg": "TG Intermediate Board",
         "ap": "AP Intermediate Board",
         "sbtet_tg": "TG SBTET Board",
+        "jntuh": "JNTUH / Autonomous Colleges",
+        "jntu_tg": "JNTU (Telangana)",
+        "jntu_ap": "JNTU (Andhra Pradesh)",
+        "ou": "Osmania University (OU)",
         "c24_1st_sem": "C24 Curriculum - I Semester",
         "c24_2nd_sem": "C24 Curriculum - II Semester",
         "c24_3rd_sem": "C24 Curriculum - III Semester",
         "c24_4th_sem": "C24 Curriculum - IV Semester",
         "c24_5th_sem": "C24 Curriculum - V Semester",
         "first_year": "First Year",
-        "second_year": "Second Year"
+        "second_year": "Second Year",
+        "1st_year": "1st Year",
+        "2nd_year_1st_sem": "II Year - I Semester (2-1)",
+        "2nd_year_2nd_sem": "II Year - II Semester (2-2)",
+        "3rd_year_1st_sem": "III Year - I Semester (3-1)",
+        "3rd_year_2nd_sem": "III Year - II Semester (3-2)",
+        "4th_year_1st_sem": "IV Year - I Semester (4-1)",
+        "4th_year_2nd_sem": "IV Year - II Semester (4-2)"
     }
 
     def _format(self, items):
@@ -58,7 +70,7 @@ class SyllabusService:
         filepath = os.path.join(self.data_dir, education_level, board, f"{year}.json")
         if not os.path.exists(filepath):
             return None
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, "r", encoding="utf-8-sig") as f:
             return json.load(f)
 
     def get_available_groups(self, education_level, board, year):
@@ -76,3 +88,4 @@ class SyllabusService:
         return data["groups"][group]
 
 syllabus_service = SyllabusService()
+

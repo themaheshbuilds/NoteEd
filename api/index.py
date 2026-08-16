@@ -1,5 +1,7 @@
 import os
 import time
+import secrets
+from datetime import timedelta
 from flask import Flask
 from dotenv import load_dotenv
 
@@ -24,11 +26,30 @@ def create_app():
     app = Flask(__name__, template_folder="../templates", static_folder="../static")
     from werkzeug.middleware.proxy_fix import ProxyFix
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-    app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "supersecretkey")
-    app.config["SESSION_COOKIE_SECURE"] = True
+
+    # ── Security: Enforce strong SECRET_KEY ──────────────────────────────
+    configured_key = os.getenv("SECRET_KEY", "")
+    if not configured_key or configured_key in ("supersecretkey", "supersecretkeyreplaceinproduction", "changeme"):
+        if os.environ.get("VERCEL"):
+            raise RuntimeError(
+                "FATAL: SECRET_KEY is not set or is using a default value in production! "
+                "Set a strong SECRET_KEY in your Vercel environment variables."
+            )
+        # Auto-generate a key for local development (warn loudly)
+        configured_key = secrets.token_hex(32)
+        print("⚠️  WARNING: Using auto-generated SECRET_KEY for local development.")
+        print("⚠️  Set a strong SECRET_KEY in your .env file for production!")
+    app.config["SECRET_KEY"] = configured_key
+
+    # ── Session Security ─────────────────────────────────────────────────
+    app.config["SESSION_COOKIE_SECURE"] = os.environ.get("VERCEL") is not None
     app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
-    
-    # Configure Uploads
+    app.config["SESSION_COOKIE_NAME"] = "noted_session"
+    app.config["SESSION_COOKIE_HTTPONLY"] = True          # [M4] Prevent JS access to session cookie
+    app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=24)  # [M3] Session expires after 24h
+
+    # ── Upload Security ──────────────────────────────────────────────────
+    app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024  # [H5] 16MB max upload size
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "../uploads")
     try:
         os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
@@ -69,24 +90,21 @@ def create_app():
         from flask import send_from_directory
         return send_from_directory(app.static_folder, "manifest.json", mimetype="application/manifest+json")
 
-    @app.route("/debug_session")
-    def debug_session():
-        from flask import session, request
-        import os
-        from services.db_service import db_service
-        profile = None
-        if session.get("user_id"):
-            profile = db_service.query("SELECT * FROM profiles WHERE id = ?", (session["user_id"],), one=True)
-            
-        return {
-            "session_data": dict(session),
-            "profile_in_db": dict(profile) if profile else None,
-            "env_keys": list(os.environ.keys()),
-            "use_postgres_flag": getattr(db_service, "use_postgres", False),
-            "db_url_starts_with": str(getattr(db_service, "database_url", ""))[:15],
-            "cookies": getattr(request, "cookies", {})
-        }
+    @app.route("/favicon.ico")
+    def serve_favicon():
+        from flask import send_from_directory
+        return send_from_directory(os.path.join(app.static_folder, "images"), "noteedhalf.png", mimetype="image/png")
+
+    # [C4] REMOVED: /debug_session endpoint — leaked session data, user profile,
+    # environment variable names, DB connection info, and cookies to anyone without auth.
     
+    # ── [M1] Security Headers ────────────────────────────────────────────
+    from services.security import add_security_headers
+
+    @app.after_request
+    def apply_security_headers(response):
+        return add_security_headers(response)
+
     # Streak updater moved to specific actions in routes/study.py
     
     # Simple global context processor for user sessions
@@ -120,15 +138,3 @@ def create_app():
 
 app = create_app()
 
-# Temporarily disabled to save API keys for users
-# if not os.environ.get("VERCEL_URL") and os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-#     import threading
-#     from services.question_bank_service import question_bank_service
-#     def run_replenishment():
-#         import time
-#         while True:
-#             question_bank_service.replenish_bank()
-#             time.sleep(60 * 60 * 6) # Every 6 hours
-#             
-#     thread = threading.Thread(target=run_replenishment, daemon=True)
-#     thread.start()

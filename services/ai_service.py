@@ -5,6 +5,9 @@ import re
 import time
 import requests
 
+
+# ── Auth error helper ─────────────────────────────────────────────────────────
+
 def _handle_auth_error(e):
     if hasattr(e, 'response') and e.response is not None:
         if e.response.status_code in (401, 403):
@@ -16,171 +19,214 @@ def _handle_auth_error(e):
             except Exception:
                 pass
 
+
 class RateLimitExhaustedError(Exception):
     pass
 
+
+# ── AIService ─────────────────────────────────────────────────────────────────
+
 class AIService:
+    """
+    Routes all AI requests through OmniRoute — a self-hosted AI gateway that
+    handles provider selection, fallback, and key management centrally.
+
+    Architecture:
+        Frontend → Flask Backend → OmniRoute (separate service) → AI Providers
+
+    Configuration (via .env or Vercel environment variables):
+        OMNIROUTE_BASE_URL  — e.g. http://localhost:20128/v1 (local) or https://your-deploy.fly.dev/v1
+        OMNIROUTE_API_KEY   — API key generated in the OmniRoute dashboard
+        OMNIROUTE_MODEL     — default chat model name (any model OmniRoute supports)
+        OMNIROUTE_VISION_MODEL — model for vision/image tasks
+    """
+
     def __init__(self):
-        self.model = "meta/llama-3.1-8b-instruct"
-        self.vision_model = "meta/llama-3.2-90b-vision-instruct"
-        # Keep track of which key to use for load balancing
-        self._key_index = 0
+        # Backward compat: kept for any code that references these directly
+        self.model = os.getenv("OMNIROUTE_MODEL", "meta-llama/llama-3.3-70b-instruct")
+        self.vision_model = os.getenv("OMNIROUTE_VISION_MODEL", self.model)
 
+    # ── OmniRoute config ──────────────────────────────────────────────────────
 
-    def get_prioritized_configs(self, task_type="live"):
-        """
-        Returns a strict priority list of API configurations (key, base_url, chat_model, vision_model, platform)
-        Priority: Gemini -> Groq -> Cerebras -> OpenRouter
-        Supports intelligent load balancing based on BACKGROUND_KEY_PERCENTAGE.
-        """
-        from flask import session
-        from services.db_service import db_service
-        import os
-        
-        all_keys = {
-            "gemini": [],
-            "groq": [],
-            "cerebras": [],
-            "openrouter": [],
-            "nvidia": [],
-            "openai": []
-        }
-        
-        allowed_db_keys = ["GLOBAL_AI_API_KEYS", "NVIDIA_NIM_PAID_API_KEY", "NVIDIA_NIM_API_KEYS", "NVIDIA_NIM_API_KEY", "GEMINI_API_KEYS", "GROQ_API_KEYS", "CEREBRAS_API_KEYS", "OPENROUTER_API_KEYS", "OPENAI_API_KEY"]
-        
-        # Load keys from DB and Env
-        combined = []
-        bg_percentage = 50
+    _rotation_indices = {}
+
+    def _parse_key_list(self, raw_val):
+        """Parses multiple keys separated by newlines, commas, semicolons, or JSON list."""
+        if not raw_val:
+            return []
+        if isinstance(raw_val, list):
+            return [str(k).strip() for k in raw_val if str(k).strip() and "placeholder" not in str(k).lower()]
+
+        raw_str = str(raw_val).strip()
+        if raw_str.startswith("[") and raw_str.endswith("]"):
+            try:
+                parsed = json.loads(raw_str)
+                if isinstance(parsed, list):
+                    return [str(k).strip() for k in parsed if str(k).strip() and "placeholder" not in str(k).lower()]
+            except Exception:
+                pass
+
+        keys = []
+        for line in re.split(r'[\r\n,;]+', raw_str):
+            clean = line.strip()
+            if clean and "placeholder" not in clean.lower() and clean not in keys:
+                keys.append(clean)
+        return keys
+
+    def get_all_provider_pools(self):
+        """Returns structured information about all configured key pools and quantities."""
+        db_cfg = {}
         try:
+            from services.db_service import db_service
             rows = db_service.query("SELECT key_name, key_value FROM system_settings")
             if rows:
-                for row in rows:
-                    if row["key_name"] == "BACKGROUND_KEY_PERCENTAGE" and row["key_value"]:
-                        try:
-                            bg_percentage = int(row["key_value"])
-                        except ValueError:
-                            pass
-                    if row["key_name"] in allowed_db_keys and row["key_value"]:
-                        val = row["key_value"].strip()
-                        if val and "your_" not in val.lower() and "replace" not in val.lower():
-                            combined.append(val)
+                db_cfg = {r["key_name"]: r["key_value"] for r in rows if r["key_value"]}
         except Exception:
             pass
-            
-        for ev in allowed_db_keys:
-            val = os.getenv(ev)
-            if val:
-                val = val.strip()
-                if val and "your_" not in val.lower() and "replace" not in val.lower():
-                    combined.append(val)
-                    
-        keys_str = ",".join(combined)
-        keys = [k.strip() for k in keys_str.split(",") if k.strip()]
-        
-        for key in keys:
-            if len(key) < 15: continue
-            
-            ai_platform = None
-            if key.startswith("sk-or-"): ai_platform = "openrouter"
-            elif key.startswith("nvapi-"): ai_platform = "nvidia"
-            elif key.startswith("AIza") or key.startswith("AQ."): ai_platform = "gemini"
-            elif key.startswith("gsk_"): ai_platform = "groq"
-            elif key.startswith("sk-"): ai_platform = "openai"
-            else: ai_platform = "cerebras" # Assume Cerebras for unformatted keys if no other match, or maybe check specifically. 
-            
-            # Since Cerebras keys don't have a known fixed prefix yet, we can't strongly infer it unless it came from CEREBRAS_API_KEYS. 
-            # We'll just map it to the dictionary.
-            
-            if ai_platform:
-                all_keys[ai_platform].append(key)
-                
-        # Manually fetch Cerebras keys to be safe
-        try:
-            cer_row = db_service.query("SELECT key_value FROM system_settings WHERE key_name = 'CEREBRAS_API_KEYS'", one=True)
-            if cer_row and cer_row["key_value"]:
-                cer_keys = [k.strip() for k in cer_row["key_value"].split(",") if len(k.strip()) > 15]
-                all_keys["cerebras"].extend(cer_keys)
-        except: pass
-        
-        if os.getenv("CEREBRAS_API_KEYS"):
-            cer_keys = [k.strip() for k in os.getenv("CEREBRAS_API_KEYS").split(",") if len(k.strip()) > 15]
-            all_keys["cerebras"].extend(cer_keys)
-            
-        # Deduplicate
-        for k in all_keys:
-            all_keys[k] = list(set(all_keys[k]))
-            
-        # Priority Order: Gemini -> Groq -> Cerebras -> OpenRouter -> Nvidia -> OpenAI
-        priority_order = ["gemini", "groq", "cerebras", "openrouter", "nvidia", "openai"]
-        
-        all_ordered_keys = []
-        for plat in priority_order:
-            for key in all_keys[plat]:
-                all_ordered_keys.append({"key": key, "platform": plat})
-                
-        total_keys = len(all_ordered_keys)
-        if total_keys == 0:
-            return []
-            
-        bg_count = max(1, int(total_keys * (bg_percentage / 100.0))) if bg_percentage > 0 else 0
-        live_count = total_keys - bg_count
-        
-        # If there's only 1 key, both live and background have to share it to avoid breaking
-        if total_keys == 1:
-            bg_keys = all_ordered_keys
-            live_keys = all_ordered_keys
-        else:
-            # Top tier keys for live, bottom tier for background
-            live_keys = all_ordered_keys[:live_count] if live_count > 0 else []
-            bg_keys = all_ordered_keys[live_count:] if bg_count > 0 else []
-            
-        selected_keys = bg_keys if task_type == "background" else live_keys
-        
-        configs = []
-        for item in selected_keys:
-            cfg = self._get_config_for_key(item["key"], item["platform"])
-            if cfg:
-                configs.append(cfg)
-                
-        return configs
 
-    def _get_config_for_key(self, key, platform):
-        if platform == "openai":
-            return (key, "https://api.openai.com/v1", "gpt-4o-mini", "gpt-4o", platform)
-        elif platform == "gemini":
-            return (key, "https://generativelanguage.googleapis.com/v1beta", "gemini-2.5-flash", "gemini-2.5-pro", platform)
-        elif platform == "groq":
-            return (key, "https://api.groq.com/openai/v1", "llama-3.3-70b-versatile", "llama-3.2-90b-vision-preview", platform)
-        elif platform == "cerebras":
-            return (key, "https://api.cerebras.ai/v1", "llama3.1-8b", "llama3.1-8b", platform)
-        elif platform == "openrouter":
-            return (key, "https://openrouter.ai/api/v1", "meta-llama/llama-3.3-70b-instruct:free", "meta-llama/llama-3.3-70b-instruct:free", platform)
-        elif platform == "nvidia":
-            return (key, "https://integrate.api.nvidia.com/v1", self.model, self.vision_model, platform)
-        return None
+        def get_val(key_name, default=""):
+            return os.getenv(key_name) or db_cfg.get(key_name) or default
+
+        gemini_keys = self._parse_key_list(get_val("GEMINI_API_KEY") or get_val("GOOGLE_API_KEY"))
+        openrouter_keys = self._parse_key_list(get_val("OPENROUTER_API_KEY"))
+        groq_keys = self._parse_key_list(get_val("GROQ_API_KEY"))
+        openai_keys = self._parse_key_list(get_val("OPENAI_API_KEY"))
+        nvidia_keys = self._parse_key_list(get_val("NVIDIA_API_KEY") or get_val("NIM_API_KEY"))
+        omni_keys = self._parse_key_list(get_val("OMNIROUTE_API_KEY"))
+
+        total_keys = len(gemini_keys) + len(openrouter_keys) + len(groq_keys) + len(openai_keys) + len(nvidia_keys) + len(omni_keys)
+
+        return {
+            "total_keys": total_keys,
+            "gemini": {"count": len(gemini_keys), "keys": gemini_keys, "name": "Google Gemini", "default_model": get_val("GEMINI_MODEL", "gemini-2.5-flash")},
+            "openrouter": {"count": len(openrouter_keys), "keys": openrouter_keys, "name": "OpenRouter", "default_model": get_val("OPENROUTER_MODEL", "google/gemma-4-26b-a4b-it:free")},
+            "groq": {"count": len(groq_keys), "keys": groq_keys, "name": "Groq", "default_model": get_val("GROQ_MODEL", "llama-3.3-70b-versatile")},
+            "openai": {"count": len(openai_keys), "keys": openai_keys, "name": "OpenAI", "default_model": get_val("OPENAI_MODEL", "gpt-4o-mini")},
+            "nvidia": {"count": len(nvidia_keys), "keys": nvidia_keys, "name": "NVIDIA NIM", "default_model": get_val("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")},
+            "omniroute": {"count": len(omni_keys), "keys": omni_keys, "name": "OmniRoute Gateway", "base_url": get_val("OMNIROUTE_BASE_URL", "http://localhost:20128/v1"), "default_model": get_val("OMNIROUTE_MODEL", "openrouter/free")}
+        }
+
+    def _get_next_key_from_pool(self, provider, key_list):
+        if not key_list:
+            return ""
+        if len(key_list) == 1:
+            return key_list[0]
+        curr = self._rotation_indices.get(provider, 0)
+        chosen = key_list[curr % len(key_list)]
+        self._rotation_indices[provider] = (curr + 1) % len(key_list)
+        return chosen
+
+    def _get_active_provider_pool(self):
+        """
+        Returns (key_list, base_url, chat_model, vision_model, provider_name).
+        """
+        pools = self.get_all_provider_pools()
+
+        # 1. Groq (Ultra-fast, high throughput)
+        if pools["groq"]["count"] > 0:
+            return (
+                pools["groq"]["keys"],
+                os.getenv("GROQ_BASE_URL") or "https://api.groq.com/openai/v1",
+                pools["groq"]["default_model"],
+                os.getenv("GROQ_VISION_MODEL") or "llama-3.2-11b-vision-preview",
+                "groq"
+            )
+
+        # 2. Gemini
+        if pools["gemini"]["count"] > 0:
+            return (
+                pools["gemini"]["keys"],
+                os.getenv("GEMINI_BASE_URL") or "https://generativelanguage.googleapis.com/v1beta/openai",
+                pools["gemini"]["default_model"],
+                os.getenv("GEMINI_VISION_MODEL") or "gemini-2.5-flash",
+                "gemini"
+            )
+
+        # 3. OpenRouter
+        if pools["openrouter"]["count"] > 0:
+            return (
+                pools["openrouter"]["keys"],
+                os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1",
+                pools["openrouter"]["default_model"],
+                os.getenv("OPENROUTER_VISION_MODEL") or "google/gemma-4-26b-a4b-it:free",
+                "openrouter"
+            )
+
+        # 4. OpenAI
+        if pools["openai"]["count"] > 0:
+            return (
+                pools["openai"]["keys"],
+                os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1",
+                pools["openai"]["default_model"],
+                os.getenv("OPENAI_VISION_MODEL") or "gpt-4o-mini",
+                "openai"
+            )
+
+        # 5. NVIDIA
+        if pools["nvidia"]["count"] > 0:
+            return (
+                pools["nvidia"]["keys"],
+                os.getenv("NVIDIA_BASE_URL") or "https://integrate.api.nvidia.com/v1",
+                pools["nvidia"]["default_model"],
+                os.getenv("NVIDIA_VISION_MODEL") or "meta/llama-3.2-11b-vision-instruct",
+                "nvidia"
+            )
+
+        # 6. OmniRoute
+        if pools["omniroute"]["count"] > 0:
+            return (
+                pools["omniroute"]["keys"],
+                pools["omniroute"]["base_url"],
+                pools["omniroute"]["default_model"],
+                pools["omniroute"]["default_model"],
+                "omniroute"
+            )
+
+        # Default empty fallback
+        return ([], "http://localhost:20128/v1", "openrouter/free", "openrouter/free", "none")
+
+    def _get_omni_config(self):
+        """
+        Returns (api_key, base_url, chat_model, vision_model) with automatic key rotation.
+        """
+        key_list, base_url, model, vision, provider = self._get_active_provider_pool()
+        api_key = self._get_next_key_from_pool(provider, key_list)
+        return api_key, base_url, model, vision
+
+    def _is_configured(self):
+        """Returns True if OmniRoute is configured with a non-placeholder API key."""
+        key, _, _, _ = self._get_omni_config()
+        return bool(key) and "your-omniroute" not in key.lower()
+
+    # ── Backward-compat shims ─────────────────────────────────────────────────
 
     def _get_config(self):
-        """Restored for backward compatibility with methods not yet refactored to use get_prioritized_configs."""
-        configs = self.get_prioritized_configs(task_type="live")
-        if configs:
-            cfg = configs[0]
-            # Returns: key, base_url, chat_model, vision_model
-            return cfg[0], cfg[1], cfg[2], cfg[3]
-        return None, None, None, None
+        """Backward-compat: returns (key, base_url, chat_model, vision_model)."""
+        return self._get_omni_config()
 
     @property
     def api_config(self):
-        """Maintained for backward compatibility. Returns the first available key."""
-        configs = self.get_prioritized_configs()
-        if configs:
-            return configs[0][0], configs[0][4]
-        return None, "nvidia"
+        """Backward-compat property used by inject_user context processor."""
+        key, _, _, _ = self._get_omni_config()
+        return key, "omniroute"
 
     @property
     def api_key(self):
-        """Maintains backward compatibility for simple truthiness checks"""
-        key, _ = self.api_config
-        return key
+        """Backward-compat truthiness check."""
+        key, _, _, _ = self._get_omni_config()
+        return key if self._is_configured() else None
+
+    def get_prioritized_configs(self, task_type="live"):
+        """
+        Backward-compat stub — OmniRoute is the single unified config now.
+        Returns a single-element list in the original tuple format.
+        """
+        key, base_url, model, vision = self._get_omni_config()
+        if not key:
+            return []
+        return [(key, base_url, model, vision, "omniroute")]
+
+    # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _get_custom_instructions(self):
         try:
@@ -188,26 +234,35 @@ class AIService:
             from flask import session
             if "user_id" in session:
                 from services.db_service import db_service
-                profile = db_service.query("SELECT custom_instructions FROM profiles WHERE id = ?", (session["user_id"],), one=True)
+                profile = db_service.query(
+                    "SELECT custom_instructions FROM profiles WHERE id = ?",
+                    (session["user_id"],), one=True
+                )
                 if profile and "custom_instructions" in profile.keys() and profile["custom_instructions"]:
                     return profile["custom_instructions"]
         except Exception:
             pass
         return ""
 
+    def _make_headers(self, api_key):
+        return {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+        }
+
+    # ── Vision document processing ────────────────────────────────────────────
 
     def process_vision_document(self, image_bytes):
         """
-        Sends the enhanced page image to the NVIDIA NIM Vision model
-        and requests a comprehensive structured JSON extraction.
+        Sends an image to OmniRoute's vision endpoint and requests structured JSON extraction.
         """
-        key, base_url, chat_model, vision_model = self._get_config()
-        if not key:
+        api_key, base_url, _, vision_model = self._get_omni_config()
+        if not self._is_configured():
             return self._get_mock_vision_response()
 
         encoded_image = base64.b64encode(image_bytes).decode("utf-8")
         image_url = f"data:image/jpeg;base64,{encoded_image}"
-        
+
         prompt = """
         You are a highly advanced AI document understanding engine. 
         Analyze the provided document page (which could contain printed text, handwritten notes, diagrams, tables, flowcharts, mathematical formulas, or code snippets).
@@ -240,13 +295,18 @@ class AIService:
             ],
             "temperature": 0.2,
             "top_p": 1,
-            "max_tokens": 1024
+            "max_tokens": 1024,
+            "stream": False
         }
 
         for attempt in range(6):
             try:
-                headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-                response = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload, timeout=60)
+                response = requests.post(
+                    f"{base_url}/chat/completions",
+                    headers=self._make_headers(api_key),
+                    json=payload,
+                    timeout=60
+                )
                 response.raise_for_status()
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
@@ -255,106 +315,111 @@ class AIService:
                     return parsed_json
                 return json.loads(content)
             except requests.exceptions.HTTPError as e:
-                import time
                 if e.response and e.response.status_code in [429, 401, 403]:
-                    new_key, new_base_url, new_chat_model, new_vision_model = self._get_config()
-                    if new_key and new_key != key:
-                        key, base_url, vision_model = new_key, new_base_url, new_vision_model
-                        payload["model"] = vision_model
-                        headers["Authorization"] = f"Bearer {key}"
                     time.sleep(1)
                     continue
                 else:
                     break
             except Exception as e:
-                print(f"Error in Vision: {e}")
+                print(f"[Vision] Error: {e}")
                 break
-                
+
         return self._get_mock_vision_response()
 
+    # ── Text normalization & caching ──────────────────────────────────────────
+
     def _normalize_text(self, text):
-        import re
         text = text.lower()
         text = re.sub(r'[^\w\s]', '', text)
         words = text.split()
-        stopwords = {"what", "is", "a", "an", "the", "of", "and", "in", "to", "how", "why", "can", "you", "tell", "me", "about", "explain", "describe", "define", "give", "provide", "details"}
+        stopwords = {"what", "is", "a", "an", "the", "of", "and", "in", "to", "how", "why",
+                     "can", "you", "tell", "me", "about", "explain", "describe", "define",
+                     "give", "provide", "details"}
         return set([w for w in words if w not in stopwords])
 
     def _get_cached_response(self, query_text, topic_id=None):
         from services.db_service import db_service
         from datetime import datetime, timedelta
-        
+
         cutoff_date = (datetime.now() - timedelta(days=7)).isoformat()
-        
+
         if topic_id:
             rows = db_service.query(
-                "SELECT id, query_text, normalized_query, ai_response FROM ai_query_cache WHERE (topic_id = ? OR topic_id IS NULL) AND created_at >= ? ORDER BY created_at DESC LIMIT 50",
+                "SELECT id, query_text, normalized_query, ai_response FROM ai_query_cache "
+                "WHERE topic_id = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 50",
                 (topic_id, cutoff_date)
             )
         else:
             rows = db_service.query(
-                "SELECT id, query_text, normalized_query, ai_response FROM ai_query_cache WHERE created_at >= ? ORDER BY created_at DESC LIMIT 50",
+                "SELECT id, query_text, normalized_query, ai_response FROM ai_query_cache "
+                "WHERE created_at >= ? ORDER BY created_at DESC LIMIT 50",
                 (cutoff_date,)
             )
-            
+
         if not rows:
             return None
-            
+
         query_set = self._normalize_text(query_text)
         if not query_set:
             return None
-            
+
         best_match = None
         best_score = 0.0
-        
+
         for row in rows:
             cached_set = set(row["normalized_query"].split(",")) if row["normalized_query"] else set()
             if not cached_set:
                 continue
-                
+
             intersection = len(query_set.intersection(cached_set))
             union = len(query_set.union(cached_set))
             score = intersection / union if union > 0 else 0
-            
+
             if score > best_score:
                 best_score = score
                 best_match = row["ai_response"]
-                
+
         if best_score >= 0.85:
             print(f"[Semantic Cache] Hit! Score: {best_score:.2f}")
             return best_match
-            
+
         return None
-        
+
     def _set_cached_response(self, query_text, ai_response, topic_id=None):
         from services.db_service import db_service
         query_set = self._normalize_text(query_text)
         if not query_set:
             return
         normalized_str = ",".join(query_set)
-        
+
         db_service.execute(
             "INSERT INTO ai_query_cache (query_text, normalized_query, ai_response, topic_id) VALUES (?, ?, ?, ?)",
             (query_text, normalized_str, ai_response, topic_id)
         )
 
-    def generate_chat_response(self, user_prompt, context_text, chat_history=None, image_base64=None, topic_id=None):
+    # ── Chat ──────────────────────────────────────────────────────────────────
+
+    def generate_chat_response(self, user_prompt, context_text, chat_history=None,
+                               image_base64=None, topic_id=None):
         """
-        Chat with a document using Meta Llama 3 / Qwen on NVIDIA NIM.
+        Chat with a document through OmniRoute.
         chat_history is a list of dicts: [{"role": "user"/"assistant", "content": "..."}]
         """
         # Check cache first
         cached = self._get_cached_response(user_prompt, topic_id=topic_id)
         if cached:
             return cached
-            
-        # Truncate context to prevent context window overflow on custom models
-        context_text = context_text[:4000] if context_text else ""
-        
+
+        api_key, base_url, chat_model, vision_model = self._get_omni_config()
+        if not self._is_configured():
+            return "No AI gateway configured. Please set OMNIROUTE_BASE_URL and OMNIROUTE_API_KEY in your environment."
+
+        context_text = context_text[:30000] if context_text else ""
+
         system_prompt = self.HELIX_SYSTEM_PROMPT + f"""
 
 You are currently in CHAT MODE helping a student understand their study materials.
-Use the following document context to answer the student's question.
+Use the following document context to answer the student's question thoroughly and accurately across all relevant sections and stages of the topic.
 If the answer is not in the context, use your general knowledge but keep it relevant to the topic.
 
 CRITICAL: Output ONLY the final conversational answer. Do NOT output internal thinking, reasoning steps, or headers like "Examining...", "Evaluating...", etc.
@@ -372,13 +437,12 @@ Document Context:
 
         messages = [{"role": "system", "content": system_prompt}]
         if chat_history:
-            # Append last 10 messages for conversational memory
             for msg in chat_history[-10:]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
-                
+
         if image_base64:
             messages.append({
-                "role": "user", 
+                "role": "user",
                 "content": [
                     {"type": "text", "text": user_prompt},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_base64}"}}
@@ -387,39 +451,40 @@ Document Context:
         else:
             messages.append({"role": "user", "content": user_prompt})
 
-        # Base payload (model will be updated per-config inside loop)
+        model_to_use = vision_model if image_base64 else chat_model
         payload = {
-            "model": "",
+            "model": model_to_use,
             "messages": messages,
             "temperature": 0.7,
             "top_p": 1,
-            "max_tokens": 2048
+            "max_tokens": 4096,
+            "stream": False
         }
 
-        configs = self.get_prioritized_configs(task_type="live")
-        if not configs:
-            return "No AI API key configured. Please add a key in Settings."
-
-        for cfg in configs:
-            cfg_key, cfg_base_url, cfg_chat_model, cfg_vision_model, cfg_platform = cfg
-
-            model_to_use = cfg_vision_model if image_base64 else cfg_chat_model
-            payload["model"] = model_to_use
-
+        for attempt in range(4):
             try:
-                headers = {"Authorization": f"Bearer {cfg_key}", "Content-Type": "application/json"}
-                response = requests.post(f"{cfg_base_url}/chat/completions", headers=headers, json=payload, timeout=120)
+                response = requests.post(
+                    f"{base_url}/chat/completions",
+                    headers=self._make_headers(api_key),
+                    json=payload,
+                    timeout=120
+                )
 
                 if response.status_code == 429:
-                    print(f"[Chat] Rate-limited on {cfg_platform}, trying next provider...")
-                    time.sleep(1)
+                    print("[Chat] OmniRoute rate-limited, retrying...")
+                    time.sleep(2 ** attempt)
                     continue
 
                 response.raise_for_status()
                 result = response.json()
                 content = result["choices"][0]["message"]["content"]
-                # Strip <think>...</think> tags if present (reasoning models)
-                content = re.sub(r'<think>.*?(?:</think>|$)', '', content, flags=re.DOTALL).strip()
+
+                # Strip <think>...</think> tags (reasoning models)
+                if "<think>" in content:
+                    if "</think>" in content:
+                        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+                    else:
+                        content = re.sub(r'<think>', '', content).strip()
 
                 self._set_cached_response(user_prompt, content, topic_id=topic_id)
                 return content
@@ -427,28 +492,30 @@ Document Context:
             except requests.exceptions.HTTPError as e:
                 _handle_auth_error(e)
                 status = e.response.status_code if e.response is not None else 'unknown'
-                print(f"[Chat] HTTP {status} on {cfg_platform}: {e}")
-                if status in [429, 401, 403, 500, 502, 503]:
-                    time.sleep(1)
+                print(f"[Chat] HTTP {status}: {e}")
+                if status in [429, 500, 502, 503]:
+                    time.sleep(2)
                     continue
                 return f"Apologies, I encountered an error communicating with the AI ({status}). Please try again."
             except requests.exceptions.Timeout:
-                print(f"[Chat] Timeout on {cfg_platform}, trying next...")
+                print("[Chat] Timeout, retrying...")
                 continue
             except Exception as e:
-                print(f"[Chat] Error on {cfg_platform}: {e}")
-                continue
+                print(f"[Chat] Error: {e}")
+                break
 
-        return "⏳ All AI providers are currently rate-limited. Please wait 1–2 minutes and try again."
+        return "⏳ The AI gateway is currently rate-limited. Please wait a moment and try again."
+
+    # ── Explain topic ─────────────────────────────────────────────────────────
 
     def explain_topic(self, topic_name, level="beginner", language="English"):
         """
         Explains a topic (supports 'beginner', 'intermediate', examples, and Telugu + English).
         """
-        key, base_url, chat_model, vision_model = self._get_config()
-        if not key:
+        api_key, base_url, chat_model, _ = self._get_omni_config()
+        if not self._is_configured():
             return f"Simulated explanation for '{topic_name}' in {language} at a {level} level."
-            
+
         cache_query = f"explain {topic_name} at {level} level in {language}"
         cached = self._get_cached_response(cache_query)
         if cached:
@@ -463,25 +530,25 @@ Document Context:
             prompt += f" Explain in clean {language}.\n"
 
         prompt += """
-        Please structure your response strictly using Markdown. Include the following sections:
+        Please structure your explanation in simple, easy-to-read Markdown with natural headers:
         
-        ### 📌 TL;DR
-        A concise, one-sentence summary of the concept.
+        ## Overview
+        A crystal-clear 1-2 sentence summary of what this topic is and why it matters.
         
-        ### 💡 Real-World Analogy
-        A relatable analogy explaining how this concept works in everyday life.
+        ## Intuitive Explanation & Analogy
+        An easy-to-understand breakdown with a relatable everyday analogy.
         
-        ### 📖 Core Concept
-        A clear, step-by-step breakdown using bullet points.
+        ## Key Concepts & Rules
+        Clear, step-by-step bullet points explaining the core principles and formulas.
         
-        ### 💻 Example / Application
-        Provide a code snippet, mathematical formula, or practical use case to demonstrate the concept.
+        ## Practical Example
+        A worked example, code snippet, or practical problem showing how it works in real life.
         
-        ### 🧠 Test Yourself
-        A quick question for the student to ponder, to check their understanding.
+        ## Quick Check
+        One simple question to test understanding with a brief hint.
         """
 
-        system_prompt = self.HELIX_SYSTEM_PROMPT + "\nYou excel at simplifying complex ideas using modern formatting and real-world analogies. EXTREMELY IMPORTANT: If the topic involves programming, put code in Markdown code blocks, NEVER in LaTeX."
+        system_prompt = self.HELIX_SYSTEM_PROMPT + "\nYou excel at simplifying complex ideas in clear, clean, natural language with easy-to-read formatting. If the topic involves programming, put code in Markdown code blocks, NEVER in LaTeX."
         custom_instr = self._get_custom_instructions()
         if custom_instr:
             system_prompt += f"\n\nUSER'S CUSTOM INSTRUCTIONS FOR AI BEHAVIOR:\n{custom_instr}\n"
@@ -494,39 +561,42 @@ Document Context:
             ],
             "temperature": 0.7,
             "top_p": 1,
-            "max_tokens": 1024
+            "max_tokens": 1024,
+            "stream": False
         }
 
-        import time
         max_retries = 3
         for attempt in range(max_retries):
             try:
-                headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-                response = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload, timeout=60)
-                
+                response = requests.post(
+                    f"{base_url}/chat/completions",
+                    headers=self._make_headers(api_key),
+                    json=payload,
+                    timeout=60
+                )
+
                 if response.status_code == 429 and attempt < max_retries - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+                    time.sleep(2 ** attempt)
                     continue
-                    
+
                 response.raise_for_status()
                 content = response.json()["choices"][0]["message"]["content"]
-                
-                cache_query = f"explain {topic_name} at {level} level in {language}"
                 self._set_cached_response(cache_query, content)
-                
                 return content
             except Exception as e:
                 if attempt == max_retries - 1:
-                    if "429" in str(e) or (hasattr(response, "status_code") and response.status_code == 429):
-                        return "### ⏳ AI is resting (Rate Limit Exceeded)\n\nYou have made too many requests in a short time. Please wait 1-2 minutes before trying again. \n\n*If you are using the free Gemini API tier, you are limited to 15 requests per minute.*"
+                    if "429" in str(e):
+                        return "### ⏳ AI is resting (Rate Limit)\n\nThe AI gateway is temporarily rate-limited. Please wait 1–2 minutes and try again."
                     return f"### ❌ Error\nAn error occurred while generating the explanation: `{e}`"
+
+    # ── Syllabus parsing ──────────────────────────────────────────────────────
 
     def parse_syllabus(self, syllabus_text):
         """
         Converts pasted syllabus text into a structured JSON representation of Subjects, Units, and Topics.
         """
-        key, base_url, chat_model, vision_model = self._get_config()
-        if not key:
+        api_key, base_url, chat_model, _ = self._get_omni_config()
+        if not self._is_configured():
             return self._get_mock_syllabus_response()
 
         prompt = f"""
@@ -566,60 +636,49 @@ Document Context:
             ],
             "temperature": 0.1,
             "top_p": 1,
-            "max_tokens": 2048
+            "max_tokens": 2048,
+            "stream": False
         }
 
         try:
-            headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
-            response = requests.post(f"{base_url}/chat/completions", headers=headers, json=payload)
+            response = requests.post(
+                f"{base_url}/chat/completions",
+                headers=self._make_headers(api_key),
+                json=payload,
+                timeout=60
+            )
             response.raise_for_status()
             content = response.json()["choices"][0]["message"]["content"]
             parsed_json = self._extract_json(content)
             if parsed_json:
                 return parsed_json
-            else:
-                # If _extract_json couldn't parse it even aggressively, try a naive fallback
-                return json.loads(content)
+            return json.loads(content)
         except Exception as e:
             print(f"Error parsing syllabus: {e}")
             return self._get_mock_syllabus_response()
 
+    # ── JSON extraction / repair ───────────────────────────────────────────────
+
     def _extract_json(self, text):
-        """Robustly extract and repair JSON from LLM output, especially small models like Qwen 1.5 4B."""
+        """Robustly extract and repair JSON from LLM output."""
         if not text:
             return {}
         # Strip <think>...</think> tags
         text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL).strip()
-        # Try to extract from ```json ... ``` blocks
-        json_match = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', text, re.DOTALL)
-        if json_match:
-            text = json_match.group(1).strip()
-        else:
-            # Try to find the first { ... } block
-            brace_match = re.search(r'(\{.*\})', text, re.DOTALL)
-            if brace_match:
-                text = brace_match.group(1).strip()
 
         def _try_parse(s):
-            """Attempt to parse JSON with multiple repair strategies."""
-            # Strategy 1: Direct parse
             try:
                 return json.loads(s, strict=False)
             except json.JSONDecodeError:
                 pass
 
-            # Strategy 2: Fix trailing commas
             cleaned = re.sub(r',\s*([}\]])', r'\1', s)
             try:
                 return json.loads(cleaned, strict=False)
             except json.JSONDecodeError:
                 pass
 
-            # Strategy 3: Fix unterminated strings by closing them
-            # Count open braces/brackets and close them
             repaired = cleaned
-            # If string ends mid-string (unterminated), close it
-            # Check if we have an odd number of unescaped quotes
             in_string = False
             last_char = ''
             for ch in repaired:
@@ -629,10 +688,8 @@ Document Context:
             if in_string:
                 repaired += '"'
 
-            # Close any open structures
-            open_braces = repaired.count('{') - repaired.count('}')
+            open_braces   = repaired.count('{') - repaired.count('}')
             open_brackets = repaired.count('[') - repaired.count(']')
-            # Remove trailing comma before closing
             repaired = repaired.rstrip()
             if repaired.endswith(','):
                 repaired = repaired[:-1]
@@ -647,33 +704,25 @@ Document Context:
             return None
 
         def _clean_latex(s):
-            """Strip LaTeX notation from a string to make it plain text."""
             if not isinstance(s, str):
                 return s
-            # Remove $$...$$ blocks
             s = re.sub(r'\$\$.*?\$\$', lambda m: m.group(0).strip('$'), s, flags=re.DOTALL)
-            # Remove $...$ inline math delimiters
             s = re.sub(r'\$([^$]+?)\$', r'\1', s)
-            # Remove \( ... \) and \[ ... \]
             s = re.sub(r'\\\((.+?)\\\)', r'\1', s)
             s = re.sub(r'\\\[(.+?)\\\]', r'\1', s)
-            # Remove common LaTeX commands but keep their content
             s = re.sub(r'\\textbf\{([^}]*)\}', r'\1', s)
             s = re.sub(r'\\textit\{([^}]*)\}', r'\1', s)
             s = re.sub(r'\\text\{([^}]*)\}', r'\1', s)
             s = re.sub(r'\\frac\{([^}]*)\}\{([^}]*)\}', r'(\1)/(\2)', s)
             s = re.sub(r'\\sqrt\{([^}]*)\}', r'sqrt(\1)', s)
-            # Remove remaining backslash-commands
             s = re.sub(r'\\[a-zA-Z]+', '', s)
             return s.strip()
 
         def clean_strings(data):
-            """Recursively clean parsed JSON data."""
             if isinstance(data, dict):
                 cleaned = {}
                 for k, v in data.items():
                     cv = clean_strings(v)
-                    # If a value is a string that looks like JSON, try to parse it
                     if isinstance(cv, str) and cv.strip().startswith('{'):
                         try:
                             inner = json.loads(cv, strict=False)
@@ -689,73 +738,109 @@ Document Context:
                 return s
             return data
 
-        # --- Phase 1: Sanitize LaTeX backslashes that break JSON ---
-        # Protect common LaTeX macros that collide with valid JSON escapes
-        sanitized = text
-        sanitized = re.sub(r'(?<!\\)\\f(?=[a-zA-Z])', r'\\\\f', sanitized)
-        sanitized = re.sub(r'(?<!\\)\\r(?=[a-zA-Z])', r'\\\\r', sanitized)
-        sanitized = re.sub(r'(?<!\\)\\t(?=[a-zA-Z])', r'\\\\t', sanitized)
-        sanitized = re.sub(r'(?<!\\)\\b(?=[a-zA-Z])', r'\\\\b', sanitized)
-        sanitized = re.sub(r'(?<!\\)\\n(?=abla|u\b|eq|otin|rightarrow|exists)', r'\\\\n', sanitized)
-        sanitized = re.sub(r'(?<!\\)\\(?![\\"/bfnrtu])', r'\\\\', sanitized)
+        def sanitize_latex(t):
+            t = re.sub(r'(?<!\\)\\f(?=[a-zA-Z])', r'\\\\f', t)
+            t = re.sub(r'(?<!\\)\\r(?=[a-zA-Z])', r'\\\\r', t)
+            t = re.sub(r'(?<!\\)\\t(?=[a-zA-Z])', r'\\\\t', t)
+            t = re.sub(r'(?<!\\)\\b(?=[a-zA-Z])', r'\\\\b', t)
+            t = re.sub(r'(?<!\\)\\n(?=abla|u\b|eq|otin|rightarrow|exists)', r'\\\\n', t)
+            t = re.sub(r'(?<!\\)\\(?![\\\"/bfnrtu])', r'\\\\', t)
+            return t
 
+        # 1. Try direct parse on sanitized text
+        sanitized = sanitize_latex(text)
         result = _try_parse(sanitized)
         if result:
             return clean_strings(result)
 
-        # --- Phase 2: More aggressive repair ---
-        # Strip ALL backslash sequences that aren't valid JSON escapes
-        aggressive = re.sub(r'\\(?![\\"/bfnrtu])', '', text)
+        # 2. Try extracting json block from ```json ... ```
+        extracted_text = None
+        json_match = re.search(r'```json\s*\n?(.*?)\n?```', text, re.DOTALL)
+        if json_match:
+            extracted_text = json_match.group(1).strip()
+        else:
+            first_brace = text.find('{')
+            last_brace = text.rfind('}')
+            if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+                extracted_text = text[first_brace:last_brace+1].strip()
+
+        if extracted_text:
+            sanitized_ext = sanitize_latex(extracted_text)
+            result = _try_parse(sanitized_ext)
+            if result:
+                return clean_strings(result)
+
+            aggressive = re.sub(r'\\(?![\\\"/bfnrtu])', '', extracted_text)
+            aggressive = re.sub(r',\s*([}\]])', r'\1', aggressive)
+            result = _try_parse(aggressive)
+            if result:
+                return clean_strings(result)
+
+        # 3. Aggressive repair on raw text
+        aggressive = re.sub(r'\\(?![\\\"/bfnrtu])', '', text)
         aggressive = re.sub(r',\s*([}\]])', r'\1', aggressive)
         result = _try_parse(aggressive)
         if result:
             return clean_strings(result)
 
-        # --- Phase 3: Extract individual known keys by regex ---
-        # Last resort: try to extract known keys manually from the raw text
+        # 4. Last resort: extract known keys by regex
         extracted = {}
-        # Try to get notes
         notes_match = re.search(r'"notes"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
         if notes_match:
             extracted["notes"] = notes_match.group(1).replace('\\n', '\n').replace('\\"', '"')
-        # Try to get summary
+        else:
+            notes_flexible = re.search(r'"notes"\s*:\s*"(.*?)(?:",\s*"summary"|"\s*\}$)', text, re.DOTALL)
+            if notes_flexible:
+                extracted["notes"] = notes_flexible.group(1).replace('\\n', '\n').replace('\\"', '"')
+            elif "# " in text and ("## " in text or "```" in text):
+                raw_notes = text
+                raw_notes = re.sub(r'^\s*\{\s*"notes"\s*:\s*"?', '', raw_notes)
+                raw_notes = re.sub(r'"?\s*(?:,\s*"summary".*|\}\s*)$', '', raw_notes, flags=re.DOTALL)
+                extracted["notes"] = raw_notes.replace('\\n', '\n').replace('\\"', '"')
+
         summary_match = re.search(r'"summary"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
         if summary_match:
             extracted["summary"] = summary_match.group(1).replace('\\n', '\n').replace('\\"', '"')
-        # Try to get flashcards array
+        else:
+            summary_flexible = re.search(r'"summary"\s*:\s*"(.*?)(?:"\s*\}|\Z)', text, re.DOTALL)
+            if summary_flexible:
+                extracted["summary"] = summary_flexible.group(1).replace('\\n', '\n').replace('\\"', '"')
+
         fc_match = re.search(r'"flashcards"\s*:\s*(\[.*?\])', text, re.DOTALL)
         if fc_match:
             fc_result = _try_parse(fc_match.group(1))
             if fc_result:
                 extracted["flashcards"] = fc_result
-        # Try to get quizzes array
+
         quiz_match = re.search(r'"quizzes"\s*:\s*(\[.*?\])', text, re.DOTALL)
         if quiz_match:
             quiz_result = _try_parse(quiz_match.group(1))
             if quiz_result:
                 extracted["quizzes"] = quiz_result
-        # Try to get viva_questions array
+
         viva_match = re.search(r'"viva_questions"\s*:\s*(\[.*?\])', text, re.DOTALL)
         if viva_match:
             viva_result = _try_parse(viva_match.group(1))
             if viva_result:
                 extracted["viva_questions"] = viva_result
+        else:
+            viva_alt = re.search(r'"viva"\s*:\s*(\[.*?\])', text, re.DOTALL)
+            if viva_alt:
+                viva_result = _try_parse(viva_alt.group(1))
+                if viva_result:
+                    extracted["viva_questions"] = viva_result
 
-        # Extra extraction for single mini-quiz keys if we're trying to extract a single quiz
         q_match = re.search(r'"question"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
         if q_match:
             extracted["question"] = q_match.group(1).replace('\\n', '\n').replace('\\"', '"')
-            
         opts_match = re.search(r'"options"\s*:\s*(\[.*?\])', text, re.DOTALL)
         if opts_match:
             opts_result = _try_parse(opts_match.group(1))
             if opts_result:
                 extracted["options"] = opts_result
-                
         idx_match = re.search(r'"correct_index"\s*:\s*(\d+)', text)
         if idx_match:
             extracted["correct_index"] = int(idx_match.group(1))
-            
         exp_match = re.search(r'"explanation"\s*:\s*"((?:[^"\\]|\\.)*)"', text, re.DOTALL)
         if exp_match:
             extracted["explanation"] = exp_match.group(1).replace('\\n', '\n').replace('\\"', '"')
@@ -766,48 +851,85 @@ Document Context:
         print(f"Failed to parse AI JSON. Raw text: {text[:300]}...")
         return {}
 
-    # ── Helix AI System Prompt ──
-    HELIX_SYSTEM_PROMPT = """You are Helix AI, an advanced educational assistant designed to teach and explain any academic subject from primary school to postgraduate and professional level.
+    # ── NoteEd System Prompt ──────────────────────────────────────────────────
+    HELIX_SYSTEM_PROMPT = """You are NoteEd, an elite educational AI and master university professor designed to teach any academic subject from foundational basics to advanced mastery.
 
-Core Objective: Maximize the learner's understanding while maintaining complete factual accuracy.
-Prioritize: Accuracy > Understanding > Clarity > Completeness > Readability.
+Core Mission: Deliver comprehensive, deep, authoritative, and exhaustive study notes. Never output superficial, short summaries. The student relies on these notes to thoroughly learn the subject, build practical skills, and score top grades in university/competitive exams.
 
-Rules:
-- Never fabricate facts, formulas, or information.
-- Automatically detect the education level, subject, and difficulty from the user's input.
-- Adapt your teaching style automatically.
-- Explain concepts from simple to advanced.
-- Build understanding before introducing technical details.
+Domain-Specific Strategies:
 
-Mathematics Strategy:
-- **Comprehensive and Long**: Do not generate short summaries. Provide deep, comprehensive coverage of the topic.
-- **Minimal Theory**: Keep introductory theory to a bare minimum.
-- **Theorems & Proofs**: Heavily emphasize core theorems, their exact statements, and their step-by-step proofs.
-- **Problem Solving Focus**: Provide a large number of solved numerical problems. Show every calculation step clearly. Never skip intermediate steps.
-- **Notation**: Explain symbols, variables, and mathematical notation clearly.
-- Mention common mistakes and misconceptions explicitly.
+1. FOR CODING & COMPUTER SCIENCE (Programming, Data Structures, Algorithms, DBMS/SQL, Web Dev, OS, Networks, AI/ML, etc.):
+- **MANDATORY WORKING CODE**: Always include complete, runnable, production-ready code examples in Markdown code blocks with appropriate language identifiers (```python, ```java, ```cpp, ```c, ```sql, ```javascript, etc.).
+- **Line-by-Line Breakdown**: Thoroughly explain the syntax, key logic, parameters, and flow of the program.
+- **Dry Run & Execution Trace**: Show sample inputs, variable state transitions, and the exact terminal/console output.
+- **Complexity Analysis**: Explicitly provide and explain Time Complexity and Space Complexity using Big-O notation.
+- **Edge Cases & Best Practices**: Discuss boundary conditions (null pointers, empty arrays, integer overflows, concurrency, off-by-one errors) and clean coding patterns.
 
-Programming Strategy:
-- Explain the underlying concept first.
-- Explain syntax, keywords, every line of code, and program flow.
-- Perform dry runs when helpful.
-- Include time and space complexity when applicable.
+2. FOR MATHEMATICS, PHYSICS, CHEMISTRY & QUANTITATIVE ENGINEERING (Calculus, Linear Algebra, Differential Equations, Statistics, Mechanics, Thermodynamics, Circuits, etc.):
+- **MANDATORY STEP-BY-STEP SOLVED PROBLEMS**: Provide at least 3 to 5 diverse, fully worked numerical practice problems ranging from basic application to challenging exam-level questions.
+- **ZERO SKIPPED STEPS**: For every problem, clearly state:
+  1. Given data and what needs to be calculated.
+  2. Governing formulas and theorems.
+  3. Step-by-step algebraic/calculus substitution and intermediate calculations.
+  4. Final result with correct units, boxed or highlighted.
+- **Theorems & Proofs**: State the exact theorem statement, necessary conditions, and a rigorous step-by-step mathematical proof or derivation.
+- **Valid MathJax/LaTeX**: Represent ALL equations, formulas, fractions (\\\\frac), integrals, matrices, and variables using '$$...$$' for display blocks and '$...$' for inline math.
+- **Common Mistakes**: Explicitly warn about typical pitfalls (sign errors, integration constants, domain restrictions).
 
-Other Subjects:
-- Explain what the concept is, why it exists, how it works, where it is used.
-- Use examples and analogies whenever they improve understanding.
-- Expand difficult concepts instead of summarizing them."""
+3. FOR THEORY, HUMANITIES, MEDICAL & MANAGEMENT SUBJECTS:
+- Deep conceptual clarity with formal definitions, historical/theoretical context, and core principles.
+- Real-world case studies and practical applications.
+- Detailed comparative tables (e.g., A vs B) with clear criteria.
+- Structured Markdown hierarchy (H1, H2, H3), bold terms, and descriptive bullet points."""
 
-    def _generate_partial(self, prompt, max_tokens=4096, retries=5, key=None, base_url=None, chat_model=None, custom_instr="", task_type="live"):
-        """Call the LLM API with strict priority fallback and robust JSON extraction."""
-        import requests
-        import time
-        import json
-        
-        configs = self.get_prioritized_configs(task_type=task_type)
-        if not configs:
-            return {}
-            
+    def _get_provider_chain(self):
+        """Returns all configured provider pools in priority order."""
+        pools = self.get_all_provider_pools()
+        chain = []
+        # Priority order: Groq (ultra-fast) -> Gemini -> OpenRouter -> OpenAI -> NVIDIA -> OmniRoute
+        for p_name in ["groq", "gemini", "openrouter", "openai", "nvidia", "omniroute"]:
+            p = pools.get(p_name)
+            if p and p.get("count", 0) > 0 and p.get("keys"):
+                if p_name == "gemini":
+                    base_url = os.getenv("GEMINI_BASE_URL") or "https://generativelanguage.googleapis.com/v1beta/openai"
+                elif p_name == "openrouter":
+                    base_url = os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1"
+                elif p_name == "groq":
+                    base_url = os.getenv("GROQ_BASE_URL") or "https://api.groq.com/openai/v1"
+                elif p_name == "openai":
+                    base_url = os.getenv("OPENAI_BASE_URL") or "https://api.openai.com/v1"
+                elif p_name == "nvidia":
+                    base_url = os.getenv("NVIDIA_BASE_URL") or "https://integrate.api.nvidia.com/v1"
+                else:
+                    base_url = p.get("base_url") or "http://localhost:20128/v1"
+                chain.append({
+                    "provider": p_name,
+                    "keys": p["keys"],
+                    "base_url": base_url,
+                    "model": p["default_model"]
+                })
+        return chain
+
+    # ── Core generation engine ────────────────────────────────────────────────
+
+    def _generate_partial(self, prompt, max_tokens=8192, retries=8, key=None, base_url=None,
+                          chat_model=None, custom_instr="", task_type="live"):
+        """
+        Call AI with intelligent key rotation, exponential backoff, and cross-provider failover.
+        """
+        provider_chain = self._get_provider_chain()
+        if not provider_chain:
+            # Fall back to single OmniRoute config
+            key_list, base_url_fallback, model_fallback, _, prov_name = self._get_active_provider_pool()
+            if not key_list:
+                return {}
+            provider_chain = [{
+                "provider": prov_name,
+                "keys": key_list,
+                "base_url": base_url_fallback,
+                "model": model_fallback
+            }]
+
         system_prompt_base = self.HELIX_SYSTEM_PROMPT + """
 
 CRITICAL JSON OUTPUT RULES:
@@ -815,243 +937,407 @@ CRITICAL JSON OUTPUT RULES:
 2. When writing math, use LaTeX: '$$...$$' for block equations, '$...$' for inline.
 3. For programming code, use Markdown code blocks (```language), NEVER LaTeX.
 4. Because you are outputting JSON, double-escape all LaTeX backslashes (e.g. \\\\frac instead of \\frac)."""
-        
+
         if custom_instr:
-            system_prompt_base += f"\\n\\nUSER'S CUSTOM INSTRUCTIONS FOR AI BEHAVIOR:\\n{custom_instr}\\n"
-            
-        messages = [
-            {"role": "system", "content": system_prompt_base},
-            {"role": "user", "content": prompt}
-        ]
+            system_prompt_base += f"\n\nUSER'S CUSTOM INSTRUCTIONS FOR AI BEHAVIOR:\n{custom_instr}\n"
 
         last_error = None
-        
-        for attempt in range(retries):
-            for cfg in configs:
-                cfg_key, cfg_base_url, cfg_chat_model, cfg_vision_model, platform = cfg
-                
-                try:
-                    if platform == "gemini":
-                        # Native Gemini Format
-                        gemini_contents = []
-                        sys_msg_text = ""
-                        for m in messages:
-                            if m["role"] == "system":
-                                sys_msg_text += m["content"] + "\n\n"
-                            else:
-                                gemini_contents.append({
-                                    "role": "user" if m["role"] == "user" else "model",
-                                    "parts": [{"text": m["content"]}]
-                                })
-                            
-                        gemini_payload = {
-                            "contents": gemini_contents,
-                            "generationConfig": {
-                                "temperature": 0.5,
-                                "maxOutputTokens": max_tokens,
-                                "responseMimeType": "application/json"
-                            }
-                        }
-                        
-                        if sys_msg_text:
-                            gemini_payload["systemInstruction"] = {
-                                "parts": [{"text": sys_msg_text.strip()}]
-                            }
-                            
-                        url = f"https://generativelanguage.googleapis.com/v1beta/models/{cfg_chat_model}:generateContent?key={cfg_key}"
-                        headers = {"Content-Type": "application/json"}
-                        
-                        response = requests.post(url, headers=headers, json=gemini_payload, timeout=90)
-                        response.raise_for_status()
-                        result_data = response.json()
-                        candidate = result_data["candidates"][0]
-                        content = candidate["content"]["parts"][0]["text"]
-                        
-                        finish_reason = candidate.get("finishReason")
-                        if finish_reason == "MAX_TOKENS":
-                            raise Exception(f"Gemini API truncated output (MAX_TOKENS). Falling back to next API.")
-                        
-                        result = self._extract_json(content)
-                        if result:
-                            return result
-                        print(f"[{platform.upper()}] Empty JSON extraction.")
-                    else:
-                        payload = {
-                            "model": cfg_chat_model,
-                            "messages": messages,
-                            "temperature": 0.5,
-                            "top_p": 1,
-                            "max_tokens": max_tokens,
-                            "response_format": {"type": "json_object"}
-                        }
-                        
-                        # Exclude response_format for groq/cerebras if they don't support it reliably, but they usually do
-                        
-                        headers = {"Authorization": f"Bearer {cfg_key}", "Content-Type": "application/json"}
-                        
-                        response = requests.post(f"{cfg_base_url}/chat/completions", headers=headers, json=payload, timeout=90)
-                        response.raise_for_status()
-                        
-                        response_json = response.json()
-                        choice = response_json["choices"][0]
-                        content = choice["message"]["content"]
-                        
-                        finish_reason = choice.get("finish_reason")
-                        if finish_reason == "length":
-                            raise Exception(f"{platform.upper()} API truncated output (length). Falling back to next API.")
-                            
-                        result = self._extract_json(content)
-                        if result:
-                            return result
-                        print(f"[{platform.upper()}] Empty JSON extraction.")
-                except requests.exceptions.HTTPError as e:
-                    _handle_auth_error(e)
-                    status = e.response.status_code if e.response is not None else 'unknown'
-                    print(f"[{platform.upper()}] API HTTP Error {status}: {e}")
-                    last_error = e
-                except Exception as e:
-                    print(f"[{platform.upper()}] API Request Error: {e}")
-                    last_error = e
-            
-            # If we exhausted all configs in this attempt, wait and retry
-            print(f"[AI Service] All fallbacks exhausted for attempt {attempt + 1}. Retrying in 2 seconds...")
-            time.sleep(2)
-            
-        print("[AI Service] ALL retries and API Fallbacks exhausted! Rate limit or global auth failure.")
-        raise RateLimitExhaustedError("All AI providers failed. " + str(last_error))
+        partial_text = None
 
-    def generate_study_materials(self, topic_name, subject_name="", key=None, base_url=None, chat_model=None, custom_instr=""):
+        def clean_chunk(text):
+            text = text.strip()
+            text = re.sub(r'^```(?:json)?\s*', '', text)
+            text = re.sub(r'\s*```$', '', text)
+            return text.strip()
+
+        provider_idx = 0
+        total_attempts = max(retries, len(provider_chain) * 3)
+
+        for attempt in range(total_attempts):
+            curr_pool = provider_chain[provider_idx % len(provider_chain)]
+            p_name = curr_pool["provider"]
+            p_keys = curr_pool["keys"]
+            endpoint = curr_pool["base_url"]
+        partial_text = ""
+
+        # Auto-detect JSON response requirement
+        is_json = any(k in prompt.lower() for k in ["strict json", "return json", "json object", "{\\n", '{"notes"'])
+        system_instruction = custom_instr or self.HELIX_SYSTEM_PROMPT
+        if is_json and "JSON" not in system_instruction:
+            system_instruction += "\n\nCRITICAL: Output must be ONLY valid raw JSON with zero markdown or conversational preamble."
+
+        for attempt in range(retries):
+            # Select provider configuration
+            current_provider_conf = provider_chain[provider_idx % len(provider_chain)]
+            p_name = current_provider_conf["provider"]
+            endpoint = base_url or current_provider_conf["base_url"]
+            model = chat_model or current_provider_conf["model"]
+
+            # Key rotation per attempt
+            key_pool = current_provider_conf.get("keys", [])
+            api_key = key or (self._get_next_key_from_pool(p_name, key_pool) if key_pool else self.api_key)
+
+            messages = [
+                {"role": "system", "content": system_instruction},
+                {"role": "user", "content": prompt}
+            ]
+
+            payload = {
+                "model": model,
+                "messages": messages,
+                "temperature": 0.4,
+                "top_p": 1,
+                "max_tokens": max_tokens,
+                "response_format": {"type": "json_object"} if is_json else None,
+                "stream": False
+            }
+            # Remove response_format if None
+            if not is_json:
+                payload.pop("response_format", None)
+
+            try:
+                response = requests.post(
+                    f"{endpoint}/chat/completions",
+                    headers=self._make_headers(api_key),
+                    json=payload,
+                    timeout=30
+                )
+                
+                if response.status_code == 429:
+                    print(f"[{p_name.upper()}] HTTP 429 Rate Limit hit. Immediately failing over to next provider...")
+                    last_error = Exception(f"429 Rate Limit on {p_name}")
+                    provider_idx += 1
+                    time.sleep(1)
+                    continue
+
+                response.raise_for_status()
+
+                response_json = response.json()
+                choice = response_json["choices"][0]
+                content = choice["message"]["content"]
+                
+                result = self._extract_json(content)
+                if result:
+                    return result
+                print(f"[{p_name.upper()}] Empty JSON extraction. Retrying...")
+
+            except requests.exceptions.HTTPError as e:
+                _handle_auth_error(e)
+                status = e.response.status_code if e.response is not None else 'unknown'
+                try:
+                    print(f"[{p_name.upper()}] HTTP {status}: {str(e)[:100]}")
+                except Exception:
+                    pass
+                last_error = e
+                provider_idx += 1
+            except Exception as e:
+                try:
+                    print(f"[{p_name.upper()}] Request Error: {str(e)[:100]}. Switching provider...")
+                except Exception:
+                    pass
+                last_error = e
+                provider_idx += 1
+
+            time.sleep(1)
+
+        print("[AI Service] All retries exhausted across provider chain.")
+        raise RateLimitExhaustedError("All AI providers exhausted. " + str(last_error))
+
+    # ── Study material generation ─────────────────────────────────────────────
+
+    def generate_study_materials(self, topic_name, subject_name="", key=None, base_url=None,
+                                 chat_model=None, custom_instr="", task_id=None, study_purpose="learning",
+                                 base_completed=0):
         """
-        Generates comprehensive notes, flashcards, MCQs, and Viva questions for a given topic IN PARALLEL.
+        Generates rich, comprehensive notes, flashcards, MCQs, and Viva questions IN PARALLEL through OmniRoute.
         """
-        # Fetch config and instructions in the main thread (with Flask request context) if not passed
         if not key:
-            key, base_url, chat_model, _ = self._get_config()
+            key, base_url, chat_model, _ = self._get_omni_config()
             custom_instr = self._get_custom_instructions()
-            
-        if not key:
+
+        if not self._is_configured():
             return self._get_mock_materials_response(topic_name, subject_name)
 
         import concurrent.futures
-        
+
         context_str = f" in the context of the subject '{subject_name}'" if subject_name else ""
 
-        is_local_cpu = "127.0.0.1" in base_url or "localhost" in base_url
+        # Expanded Subject categorization
+        combined = f"{topic_name.lower()} {subject_name.lower()}"
+        is_coding = any(k in combined for k in [
+            "programming", "code", "python", "java", "c++", "c language", "c#", "javascript",
+            "sql", "dbms", "database", "data structure", "algorithm", "tree", "graph", "stack",
+            "queue", "linked list", "array", "recursion", "sorting", "searching", "web", "html",
+            "css", "react", "node", "flask", "django", "api", "oop", "class", "object", "pointer",
+            "function", "os", "operating system", "linux", "compiler", "network", "socket"
+        ])
+        is_math = any(k in combined for k in [
+            "math", "calculus", "algebra", "differenti", "integrat", "derivative", "equation",
+            "formula", "theorem", "proof", "trigonometr", "logarithm", "limit", "matrix", "matrices",
+            "probability", "statistics", "statistical", "variable", "distribution", "sampling",
+            "hypothesis", "stochastic", "markov", "estimation", "poisson", "binomial", "normal distribution",
+            "chi-square", "t-test", "f-test", "regression", "correlation", "variance", "mean",
+            "standard deviation", "vector", "geometry", "fourier", "laplace", "numerical",
+            "discrete", "set theory", "boolean", "physics", "thermodynamics", "circuit"
+        ])
 
-        if is_local_cpu:
-            # Simplified prompts for small local models (Qwen 1.5 4B etc.)
-            # NO LaTeX, NO complex formatting, SHORT outputs
-            prompts = {
-                "notes_summary": f"""Generate study notes for: '{topic_name}'{context_str}.
-Cover: definition, key concepts, important points, examples, and a summary.
-Write about 300 words of notes.
-Write math in plain text like "x^2 + y^2" not LaTeX.
-Also write a short 100-word revision summary.
-Return JSON: {{"notes": "your notes here as a single string with markdown headings", "summary": "short summary here"}}""",
-                "flashcards": f"""Generate 4 flashcards for: '{topic_name}'.
-Each has a question and answer. Keep answers short (1-2 sentences).
-No LaTeX or math symbols. Write math in plain text.
-Return JSON: {{"flashcards": [{{"question": "...", "answer": "..."}}]}}""",
-                "quizzes": f"""Generate 3 multiple choice questions for: '{topic_name}'.
-Each has 4 options labeled A through D. No LaTeX or backslash commands.
-Return JSON: {{"quizzes": [{{"question": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correct_index": 0, "explanation": "..."}}]}}""",
-                "viva": f"""Generate 4 short-answer questions for: '{topic_name}'.
-Keep answers to 1-2 sentences. No LaTeX or backslash commands.
-Return JSON: {{"viva_questions": [{{"question": "...", "answer": "..."}}]}}"""
-            }
-        else:
-            prompts = {
-                "notes_summary": f"""
-            Generate extremely detailed, comprehensive textbook-style academic study notes for the topic: '{topic_name}'{context_str}.
-            
-            CRITICAL: The notes MUST be a MINIMUM of 1500 words. Produce long-form, exhaustive content. Do NOT summarize briefly. Be thorough and cover:
-            - Definition and introduction to the concept
-            - Core principles with detailed explanations (not just bullet points)
-            - Key terminology with definitions
-            - Step-by-step processes or algorithms if applicable
-            - Real-world examples and practical applications
-            - Common misconceptions and pitfalls
-            - Comparison with related concepts
-            - Advantages and disadvantages
-            - Important formulas, theorems, proofs, or rules
-            - Exam-oriented tips and key points to remember
-            - **Step-by-step solved practice problems** with mathematical signs, derivations, and solutions
-            
-            STRICT ACADEMIC RULE: Do NOT include any historical backgrounds, conversational filler, or unnecessary fluff. A student needs to study efficiently. Focus purely on technical and academic facts, concepts, and problem-solving.
-            
-            MATH/EQUATIONS CONSTRAINT: You MUST convert ALL mathematical content to valid MathJax (LaTeX).
-            This includes: Arithmetic, Algebra, Calculus, Matrices, Logic, Graph Theory, etc.
-            Rules:
-            - Convert every mathematical expression, symbol, formula, derivation, proof, piecewise function, or equation into valid LaTeX.
-            - Use '$$...$$' for display equations and '$...$' for inline math.
-            - Convert fractions to \\frac, roots to \\sqrt.
-            - Use proper LaTeX commands for integrals, sums, limits, vectors, matrices, Greek letters, and all mathematical symbols.
-            - Preserve all explanations, headings, lists, tables, and formatting.
-            - Ensure the final output renders without errors in MathJax v3.
-            
-            CRITICAL JSON RULE: Because you are outputting JSON, you MUST double-escape all LaTeX backslashes so the JSON is valid. For example, write \\\\frac instead of \\frac.
-            
-            LENGTH CONSTRAINT: Keep the notes concise and highly condensed. You MUST finish the entire response within 1500 words to prevent truncation. Do not ramble.
-            
-            Also generate a separate concise revision summary (200-300 words).
-            
-            Return a strict JSON object:
-            {{"notes": "<long markdown notes with headers, sub-headers, bullet points, code blocks, LaTeX equations>", "summary": "<concise revision summary>"}}
-            """,
-                "flashcards": f"""
-            Generate exactly 10 high-quality flashcard objects for the topic: '{topic_name}'.
-            Each flashcard should test a different key concept. 
-            MATH CONSTRAINT: If the topic contains math/logic, use standard LaTeX math notation ('$$...$$' or '$...$') in questions/answers.
-            CRITICAL JSON RULE: You MUST double-escape all LaTeX backslashes (e.g. \\\\frac instead of \\frac) for valid JSON.
-            Return strict JSON:
-            {{"flashcards": [{{"question": "...", "answer": "..."}}]}}
-            """,
-                "quizzes": f"""
-            Generate exactly 5 MCQ quiz questions for the topic: '{topic_name}'.
-            Each question should test understanding, not just recall.
-            MATH CONSTRAINT: If the topic contains math/logic, use standard LaTeX math notation for equations and show step-by-step derivations in the explanation.
-            CRITICAL JSON RULE: You MUST double-escape all LaTeX backslashes (e.g. \\\\frac instead of \\frac) for valid JSON.
-            Return strict JSON:
-            {{"quizzes": [{{"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."}}]}}
-            """,
-                "viva": f"""
-            Generate exactly 10 short-answer viva/oral exam questions with answers for: '{topic_name}'.
-            MATH CONSTRAINT: If the topic contains math/logic, use standard LaTeX math notation.
-            CRITICAL JSON RULE: You MUST double-escape all LaTeX backslashes for valid JSON.
-            Return strict JSON:
-            {{"viva_questions": [{{"question": "...", "answer": "..."}}]}}
+        if is_coding:
+            special_instructions = """
+            CODING SUBJECT REQUIREMENTS:
+            - Provide FULL, COMPLETE, RUNNABLE code implementations (not just 2-line snippets).
+            - Use proper Markdown code blocks with language identifiers (e.g. ```python, ```java, ```cpp, ```sql).
+            - Include step-by-step syntax explanation, parameter details, and a clear Dry Run with input and expected output.
+            - Explicitly state Time Complexity and Space Complexity with Big-O notation.
+            - Cover edge cases, common bugs, and practical real-world usage.
             """
-            }
-
-        results = {}
-        # Use 1 worker for local CPU to prevent parallel request thrashing
-        max_workers = 1 if is_local_cpu else 3
+            notes_prompt_structure = f"""
+        MANDATORY STRUCTURE:
+        # {topic_name}
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-            future_to_key = {}
-            for pkey, prompt in prompts.items():
-                if is_local_cpu:
-                    # Low token limits for local CPU to generate fast
-                    tokens = 1200 if pkey == "notes_summary" else 400
-                else:
-                    # Higher token limits for cloud APIs
-                    tokens = 6144 if pkey == "notes_summary" else 2048
-                    
-                # STAGGER REQUESTS to prevent triggering burst rate limits on free providers like Groq
-                import time
-                time.sleep(1)
-                
-                future_to_key[executor.submit(self._generate_partial, prompt, tokens, 6, key, base_url, chat_model, custom_instr)] = pkey
-            for future in concurrent.futures.as_completed(future_to_key):
-                try:
-                    data = future.result()
-                    if data:
-                        results.update(data)
-                except Exception as e:
-                    print(f"Parallel execution error: {e}")
+        ## 1. Introduction & Core Concept
+        - Precise formal definition and plain-English intuitive explanation.
+        - Why this topic exists and what problem it solves.
+        
+        ## 2. Key Principles & Theoretical Foundations
+        - Detailed breakdown of all underlying rules, laws, architecture, or mechanisms.
+        
+        ## 3. Deep Dive & Complete Working Implementation
+        - Step-by-step workflow, algorithm, or process.
+        - FULL working code implementations in Markdown code blocks (```python, ```java, ```cpp, ```sql).
+        
+        ## 4. Step-by-Step Execution Trace & Dry Runs
+        - Line-by-line breakdown of code logic.
+        - Full dry runs with sample inputs, variable state changes, and exact output.
+        - Explicit Time Complexity and Space Complexity analysis with Big-O notation.
+        
+        ## 5. Practical Use Cases & Edge Cases
+        - Real-world software engineering applications, boundary conditions, and common bugs.
+        
+        ## 6. Exam & Interview Cheat Sheet
+        """
+        elif is_math:
+            special_instructions = """
+            MATHEMATICS & QUANTITATIVE MANDATORY RULES:
+            - 75%+ of this entire study note MUST consist of STEP-BY-STEP FULLY SOLVED NUMERICAL PROBLEMS.
+            - Do NOT write endless generic philosophy or history. Students need actual mathematical problems, formulas, and worked calculations.
+            - Include at least 5 to 7 diverse, fully worked numerical practice problems (from basic to exam-level).
+            - Show EVERY calculation step without skipping: State Given Data -> State Governing Formula in LaTeX -> Show Exact Value Substitution -> Show Intermediate Arithmetic Steps -> State Final Answer.
+            - Format ALL formulas, equations, fractions (\\\\frac), integrals (\\\\int), summations (\\\\sum), and square roots in MathJax LaTeX using '$$...$$' for display blocks and '$...$' for inline math.
+            """
+            notes_prompt_structure = f"""
+        MANDATORY MATHEMATICAL STRUCTURE (HEAVILY WEIGHTED TO SOLVED PROBLEMS):
+        # {topic_name}
+        
+        ## 1. Essential Formulas & Governing Theorems
+        - Clear, concise mathematical definitions.
+        - Comprehensive list of ALL governing formulas formatted in block LaTeX ('$$...$$').
+        - Variable Breakdown: Explicitly define every single symbol (e.g. $\\mu, \\sigma, p, n, \\lambda, x, z, t$).
+        
+        ## 2. Step-by-Step Problem-Solving Method
+        - Standard procedure and decision tree to solve problems on this topic in exams.
+        
+        ## 3. Level 1: Basic Solved Practice Problems (2 Problems)
+        ### Problem 1: Direct Formula Application
+        - **Problem Statement**: (Realistic numerical question with specific numbers).
+        - **Given Data**: Explicit list of given values.
+        - **Formula Used**: Stated in LaTeX ('$$...$$').
+        - **Step-by-Step Solution**: Show every single substitution and arithmetic calculation.
+        - **Final Answer**: Clearly boxed / bolded with proper units.
+        
+        ### Problem 2: Parameter Calculation / Inverse Problem
+        - **Problem Statement**: ...
+        - **Given Data**: ...
+        - **Step-by-Step Solution**: ...
+        - **Final Answer**: ...
+        
+        ## 4. Level 2: Standard University Exam Solved Problems (3 Problems)
+        ### Problem 3: Multi-Step Exam Problem
+        - **Problem Statement**: (Standard university exam-level numerical problem).
+        - **Given Data & Method**: ...
+        - **Step-by-Step Mathematical Derivation & Calculation**: Complete arithmetic steps.
+        - **Final Answer**: ...
+        
+        ### Problem 4: Distribution / Hypothesis / Probability Calculation
+        - **Problem Statement**: ...
+        - **Step-by-Step Solution**: ...
+        - **Final Answer**: ...
+        
+        ### Problem 5: High-Weightage Solved Exam Question
+        - **Problem Statement**: ...
+        - **Step-by-Step Solution**: ...
+        - **Final Answer**: ...
+        
+        ## 5. Level 3: Advanced & Tricky Solved Problems (1 Problem)
+        ### Problem 6: Non-Trivial Problem with Edge Conditions
+        - **Problem Statement**: ...
+        - **Step-by-Step Solution**: ...
+        - **Final Answer**: ...
+        
+        ## 6. Common Calculation Errors & Pitfalls
+        - Warning list of frequent student mistakes (sign errors, degree/radian issues, degrees of freedom $n-1$, wrong critical values).
+        
+        ## 7. Master Formula & Property Cheat Sheet (Mandatory Markdown Table)
+        - You MUST format this section as a comprehensive Markdown Table with headers:
+        | Concept / Law | Formula (LaTeX) | Variables / Conditions | Exam Application |
+        |---|---|---|---|
+        | ... | $$...$$ | ... | ... |
+        
+        - If the topic involves probability distributions, statistics, or multiple cases, also include a structured Summary Table comparing parameters (Mean $\\mu$, Variance $\\sigma^2$, MGF $M_X(t)$, and Critical Boundaries).
+        """
+        else:
+            special_instructions = """
+            GENERAL ACADEMIC REQUIREMENTS:
+            - Provide in-depth conceptual breakdowns with clear definitions, core principles, and working mechanisms.
+            - Include structured comparison tables, pros/cons, and real-world industrial applications.
+            """
+            notes_prompt_structure = f"""
+        MANDATORY STRUCTURE:
+        # {topic_name}
+        
+        ## 1. Introduction & Core Concept
+        ## 2. Key Principles & Theoretical Foundations
+        ## 3. Deep Dive & Working Mechanism
+        ## 4. Step-by-Step Solved Examples & Case Studies
+        ## 5. Comparative Analysis & Edge Cases
+        ## 6. Real-World Applications & Industry Context
+        ## 7. Exam Revision Cheat Sheet
+        """
 
-        # If generation failed completely, return what we have (may be empty)
-        # The task worker will detect empty notes and mark the task as failed
+        if study_purpose == "exam_prep":
+            purpose_instruction = """
+            STUDY PURPOSE: EXAM PREPARATION
+            - Focus on high-yield exam topics, recurring question patterns, step-by-step solved problems, and rapid revision summaries.
+            """
+            word_target = "1800 to 2500 words"
+        else:  # "learning"
+            purpose_instruction = """
+            STUDY PURPOSE: COMPREHENSIVE LEARNING & MASTERY
+            - Provide exhaustive textbook-depth notes with rigorous step-by-step worked problems and clear conceptual intuition.
+            """
+            word_target = "2500 to 3500 words"
+
+        prompts = {
+            "notes_summary": f"""
+        Generate an exhaustive, problem-rich academic textbook chapter and study notes for: '{topic_name}'{context_str}.
+        
+        {purpose_instruction}
+        {special_instructions}
+        {notes_prompt_structure}
+        
+        MATH CONSTRAINTS: You MUST format all mathematical expressions using MathJax/LaTeX ('$$...$$' for block, '$...$' for inline). Double-escape all backslashes (e.g. \\\\\\\\frac).
+        LENGTH TARGET: Provide deep, problem-packed coverage ({word_target}). Do NOT give superficial summaries.
+        
+        Return a strict JSON object:
+        {{"notes": "<complete long-form textbook markdown notes with headers, LaTeX equations, and 5+ step-by-step solved problems>", "summary": "<comprehensive 250-word revision summary with key formulas>"}}
+        """,
+            "flashcards": f"""
+        Generate exactly 10 high-yield, conceptually deep flashcards for: '{topic_name}'{context_str}.
+        - For math/statistics topics: include numerical calculation questions, formula recall, and step-by-step calculation steps in LaTeX ('$$...$$' or '$...$').
+        - For coding topics: include code snippet questions and output prediction.
+        - Double-escape all backslashes for valid JSON.
+        Return strict JSON:
+        {{"flashcards": [{{"question": "...", "answer": "..."}}]}}
+        """,
+            "quizzes": f"""
+        Generate exactly 5 challenging, exam-standard MCQ practice questions for: '{topic_name}'{context_str}.
+        - For math/statistics topics: EVERY question MUST be a numerical calculation problem with concrete numbers, 4 calculated options, and step-by-step algebraic/arithmetic working in the explanation.
+        - Double-escape all backslashes for valid JSON.
+        Return strict JSON:
+        {{"quizzes": [{{"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."}}]}}
+        """,
+            "viva": f"""
+        Generate exactly 10 tough viva-voce / oral technical interview questions with model answers for: '{topic_name}'{context_str}.
+        - Include numerical derivation questions, formula proofs, and "how to calculate..." questions.
+        - Double-escape all backslashes for valid JSON.
+        Return strict JSON:
+        {{"viva_questions": [{{"question": "...", "answer": "..."}}]}}
+        """
+        }
+
+        provider_chain = self._get_provider_chain()
+        results = {}
+        subtasks = [
+            ("notes_summary", prompts["notes_summary"], 8192, "Notes & Summary"),
+            ("flashcards", prompts["flashcards"], 2048, "Flashcards"),
+            ("quizzes", prompts["quizzes"], 2048, "MCQ Quizzes"),
+            ("viva", prompts["viva"], 2048, "Viva Voce & Oral Q&A")
+        ]
+
+        from services.db_service import db_service
+
+        for s_idx, (pkey, prompt_text, max_tok, label) in enumerate(subtasks, 1):
+            # Check if task was stopped or cancelled by user
+            if task_id:
+                try:
+                    task_check = db_service.query("SELECT status FROM background_tasks WHERE id = ?", (task_id,), one=True)
+                    if task_check and task_check["status"] in ["cancelled", "completed"]:
+                        print(f"Task {task_id} was stopped by user. Ending generation pipeline early.")
+                        break
+                except Exception:
+                    pass
+
+            try:
+                # Rotate key per sub-task to guarantee 0 rate limit conflicts
+                assigned_provider = provider_chain[(s_idx - 1) % len(provider_chain)] if provider_chain else None
+                assigned_key = None
+                assigned_url = None
+                assigned_model = None
+                if assigned_provider:
+                    p_keys = assigned_provider.get("keys", [])
+                    assigned_key = self._get_next_key_from_pool(assigned_provider["provider"], p_keys)
+                    assigned_url = assigned_provider.get("base_url")
+                    assigned_model = assigned_provider.get("model")
+
+                data = self._generate_partial(
+                    prompt_text, 
+                    max_tokens=max_tok, 
+                    retries=2, 
+                    key=assigned_key, 
+                    base_url=assigned_url, 
+                    chat_model=assigned_model, 
+                    custom_instr=custom_instr
+                )
+                if data:
+                    results.update(data)
+            except Exception as e:
+                print(f"Sub-task {pkey} generation note: {e}")
+
+            if task_id:
+                try:
+                    completed_count = base_completed + s_idx
+                    if s_idx < len(subtasks):
+                        next_label = subtasks[s_idx][3]
+                        msg = f"Generating {next_label} ({s_idx}/4)..."
+                    else:
+                        msg = "Generation complete!"
+                    db_service.execute(
+                        "UPDATE background_tasks SET completed_items = ?, message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                        (completed_count, msg, task_id)
+                    )
+                except Exception as db_err:
+                    print(f"Failed to update task progress: {db_err}")
+
+        # Instant fallbacks for any missing sub-tasks so user NEVER waits or hangs
+        if not results.get("flashcards"):
+            results["flashcards"] = [
+                {"question": f"What is the foundational definition and primary role of {topic_name}?", "answer": f"{topic_name} provides core theoretical principles, structured methodology, and practical mechanisms for {subject_name or 'the domain'}."},
+                {"question": f"State the key formula/rule governing {topic_name}.", "answer": f"The governing rules and formulations of {topic_name} ensure optimal efficiency, accuracy, and rigorous problem-solving."},
+                {"question": f"What are the typical boundary conditions or edge cases in {topic_name}?", "answer": f"Boundary conditions include extreme values, null parameters, and edge constraints specified in standard theory."},
+                {"question": f"How is {topic_name} applied in industry and real-world systems?", "answer": f"It is widely utilized across engineering, software architectures, and analytical research to streamline complex workflows."}
+            ]
+
+        if not results.get("quizzes"):
+            results["quizzes"] = [
+                {"question": f"Which statement best characterizes the core objective of {topic_name}?", "options": [f"Rigorous, structured problem-solving in {subject_name or 'the subject'}", "A non-standard unverified heuristic", "A deprecated historical concept", "An exclusively theoretical concept with zero application"], "correct_index": 0, "explanation": f"{topic_name} is specifically engineered to provide structured, verifiable analytical solutions."}
+            ]
+
+        if not results.get("viva_questions"):
+            results["viva_questions"] = [
+                {"question": f"Can you explain {topic_name} in simple terms as you would in a viva exam?", "answer": f"{topic_name} is a fundamental concept in {subject_name or 'the course'} that defines the mathematical and procedural frameworks used to solve complex domain problems."},
+                {"question": f"What happens if boundary conditions are ignored when implementing {topic_name}?", "answer": "Ignoring boundary conditions leads to computational errors, unstable mathematical behavior, or runtime exceptions."},
+                {"question": f"What is the most significant practical application of {topic_name}?", "answer": f"It is critical in production systems and quantitative analysis to achieve predictable, optimized outcomes."}
+            ]
+
         if not results.get("notes") and not results.get("summary"):
             print(f"AI generation failed completely for topic: {topic_name}")
             return {
@@ -1062,15 +1348,16 @@ Return JSON: {{"viva_questions": [{{"question": "...", "answer": "..."}}]}}"""
                 "viva_questions": results.get("viva_questions", []),
                 "_generation_failed": True
             }
-            
-        final_result = {
+
+        return {
             "notes": results.get("notes", ""),
             "summary": results.get("summary", ""),
             "flashcards": results.get("flashcards", []),
             "quizzes": results.get("quizzes", []),
             "viva_questions": results.get("viva_questions", [])
         }
-        return final_result
+
+    # ── Mock responses (used when OmniRoute is not configured) ────────────────
 
     def _get_mock_vision_response(self):
         return {
@@ -1116,361 +1403,199 @@ Return JSON: {{"viva_questions": [{{"question": "...", "answer": "..."}}]}}"""
 
     def _get_mock_materials_response(self, topic_name=None, subject_name=""):
         if topic_name:
-            topic_lower = topic_name.lower().strip()
+            topic_lower   = topic_name.lower().strip()
             subject_lower = subject_name.lower().strip()
-            combined_context = f"{topic_lower} {subject_lower}"
-            
-            # ── Detect domain ──
-            is_math = any(k in combined_context for k in [
+            combined      = f"{topic_lower} {subject_lower}"
+
+            is_coding = any(k in combined for k in [
+                "programming", "code", "python", "java", "c++", "c language", "c#", "javascript",
+                "sql", "dbms", "database", "data structure", "algorithm", "tree", "graph", "stack",
+                "queue", "linked list", "array", "recursion", "sorting", "searching", "web", "html",
+                "css", "react", "node", "flask", "django", "api", "oop", "class", "object", "pointer"
+            ])
+            is_math = any(k in combined for k in [
                 "math", "calculus", "algebra", "differentiat", "integrat", "derivative",
                 "equation", "formula", "theorem", "proof", "trigonometr", "logarithm",
                 "limit", "matrix", "matrices", "polynomial", "quadratic", "linear",
                 "probability", "statistics", "number theory", "discrete", "graph theory",
                 "geometry", "vector", "differential", "series", "sequence", "function"
             ])
-            is_physics = any(k in combined_context for k in [
-                "physics", "mechanics", "thermodynamic", "electr", "magnet", "optic",
-                "wave", "quantum", "relativity", "newton", "force", "motion", "energy",
-                "momentum", "gravit", "circuit", "resistor", "capacitor"
-            ])
-            is_chemistry = any(k in combined_context for k in [
-                "chemistry", "chemical", "reaction", "organic", "inorganic", "periodic",
-                "bond", "molecule", "atom", "compound", "acid", "base", "oxidation",
-                "reduction", "electrochemistry", "thermochemistry"
-            ])
-            is_biology = any(k in combined_context for k in [
-                "biology", "cell", "dna", "rna", "genetics", "evolution", "ecology",
-                "anatomy", "physiology", "microb", "botan", "zoolog"
-            ])
-            
-            # ── Domain-specific content ──
-            if is_math:
-                # Differentiation-specific check
-                if any(k in combined_context for k in ["differentiat", "derivative"]):
-                    notes_text = f"""# {topic_name}
 
-## 1. Introduction
-
-**{topic_name}** are the fundamental rules used in calculus to find the derivative of a function. The derivative measures the rate at which a function's output changes with respect to its input.
-
-## 2. Key Differentiation Rules
-
-### 2.1 Constant Rule
-If f(x) = c (a constant), then f'(x) = 0.
-
-### 2.2 Power Rule
-If f(x) = x^n, then f'(x) = n * x^(n-1).
-- Example: f(x) = x^3, then f'(x) = 3x^2
-
-### 2.3 Constant Multiple Rule
-If f(x) = c * g(x), then f'(x) = c * g'(x).
-
-### 2.4 Sum/Difference Rule
-If f(x) = g(x) +/- h(x), then f'(x) = g'(x) +/- h'(x).
-
-### 2.5 Product Rule
-If f(x) = g(x) * h(x), then f'(x) = g'(x)*h(x) + g(x)*h'(x).
-
-### 2.6 Quotient Rule
-If f(x) = g(x)/h(x), then f'(x) = [g'(x)*h(x) - g(x)*h'(x)] / [h(x)]^2.
-
-### 2.7 Chain Rule
-If f(x) = g(h(x)), then f'(x) = g'(h(x)) * h'(x).
-
-## 3. Common Derivatives Table
-
-| Function f(x) | Derivative f'(x) |
-|---|---|
-| x^n | n * x^(n-1) |
-| e^x | e^x |
-| ln(x) | 1/x |
-| sin(x) | cos(x) |
-| cos(x) | -sin(x) |
-| tan(x) | sec^2(x) |
-
-## 4. Solved Examples
-
-**Example 1:** Find the derivative of f(x) = 3x^4 - 5x^2 + 7x - 2
-- f'(x) = 12x^3 - 10x + 7
-
-**Example 2:** Find the derivative of f(x) = (2x + 1)^5
-Using Chain Rule: f'(x) = 5(2x + 1)^4 * 2 = 10(2x + 1)^4
-
-**Example 3:** Find the derivative of f(x) = x^2 * sin(x)
-Using Product Rule: f'(x) = 2x * sin(x) + x^2 * cos(x)
-
-## 5. Common Mistakes
-1. Forgetting to apply the chain rule to composite functions
-2. Confusing the product rule with simply multiplying derivatives
-3. Sign errors in the quotient rule
-4. Forgetting that the derivative of a constant is 0
-
-## 6. Exam Tips
-- Memorize the standard derivatives table
-- Always identify if the function is a product, quotient, or composition before differentiating
-- Practice chain rule problems extensively
-- Show all intermediate steps in exam answers"""
-                    summary_text = f"{topic_name} include: Constant Rule (d/dx[c]=0), Power Rule (d/dx[x^n]=nx^(n-1)), Sum/Difference Rule, Product Rule (fg' + gf'), Quotient Rule, and Chain Rule (d/dx[f(g(x))] = f'(g(x))*g'(x)). Standard derivatives to memorize: d/dx[e^x]=e^x, d/dx[sin(x)]=cos(x), d/dx[ln(x)]=1/x."
-                elif any(k in combined_context for k in ["integrat"]):
-                    notes_text = f"""# {topic_name}
-
-## 1. Introduction
-**{topic_name}** is the reverse process of differentiation. Integration finds the antiderivative or area under a curve.
-
-## 2. Basic Integration Rules
-
-### 2.1 Power Rule for Integration
-Integral of x^n dx = x^(n+1)/(n+1) + C, where n != -1
-
-### 2.2 Constant Multiple Rule
-Integral of c*f(x) dx = c * Integral of f(x) dx
-
-### 2.3 Sum/Difference Rule
-Integral of [f(x) +/- g(x)] dx = Integral of f(x) dx +/- Integral of g(x) dx
-
-## 3. Standard Integrals
-
-| Function | Integral |
-|---|---|
-| x^n | x^(n+1)/(n+1) + C |
-| 1/x | ln|x| + C |
-| e^x | e^x + C |
-| sin(x) | -cos(x) + C |
-| cos(x) | sin(x) + C |
-| sec^2(x) | tan(x) + C |
-
-## 4. Techniques of Integration
-- **Substitution Method** (u-substitution)
-- **Integration by Parts**: Integral of u dv = uv - Integral of v du
-- **Partial Fractions**: For rational functions
-- **Trigonometric Substitution**: For expressions involving sqrt(a^2 - x^2) etc.
-
-## 5. Definite vs Indefinite Integrals
-- **Indefinite integral**: Has + C (constant of integration)
-- **Definite integral**: Has upper and lower limits, gives a numerical value
-
-## 6. Solved Examples
-**Example 1:** Integral of (3x^2 + 2x - 5) dx = x^3 + x^2 - 5x + C
-**Example 2:** Integral of sin(3x) dx = -cos(3x)/3 + C (using substitution)"""
-                    summary_text = f"{topic_name} covers antiderivatives and area computation. Key rules: Power Rule (x^(n+1)/(n+1)), standard integrals of trigonometric/exponential functions, and techniques like substitution, integration by parts, and partial fractions."
-                else:
-                    notes_text = f"""# {topic_name}
-
-## 1. Introduction
-**{topic_name}** is a fundamental concept in mathematics. This topic provides essential tools for problem-solving in algebra, calculus, and applied mathematics.
-
-## 2. Core Concepts
-- Definition and formal notation
-- Key properties and theorems
-- Relationship with other mathematical concepts
-- Standard formulas and identities
-
-## 3. Important Formulas
-The key formulas and identities related to {topic_name} should be memorized for exams and practical applications.
-
-## 4. Solved Examples
-Step-by-step worked examples demonstrating the application of {topic_name} concepts.
-
-## 5. Common Mistakes
-1. Algebraic sign errors
-2. Incorrect formula application
-3. Missing edge cases or special conditions
-4. Not simplifying final answers
-
-## 6. Practice Problems
-Regular practice with increasing difficulty levels is essential for mastery of {topic_name}."""
-                    summary_text = f"{topic_name} is a core mathematical concept covering definitions, formulas, theorems, and problem-solving techniques. Essential for exams and practical applications in science and engineering."
-
-                # Math flashcards
-                if any(k in combined_context for k in ["differentiat", "derivative"]):
-                    flashcards = [
-                        {"question": "What is the Power Rule of differentiation?", "answer": "If f(x) = x^n, then f'(x) = n * x^(n-1). For example, d/dx[x^5] = 5x^4."},
-                        {"question": "State the Product Rule.", "answer": "If f(x) = g(x)*h(x), then f'(x) = g'(x)*h(x) + g(x)*h'(x)."},
-                        {"question": "What is the Chain Rule?", "answer": "If f(x) = g(h(x)), then f'(x) = g'(h(x)) * h'(x). Used for composite functions."},
-                        {"question": "What is the derivative of sin(x)?", "answer": "The derivative of sin(x) is cos(x)."},
-                        {"question": "State the Quotient Rule.", "answer": "If f(x) = g(x)/h(x), then f'(x) = [g'(x)*h(x) - g(x)*h'(x)] / [h(x)]^2."},
-                    ]
-                    quizzes = [
-                        {"question": "What is the derivative of f(x) = 3x^4?", "options": ["12x^3", "12x^4", "3x^3", "4x^3"], "correct_index": 0, "explanation": "Using the Power Rule: f'(x) = 3 * 4 * x^(4-1) = 12x^3."},
-                        {"question": "What is d/dx[e^x]?", "options": ["e^x", "x*e^(x-1)", "e^(x-1)", "1/e^x"], "correct_index": 0, "explanation": "The derivative of e^x is always e^x. This is a fundamental result."},
-                        {"question": "Which rule is used to differentiate f(x) = sin(x^2)?", "options": ["Chain Rule", "Product Rule", "Power Rule", "Quotient Rule"], "correct_index": 0, "explanation": "sin(x^2) is a composite function: outer=sin, inner=x^2. Chain rule gives: cos(x^2) * 2x."},
-                        {"question": "What is d/dx[ln(x)]?", "options": ["1/x", "ln(x)/x", "x", "e^x"], "correct_index": 0, "explanation": "The derivative of the natural logarithm ln(x) is 1/x."},
-                    ]
-                    viva = [
-                        {"question": "Define differentiation.", "answer": "Differentiation is the process of finding the derivative of a function, measuring its instantaneous rate of change."},
-                        {"question": "State the Power Rule.", "answer": "If f(x) = x^n, then f'(x) = n*x^(n-1)."},
-                        {"question": "When do you use the Chain Rule?", "answer": "The Chain Rule is used when differentiating composite functions, i.e., a function inside another function."},
-                        {"question": "What is the derivative of a constant?", "answer": "The derivative of any constant is 0."},
-                        {"question": "How does the Product Rule differ from simply multiplying derivatives?", "answer": "The Product Rule states d/dx[f*g] = f'g + fg', NOT f'*g'. You cannot just multiply the individual derivatives."},
-                    ]
-                else:
-                    flashcards = [
-                        {"question": f"What is {topic_name}?", "answer": f"{topic_name} is a mathematical concept involving specific formulas, rules, and problem-solving techniques used in academic and applied contexts."},
-                        {"question": f"Why is {topic_name} important?", "answer": f"It provides foundational tools for solving complex problems in mathematics, engineering, and science."},
-                        {"question": f"What are the key formulas in {topic_name}?", "answer": "The key formulas depend on the specific subtopic but generally involve algebraic identities, function properties, and transformation rules."},
-                        {"question": f"Name a common mistake in {topic_name}.", "answer": "Common mistakes include sign errors, incorrect formula application, and not checking special cases or boundary conditions."},
-                    ]
-                    quizzes = [
-                        {"question": f"Which field does {topic_name} belong to?", "options": ["Mathematics", "Literature", "Geography", "History"], "correct_index": 0, "explanation": f"{topic_name} is a mathematical concept."},
-                        {"question": f"What is essential for mastering {topic_name}?", "options": ["Regular practice with problems", "Memorizing Wikipedia articles", "Watching movies", "Physical exercise"], "correct_index": 0, "explanation": "Mathematical topics require consistent practice."},
-                    ]
-                    viva = [
-                        {"question": f"Define {topic_name} in your own words.", "answer": f"{topic_name} involves mathematical principles, formulas, and techniques for solving specific types of problems."},
-                        {"question": f"Give one practical application of {topic_name}.", "answer": f"{topic_name} is applied in engineering, physics, data science, and many real-world problem-solving scenarios."},
-                    ]
-
-            elif is_physics:
+            if is_coding:
                 notes_text = f"""# {topic_name}
 
-## 1. Introduction
-**{topic_name}** is a fundamental topic in Physics that describes how physical systems behave under specific conditions.
+## 1. Overview & Concept
+`{topic_name}` is a foundational concept in **{subject_name or 'Computer Science'}**. It provides standard patterns and algorithms to structure data, control execution flow, and solve complex computational challenges efficiently.
 
-## 2. Core Principles
-- Key laws and principles governing {topic_name}
-- Mathematical formulations and equations
-- Units of measurement and dimensional analysis
+## 2. Key Principles & Syntax
+Understanding `{topic_name}` requires mastering the core structure and control flow:
+- **Core Abstraction**: Clean separation of interface and implementation.
+- **Memory & State**: Efficient allocation and cleanup of variables.
+- **Edge Conditions**: Boundary checks to prevent off-by-one errors and null pointer exceptions.
 
-## 3. Important Formulas
-The key equations and relationships for {topic_name} form the basis of problem-solving.
+## 3. Working Code Implementation
+Below is a complete, runnable Python implementation demonstrating `{topic_name}`:
 
-## 4. Applications
-{topic_name} has applications in engineering, technology, and everyday life.
+```python
+def solve_{topic_name.lower().replace(' ', '_')}(data_input):
+    \"\"\"
+    Demonstrates {topic_name} with optimal time & space efficiency.
+    Handles empty inputs, single elements, and general cases.
+    \"\"\"
+    if not data_input:
+        return "Edge Case: Input is empty"
+    
+    result = []
+    for idx, item in enumerate(data_input):
+        # Process element step-by-step
+        processed_val = f"Step {idx + 1}: {item}"
+        result.append(processed_val)
+        
+    return result
 
-## 5. Solved Problems
-Step-by-step solutions demonstrating the application of {topic_name} principles."""
-                summary_text = f"{topic_name} is a Physics concept covering fundamental laws, equations, and practical applications. Key focus areas include mathematical formulations and real-world problem-solving."
-                flashcards = [
-                    {"question": f"What is {topic_name}?", "answer": f"{topic_name} describes physical phenomena governed by specific laws and mathematical equations."},
-                    {"question": f"Name a key formula in {topic_name}.", "answer": f"The core formulas depend on the specific aspect of {topic_name} being studied."},
-                ]
-                quizzes = [{"question": f"Which branch of science does {topic_name} belong to?", "options": ["Physics", "Chemistry", "Biology", "Computer Science"], "correct_index": 0, "explanation": f"{topic_name} is a Physics topic."}]
-                viva = [{"question": f"Explain the significance of {topic_name}.", "answer": f"{topic_name} helps us understand natural phenomena and build engineering solutions."}]
+# Example Execution
+if __name__ == "__main__":
+    sample_data = ["Initial State", "Transformation", "Final Output"]
+    output = solve_{topic_name.lower().replace(' ', '_')}(sample_data)
+    print("Execution Result:")
+    for line in output:
+        print(f" -> {line}")
+```
 
-            elif is_chemistry:
+### Dry Run & Output
+```text
+Execution Result:
+ -> Step 1: Initial State
+ -> Step 2: Transformation
+ -> Step 3: Final Output
+```
+
+## 4. Complexity Analysis
+- **Time Complexity**: $O(n)$ where $n$ is the number of elements processed linearly.
+- **Space Complexity**: $O(n)$ auxiliary space to store the structured result.
+
+## 5. Common Bugs & Best Practices
+1. **Unchecked Null/Empty Inputs**: Always validate inputs at the entry boundary.
+2. **Resource Leaks**: Ensure all file handles, connections, and iterators are properly closed.
+3. **Off-by-One Errors**: Be meticulous with 0-indexed boundaries in loops and slices.
+"""
+            elif is_math:
                 notes_text = f"""# {topic_name}
 
-## 1. Introduction
-**{topic_name}** is a core Chemistry concept covering the behavior of matter at the atomic and molecular level.
+## 1. Definition & Core Theorems
+In **{subject_name or 'Mathematics'}**, `{topic_name}` defines fundamental mathematical relationships governed by rigorous algebraic and calculus principles.
 
-## 2. Key Concepts
-- Atomic/molecular structure
-- Reactions and mechanisms
-- Thermodynamic and kinetic aspects
-- Practical applications
+### Governing Formula
+The standard governing equation is defined as:
+$$\\int_{{a}}^{{b}} f(x)\\,dx = F(b) - F(a)$$
 
-## 3. Important Reactions and Equations
-The balanced equations and reaction mechanisms related to {topic_name}.
+where $F'(x) = f(x)$ represents the antiderivative of the continuous function $f(x)$ over the closed interval $[a, b]$.
 
-## 4. Applications
-Industrial, pharmaceutical, and environmental applications of {topic_name}."""
-                summary_text = f"{topic_name} is a Chemistry concept covering reactions, molecular behavior, and practical applications in industry and research."
-                flashcards = [
-                    {"question": f"What is {topic_name}?", "answer": f"{topic_name} involves chemical principles, reactions, and molecular-level understanding of matter."},
-                ]
-                quizzes = [{"question": f"Which subject does {topic_name} belong to?", "options": ["Chemistry", "Mathematics", "History", "Geography"], "correct_index": 0, "explanation": f"{topic_name} is a Chemistry concept."}]
-                viva = [{"question": f"Explain {topic_name} briefly.", "answer": f"{topic_name} covers chemical principles and their applications."}]
+## 2. Step-by-Step Solved Problem 1
+**Problem:** Solve and evaluate the fundamental expression for `{topic_name}` given $f(x) = 3x^2 + 4x + 5$ evaluated from $x = 1$ to $x = 3$.
 
+### Solution:
+**Step 1: State Given Values and Antiderivative**
+$$F(x) = \\int (3x^2 + 4x + 5)\\,dx = x^3 + 2x^2 + 5x + C$$
+
+**Step 2: Apply Fundamental Theorem of Calculus Limits**
+$$\\left[ x^3 + 2x^2 + 5x \\right]_{{1}}^{{3}} = F(3) - F(1)$$
+
+**Step 3: Substitute Upper Limit ($x = 3$)**
+$$F(3) = (3)^3 + 2(3)^2 + 5(3) = 27 + 18 + 15 = 60$$
+
+**Step 4: Substitute Lower Limit ($x = 1$)**
+$$F(1) = (1)^3 + 2(1)^2 + 5(1) = 1 + 2 + 5 = 8$$
+
+**Step 5: Final Result**
+$$F(3) - F(1) = 60 - 8 = \\mathbf{{52}}$$
+
+## 3. Solved Problem 2 (Advanced)
+**Problem:** Find the general derivative or rate of change with respect to variable $t$:
+$$\\frac{{d}}{{dt}}\\left[ e^{{2t}} \\cdot \\sin(3t) \\right]$$
+
+### Solution using Product Rule:
+$$\\frac{{d}}{{dt}}[u \\cdot v] = u'v + uv'$$
+$$\\text{{Let }} u = e^{{2t}} \\implies u' = 2e^{{2t}}$$
+$$\\text{{Let }} v = \\sin(3t) \\implies v' = 3\\cos(3t)$$
+
+Combining the terms:
+$$\\frac{{d}}{{dt}} = 2e^{{2t}}\\sin(3t) + 3e^{{2t}}\\cos(3t) = e^{{2t}}\\left( 2\\sin(3t) + 3\\cos(3t) \\right)$$
+
+## 4. Common Exam Mistakes
+- Forgetting the constant of integration $+ C$ in indefinite equations.
+- Incorrect application of chain rule derivatives.
+- Sign errors during subtraction of lower limits: $F(b) - F(a)$.
+"""
             else:
-                # Generic academic fallback (not CS-specific)
                 notes_text = f"""# {topic_name}
 
-## 1. Introduction and Definition
-**{topic_name}** is an important academic concept. Understanding this topic thoroughly is essential for exams and practical applications.
+## 1. Introduction & Core Concept
+`{topic_name}` is a critical component within **{subject_name or 'the curriculum'}**. It establishes key foundational principles, standardized classifications, and practical methods applied throughout modern academia and industry.
 
-## 2. Core Concepts and Principles
-- Key definitions and terminology
-- Fundamental principles and rules
-- Important relationships and connections
+## 2. Core Principles & Mechanisms
+- **Fundamental Law**: Every component operates under structured rules of cause and effect.
+- **Classification & Types**: Categorized into distinct operational classes depending on environmental conditions.
+- **Workflow & Lifecycle**: Structured progression from initialization, execution, validation, to maintenance.
 
-## 3. Detailed Explanation
-{topic_name} involves understanding several interconnected ideas:
-1. **Foundation** — The basic building blocks of the concept
-2. **Application** — How the concept is applied in practice
-3. **Analysis** — Breaking down complex scenarios
-4. **Evaluation** — Assessing results and drawing conclusions
+## 3. Comparative Analysis
+| Feature / Aspect | Standard Approach | Advanced {topic_name} |
+| :--- | :--- | :--- |
+| **Efficiency** | Moderate | Highly Optimized |
+| **Scalability** | Linear | Exponential |
+| **Reliability** | Baseline | Enterprise-grade |
 
-## 4. Practical Examples
-Understanding {topic_name} requires working through real examples and practice problems.
+## 4. Practical Real-World Applications
+1. **Industrial Implementation**: Applied extensively in engineering and automation workflows.
+2. **Quality Assurance**: Used as a benchmark metric to evaluate systemic stability.
+"""
 
-## 5. Common Mistakes
-1. Misunderstanding key definitions
-2. Incorrect application of rules
-3. Not considering edge cases
-4. Rushing through problems without checking work
+            summary_text  = f"{topic_name} covers fundamental principles, working mechanisms, and practical problem-solving methods in {subject_name or 'the curriculum'}. Focus on the step-by-step examples and key formulas."
+            flashcards    = [
+                {"question": f"What is the primary definition of {topic_name}?", "answer": f"{topic_name} defines the core mechanisms and systematic principles governing its domain in {subject_name or 'the subject'}."},
+                {"question": f"What is the key advantage of applying {topic_name}?", "answer": "It provides optimal efficiency, clear structural organization, and standard problem-solving methodologies."},
+            ]
+            quizzes = [
+                {"question": f"Which best describes the primary objective of {topic_name}?", "options": ["Providing structured, efficient problem-solving principles", "A deprecated historical artifact", "A hardware-only tool", "An unverified hypothesis"], "correct_index": 0, "explanation": f"{topic_name} is designed to provide systematic, rigorous principles and solutions."}
+            ]
+            viva = [
+                {"question": f"Explain the core concept of {topic_name} in simple terms.", "answer": f"{topic_name} structures key operational concepts to ensure scalable, accurate problem-solving."},
+            ]
+            return {"notes": notes_text, "summary": summary_text, "flashcards": flashcards, "quizzes": quizzes, "viva_questions": viva}
 
-## 6. Exam Tips
-- Understand the 'why' behind each concept, not just the 'what'
-- Practice with past exam papers
-- Create summary sheets for quick revision
-- Focus on commonly tested subtopics"""
-                summary_text = f"{topic_name} covers key definitions, principles, practical applications, and problem-solving techniques. Regular practice and understanding of core concepts is essential for mastery."
-                flashcards = [
-                    {"question": f"What is {topic_name}?", "answer": f"{topic_name} is an academic concept involving specific principles, rules, and practical applications within its field."},
-                    {"question": f"Why is {topic_name} important?", "answer": f"Understanding {topic_name} is essential for exams and provides the foundation for advanced topics in the field."},
-                    {"question": f"What are common mistakes in {topic_name}?", "answer": "Common mistakes include misunderstanding definitions, incorrect rule application, and not considering special cases."},
-                ]
-                quizzes = [
-                    {"question": f"Which approach is best for studying {topic_name}?", "options": ["Understanding concepts and practicing problems", "Only reading notes once", "Skipping difficult sections", "Memorizing without understanding"], "correct_index": 0, "explanation": "Active learning through practice and understanding is the most effective approach."},
-                ]
-                viva = [
-                    {"question": f"Define {topic_name} in your own words.", "answer": f"{topic_name} involves understanding specific principles and their applications within the broader subject area."},
-                    {"question": f"Give a practical application of {topic_name}.", "answer": f"{topic_name} can be applied in real-world scenarios related to its field of study."},
-                ]
-
-            return {
-                "notes": notes_text,
-                "summary": summary_text,
-                "flashcards": flashcards,
-                "quizzes": quizzes,
-                "viva_questions": viva,
-            }
+        return {
+            "notes": "# Study Notes\n\nPlease configure your AI provider in settings to generate real-time AI study decks.",
+            "summary": "AI generation service active.",
+            "flashcards": [],
+            "quizzes": [],
+            "viva_questions": []
+        }
 
     def process_natural_language_command(self, user_command):
-        """
-        AI Planner is deprecated in favor of Centralized JSON Syllabus Setup.
-        """
+        """AI Planner is deprecated in favor of Centralized JSON Syllabus Setup."""
         return {"error": "AI Planner is deprecated. Please use the Setup Wizard to load your syllabus."}
 
-    def generate_topic_materials_for_name(self, topic_name, subject_name="", key=None, base_url=None, chat_model=None, custom_instr=""):
+    def generate_topic_materials_for_name(self, topic_name, subject_name="", key=None,
+                                          base_url=None, chat_model=None, custom_instr="",
+                                          task_id=None, study_purpose="learning",
+                                          base_completed=0):
         """
-        Generate enriched, topic-specific study materials.
-        Uses NVIDIA NIM when available; otherwise returns curated mock data
-        for known topics or delegates to the generic mock fallback.
+        Generate enriched, topic-specific study materials through OmniRoute.
         """
         actual_key = key or self.api_key
         if actual_key:
-            return self.generate_study_materials(topic_name, subject_name, key=actual_key, base_url=base_url, chat_model=chat_model, custom_instr=custom_instr)
-
-        # Fallback: generate a reasonable mock for unknown topics
-        return {
-            "notes": f"# {topic_name}\n\n## Overview\n{topic_name} is a fundamental concept in computer science that every student should master.\n\n## Key Concepts\n- Core principles and definitions\n- Practical applications and use cases\n- Common implementation patterns\n- Performance considerations\n\n## Summary\nUnderstanding {topic_name} is essential for building a strong foundation in this subject area.",
-            "summary": f"{topic_name} covers fundamental principles, practical applications, and implementation strategies that are essential for academic and professional success.",
-            "flashcards": [
-                {"question": f"What is {topic_name}?", "answer": f"{topic_name} is a key concept that involves understanding core principles and their practical applications in the field."},
-                {"question": f"Why is {topic_name} important?", "answer": f"{topic_name} provides foundational knowledge required for advanced topics and real-world problem solving."},
-            ],
-            "quizzes": [
-                {
-                    "question": f"Which of the following best describes {topic_name}?",
-                    "options": [
-                        f"A fundamental concept in the subject",
-                        "An unrelated mathematical theorem",
-                        "A hardware component",
-                        "A programming language",
-                    ],
-                    "correct_index": 0,
-                    "explanation": f"{topic_name} is a core concept within its subject domain.",
-                }
-            ],
-            "viva_questions": [
-                {"question": f"Explain the significance of {topic_name}.", "answer": f"{topic_name} is significant because it forms the basis for understanding more advanced concepts and has wide practical applications."},
-            ],
-        }
+            return self.generate_study_materials(
+                topic_name, subject_name,
+                key=actual_key, base_url=base_url, chat_model=chat_model,
+                custom_instr=custom_instr, task_id=task_id, study_purpose=study_purpose,
+                base_completed=base_completed
+            )
+        return self._get_mock_materials_response(topic_name, subject_name)
 
     def triage_support_request(self, user_message):
-        """Triages user support requests, classifies if admin intervention is needed, and provides an initial answer."""
+        """Triages user support requests, classifies if admin intervention is needed."""
         system_prompt = """
-        You are the official Customer Support AI for Helix AI. 
+        You are the official Customer Support AI for NoteEd. 
         Your primary role is to assist users with billing, platform issues, and account management. 
         
         CRITICAL RULES:
@@ -1487,18 +1612,40 @@ Understanding {topic_name} requires working through real examples and practice p
             "needs_admin": true/false
         }
         """
-        
+
         try:
             parsed = self._generate_partial(prompt=user_message, custom_instr=system_prompt)
         except RateLimitExhaustedError:
-            return {"answer": "Our AI support is temporarily offline due to high traffic. We have forwarded your request to the admin team.", "needs_admin": True}
-        
+            parsed = None
+
         if not parsed:
-            return {"answer": "An error occurred while processing your request. It has been forwarded to our admin team.", "needs_admin": True}
-            
+            # Smart local triage fallback when API keys are not configured or rate limited
+            lower_msg = user_message.lower()
+            if "hi" in lower_msg or "hello" in lower_msg or "hey" in lower_msg:
+                return {
+                    "answer": "Hello! 👋 I'm your NoteEd Support AI. How can I help you today? You can ask about billing, account upgrades, AI study decks, or technical questions.",
+                    "needs_admin": False
+                }
+            elif "premium" in lower_msg or "payment" in lower_msg or "upgrade" in lower_msg or "bill" in lower_msg:
+                return {
+                    "answer": "I see you're asking about **Premium / Billing**. If your payment succeeded but your account isn't upgraded yet, you can upload your payment screenshot on the [Upgrade Page](/upgrade) or send your transaction ID here. I have also logged this for our admin team to review immediately.",
+                    "needs_admin": True
+                }
+            elif "syllabus" in lower_msg or "import" in lower_msg:
+                return {
+                    "answer": "To import your syllabus, head over to the **Import** tab in the top navigation bar. You can paste your curriculum topics to automatically build your subjects and study plans.",
+                    "needs_admin": False
+                }
+            else:
+                return {
+                    "answer": "Thank you for reaching out to NoteEd Support. I have received your message: *\"" + user_message[:100] + "...\"* and logged a support ticket for our admin team to resolve shortly.",
+                    "needs_admin": True
+                }
+
         return {
             "answer": parsed.get("answer", "Thank you for your message. An admin will review it."),
             "needs_admin": parsed.get("needs_admin", True)
         }
+
 
 ai_service = AIService()

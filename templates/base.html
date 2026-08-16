@@ -4,16 +4,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Helix AI{% endblock %}</title>
-    <link rel="icon" href="{{ url_for('static', filename='images/logo.png') }}" type="image/png">
+    <title>{% block title %}NoteEd{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/noteedhalf.png') }}?v=noteed_v2">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='images/noteedhalf.png') }}?v=noteed_v2">
+    <link rel="apple-touch-icon" sizes="192x192" href="{{ url_for('static', filename='images/noteedhalf.png') }}?v=noteed_v2">
+
+    <!-- Instant Theme Detection Script -->
+    <script>
+        (function() {
+            try {
+                var savedTheme = localStorage.getItem('noteed_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                if (savedTheme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            } catch (e) {}
+        })();
+    </script>
 
     <!-- PWA Meta Tags -->
-    <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#1d1d1f">
+    <link rel="manifest" href="/manifest.json?v=noteed_v7">
+    <link rel="apple-touch-icon" href="/static/images/noteedhalf.png">
+    <link rel="icon" type="image/png" href="/static/images/noteedhalf.png">
+    <meta name="theme-color" content="#0071e3">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Helix AI">
-    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo.png') }}">
+    <meta name="apple-mobile-web-app-title" content="NoteEd">
 
     <!-- Tailwind CSS Play CDN with Typography plugin -->
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
@@ -26,44 +45,46 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            50: '#eef0ff',
-                            100: '#e0e4ff',
-                            200: '#c7cdff',
-                            300: '#a3aaff',
-                            400: '#7e7dff',
-                            500: '#5c54ff',
-                            600: '#4848e5',
-                            700: '#3d3ddb',
-                            800: '#3232bb',
-                            900: '#2c2d93',
-                            950: '#1a1a54',
+        if (typeof tailwind !== 'undefined') {
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: {
+                                50: '#eef0ff',
+                                100: '#e0e4ff',
+                                200: '#c7cdff',
+                                300: '#a3aaff',
+                                400: '#7e7dff',
+                                500: '#5c54ff',
+                                600: '#4848e5',
+                                700: '#3d3ddb',
+                                800: '#3232bb',
+                                900: '#2c2d93',
+                                950: '#1a1a54',
+                            },
+                            accent: {
+                                50: '#fff6ec',
+                                100: '#ffecd3',
+                                200: '#ffd3a5',
+                                300: '#ffb26d',
+                                400: '#ff8a00',
+                                500: '#fa6c00',
+                                600: '#e55300',
+                                700: '#be3a02',
+                                800: '#972f09',
+                                900: '#7a280c',
+                                950: '#421104',
+                            },
                         },
-                        accent: {
-                            50: '#fff6ec',
-                            100: '#ffecd3',
-                            200: '#ffd3a5',
-                            300: '#ffb26d',
-                            400: '#ff8a00',
-                            500: '#fa6c00',
-                            600: '#e55300',
-                            700: '#be3a02',
-                            800: '#972f09',
-                            900: '#7a280c',
-                            950: '#421104',
-                        },
-                    },
-                    fontFamily: {
-                        sans: ['Lexend', 'sans-serif'],
-                        lexend: ['Lexend', 'sans-serif'],
+                        fontFamily: {
+                            sans: ['Lexend', 'sans-serif'],
+                            lexend: ['Lexend', 'sans-serif'],
+                        }
                     }
                 }
-            }
+            };
         }
     </script>
     <!-- Google Fonts: Inter + Outfit -->
@@ -80,43 +101,72 @@
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
                 processEscapes: true
             },
+            chtml: {
+                displayAlign: 'center',
+                adaptiveCSS: true
+            },
             options: {
-                ignoreHtmlClass: 'tex2jax_ignore',
-                processHtmlClass: 'tex2jax_process'
+                enableMenu: false
             },
             startup: {
-                pageReady: () => {
-                    return MathJax.startup.defaultPageReady().then(() => {
-                        document.dispatchEvent(new Event("mathjax-loaded"));
-                    });
-                }
+                typeset: false // Prevent auto-typesetting collisions
             }
         };
 
+        window.mathjaxPromise = Promise.resolve();
+        
+        let __typesetRetries = 0;
         window.typesetMath = function (element = null) {
-            let args = element ? [element] : undefined;
+            const args = element ? [element] : undefined;
             if (window.MathJax && typeof window.MathJax.typesetPromise === 'function') {
-                MathJax.typesetPromise(args).catch(err => console.error(err));
-            } else {
-                document.addEventListener("mathjax-loaded", () => {
-                    MathJax.typesetPromise(args).catch(err => console.error(err));
-                }, { once: true });
+                window.mathjaxPromise = window.mathjaxPromise.then(() => {
+                    return window.MathJax.typesetPromise(args);
+                }).catch(err => {
+                    console.warn('MathJax error during typeset:', err);
+                    return Promise.resolve();
+                });
+            } else if (__typesetRetries < 15) {
+                __typesetRetries++;
+                setTimeout(() => window.typesetMath(element), 100);
             }
         };
+
+        // Fallback markdown parser when marked.js CDN is unavailable/offline
+        function fallbackMarkdownParse(text) {
+            if (!text) return '';
+            let out = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            out = out.replace(/```([a-z0-9_-]*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+            out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+            out = out.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            out = out.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            out = out.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+            out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+            out = out.replace(/^\s*[-*]\s+(.*$)/gim, '<li>$1</li>');
+            out = out.replace(/\n\n+/g, '</p><p>');
+            out = out.replace(/\n/g, '<br/>');
+            return '<p>' + out + '</p>';
+        }
 
         // Helper function to shield Math equations from marked.js parsing
-        function parseMarkdownWithMath(text) {
+        window.parseMarkdownWithMath = function (text) {
             if (!text) return "";
-            if (typeof marked === 'undefined') return text;
 
             const placeholders = [];
 
-            // 1. Replace display math ($$...$$ or \[...\])
+            // 1. Replace display math ($$...$$ or \[...\] or \begin{...}...\end{...})
             let processed = text.replace(/\$\$([\s\S]*?)\$\$/g, (match) => {
                 placeholders.push(match);
                 return `@@MATH_BLOCK_${placeholders.length - 1}@@`;
             });
             processed = processed.replace(/\\\[([\s\S]*?)\\\]/g, (match) => {
+                placeholders.push(match);
+                return `@@MATH_BLOCK_${placeholders.length - 1}@@`;
+            });
+            processed = processed.replace(/\\begin\{([a-zA-Z0-9\*]+)\}([\s\S]*?)\\end\{\1\}/g, (match) => {
                 placeholders.push(match);
                 return `@@MATH_BLOCK_${placeholders.length - 1}@@`;
             });
@@ -131,161 +181,634 @@
                 return `@@MATH_INLINE_${placeholders.length - 1}@@`;
             });
 
-            // 3. Run marked markdown parsing
-            let html = marked.parse(processed);
-
-            // Helper to escape HTML special characters in math
-            function escapeHtml(unsafe) {
-                return unsafe
-                    .replace(/&/g, "&amp;")
-                    .replace(/</g, "&lt;")
-                    .replace(/>/g, "&gt;")
-                    .replace(/"/g, "&quot;")
-                    .replace(/'/g, "&#039;");
-            }
+            // 3. Run marked markdown parsing (or fallback if offline)
+            let html = (typeof marked !== 'undefined' && marked.parse)
+                ? marked.parse(processed)
+                : fallbackMarkdownParse(processed);
 
             // 4. Restore math blocks
             html = html.replace(/@@MATH_(BLOCK|INLINE)_(\d+)@@/g, (match, type, index) => {
-                return `<span class="math-instant">${escapeHtml(placeholders[parseInt(index)])}</span>`;
+                return `<span class="math-instant tex2jax_process">${placeholders[parseInt(index)]}</span>`;
             });
 
             return html;
-        }
+        };
     </script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script id="MathJax-script" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=spatial_glass_skeuo_v1">
     <style>
-        body {
-            font-family: 'Inter', 'Outfit', sans-serif;
+        /* ===== NOTEED SPATIAL UI + GLASSMORPHISM + SKEUOMORPHISM DESIGN SYSTEM ===== */
+        :root, [data-theme="light"] {
+            --bg: #f2f5fb;
+            --bg-gradient: radial-gradient(circle at 10% 10%, rgba(37, 99, 235, 0.08) 0%, transparent 45%),
+                           radial-gradient(circle at 90% 15%, rgba(139, 92, 246, 0.07) 0%, transparent 40%),
+                           radial-gradient(circle at 50% 85%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+                           radial-gradient(circle at 80% 80%, rgba(244, 63, 94, 0.04) 0%, transparent 45%),
+                           #f2f5fb;
+            --bg-elevated: rgba(248, 250, 253, 0.88);
+            --bg-hover: rgba(238, 242, 250, 0.9);
+            --card: rgba(255, 255, 255, 0.76);
+            --card-elevated: rgba(255, 255, 255, 0.90);
+            --border: rgba(203, 213, 225, 0.75);
+            --border-subtle: rgba(226, 232, 240, 0.6);
+            --border-specular: rgba(255, 255, 255, 0.95);
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --accent: #0071e3;
+            --accent-hover: #0077ed;
+            --accent-gradient: linear-gradient(180deg, #1f86f8 0%, #0071e3 50%, #0060c2 100%);
+            --accent-subtle: rgba(0, 113, 227, 0.12);
+            --nav-bg: rgba(255, 255, 255, 0.82);
         }
 
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
+        [data-theme="dark"], :root:not([data-theme="light"]) {
+            --bg: #06070a;
+            --bg-gradient: radial-gradient(circle at 12% 15%, rgba(59, 130, 246, 0.16) 0%, transparent 45%),
+                           radial-gradient(circle at 88% 18%, rgba(139, 92, 246, 0.14) 0%, transparent 45%),
+                           radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.06) 0%, transparent 60%),
+                           radial-gradient(circle at 75% 85%, rgba(244, 63, 94, 0.07) 0%, transparent 50%),
+                           #06070a;
+            --bg-elevated: rgba(22, 25, 33, 0.78);
+            --bg-hover: rgba(32, 37, 49, 0.88);
+            --card: rgba(16, 18, 24, 0.72);
+            --card-elevated: rgba(22, 26, 35, 0.85);
+            --border: rgba(255, 255, 255, 0.10);
+            --border-subtle: rgba(255, 255, 255, 0.05);
+            --border-specular: rgba(255, 255, 255, 0.22);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent: #3b82f6;
+            --accent-hover: #60a5fa;
+            --accent-gradient: linear-gradient(180deg, #4f94fc 0%, #2563eb 50%, #1d4ed8 100%);
+            --accent-subtle: rgba(59, 130, 246, 0.16);
+            --nav-bg: rgba(12, 14, 20, 0.78);
+        }
+
+        /* Core layout backgrounds */
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Outfit', sans-serif !important;
+            background: var(--bg-gradient) fixed !important;
+            background-size: cover;
+            color: var(--text-primary) !important;
+            overflow-x: hidden;
+            max-width: 100vw;
+            min-height: 100vh;
+            transition: background 0.35s cubic-bezier(0.16, 1, 0.3, 1), color 0.2s ease;
+        }
+
+        /* Nav */
+        nav {
+            background-color: var(--nav-bg) !important;
+            border-color: var(--border) !important;
+            backdrop-filter: blur(28px) saturate(200%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+            box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.35), inset 0 1px 1px var(--border-specular) !important;
+        }
+
+        /* All cards / white panels */
+        .glass-card,
+        .bg-white,
+        [class*="bg-white"],
+        [class*="bg-gray-50"],
+        [class*="bg-gray-100"] {
+            background-color: var(--card) !important;
+            border-color: var(--border) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Sidebar, aside, main panels */
+        aside,
+        .sidebar,
+        main {
+            background-color: var(--bg) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Mobile bottom nav */
+        .fixed.bottom-0 {
+            background-color: var(--nav-bg) !important;
+            border-color: var(--border) !important;
+        }
+
+        /* Standard gray text → theme color */
+        .text-gray-500, .text-gray-400, .text-gray-600 {
+            color: var(--text-secondary) !important;
+        }
+        .text-gray-900, .text-gray-800, .text-gray-700 {
+            color: var(--text-primary) !important;
+        }
+        [class*="text-\[#1d1d1f\]"] {
+            color: var(--text-primary) !important;
+        }
+
+        /* Borders */
+        [class*="border-gray-100"],
+        [class*="border-gray-200"],
+        [class*="border-gray-300"] {
+            border-color: var(--border) !important;
+        }
+
+        /* Navbar links */
+        nav a {
+            color: var(--text-secondary) !important;
+        }
+        nav a:hover {
+            color: var(--text-primary) !important;
+            background-color: var(--bg-hover) !important;
+        }
+        nav .font-bold {
+            color: var(--text-primary) !important;
+        }
+
+        /* Inline pill/badge buttons in nav */
+        nav a[class*="bg-gray-100"],
+        nav a[class*="bg-gray-200"] {
+            background-color: var(--bg-hover) !important;
+            border: 1px solid var(--border) !important;
+            color: var(--text-primary) !important;
+        }
+        nav a[class*="bg-gray-100"]:hover,
+        nav a[class*="bg-gray-200"]:hover {
+            background-color: var(--border) !important;
+        }
+
+        /* Headings */
+        h1, h2, h3, h4, h5, h6 {
             font-family: 'Outfit', 'Inter', sans-serif;
+            color: var(--text-primary);
+        }
+
+        /* Gradient Text Utilities */
+        .bg-clip-text,
+        [class*="bg-clip-text"],
+        .text-transparent {
+            -webkit-background-clip: text !important;
+            background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            color: transparent !important;
+            text-shadow: none !important;
+        }
+
+        /* Mobile bottom nav links */
+        .fixed.bottom-0 a {
+            color: var(--text-secondary) !important;
+        }
+        .fixed.bottom-0 a:hover {
+            background-color: var(--bg-hover) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Dividers */
+        hr { border-color: var(--border) !important; }
+
+        /* ── Global text legibility ── */
+        /* Elements that may have no explicit color class and get browser default black */
+        p, span, li, td, th, label, dt, dd, figcaption, caption,
+        blockquote, pre, code, small, em, i, u, s, del, ins {
+            color: inherit;
+        }
+
+        /* Bold text must explicitly be light — browsers can reset strong/b to black */
+        strong, b {
+            color: var(--text-primary) !important;
+            font-weight: 700;
+        }
+
+        /* Covers text-black, text-neutral-900/800/700, text-zinc-900/800/700 */
+        .text-black,
+        .text-neutral-900, .text-neutral-800, .text-neutral-700,
+        .text-zinc-900, .text-zinc-800, .text-zinc-700,
+        .text-slate-900, .text-slate-800, .text-slate-700,
+        .text-stone-900, .text-stone-800 {
+            color: var(--text-primary) !important;
+        }
+
+        /* Input / textarea / select text must be light too */
+        input, select, textarea {
+            color: var(--text-primary) !important;
+            background-color: var(--bg-elevated) !important;
+            border-color: var(--border) !important;
+        }
+        input::placeholder, textarea::placeholder {
+            color: var(--text-muted) !important;
+        }
+
+        /* Lucide icons and SVGs that default to currentColor will inherit correctly,
+           but any explicitly set fill/stroke black needs overriding */
+        svg:not([class*="text-"]):not([class*="fill-"]) {
+            color: var(--text-secondary);
+        }
+
+        /* Table rows and cells */
+        table { border-color: var(--border) !important; }
+        thead { background-color: var(--bg-elevated) !important; }
+        tr:hover { background-color: var(--bg-hover) !important; }
+        td, th { 
+            color: var(--text-primary) !important;
+            border-color: var(--border) !important;
+        }
+
+        /* Dropdown / select options */
+        option {
+            background-color: var(--bg-elevated) !important;
+            color: var(--text-primary) !important;
+        }
+
+        /* Links not in nav */
+        a:not([class*="text-"]):not(nav a) {
+            color: var(--accent);
+        }
+        a:not([class*="text-"]):not(nav a):hover {
+            color: var(--accent-hover);
         }
         
+        /* ── MathJax dark theme & Fluid Responsiveness ── */
+        /* MathJax 3 CHTML output */
+        .MathJax,
+        .MathJax_Display,
+        mjx-container,
+        mjx-container * {
+            color: var(--text-primary) !important;
+            max-width: 100% !important;
+        }
+        mjx-container[jax="CHTML"][display="true"],
+        .MathJax_Display {
+            overflow-x: hidden !important;
+            overflow-y: hidden !important;
+            scrollbar-width: none !important;
+            -ms-overflow-style: none !important;
+        }
+        mjx-container[jax="CHTML"][display="true"]::-webkit-scrollbar,
+        .MathJax_Display::-webkit-scrollbar {
+            display: none !important;
+        }
+        mjx-math {
+            max-width: 100% !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+        }
+        /* MathJax 3 SVG output */
+        mjx-container svg,
+        mjx-container svg * {
+            color: var(--text-primary) !important;
+            fill: var(--text-primary) !important;
+            stroke: var(--text-primary) !important;
+        }
+        /* MathJax 3 CHTML specific elements */
+        mjx-math, mjx-mo, mjx-mi, mjx-mn, mjx-mtext,
+        mjx-mfrac, mjx-msqrt, mjx-mroot, mjx-msup, mjx-msub,
+        mjx-msubsup, mjx-mover, mjx-munder, mjx-munderover,
+        mjx-mrow, mjx-mtable, mjx-mtr, mjx-mtd {
+            color: var(--text-primary) !important;
+        }
+
+        /* ── Code blocks ── */
+        pre, code, kbd, samp {
+            background-color: #1a1a1e !important;
+            color: #e2e8f0 !important;
+            border: 1px solid var(--border) !important;
+        }
+        pre {
+            border-radius: 10px !important;
+            padding: 1rem !important;
+            overflow-x: auto;
+        }
+        code {
+            border-radius: 4px !important;
+            padding: 0.15em 0.4em !important;
+            font-size: 0.875em !important;
+        }
+        pre code {
+            background: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+        }
+        /* Highlight.js / Prism syntax colours on dark bg */
+        .hljs-keyword, .hljs-selector-tag, .token.keyword { color: #93c5fd !important; }
+        .hljs-string, .token.string { color: #86efac !important; }
+        .hljs-comment, .token.comment { color: #6b7280 !important; }
+        .hljs-number, .token.number { color: #fca5a5 !important; }
+        .hljs-function, .token.function { color: #c4b5fd !important; }
+        .hljs-title, .token.class-name { color: #fbbf24 !important; }
+
+        /* ── Markdown-rendered body content ── */
+        .markdown-body,
+        .markdown-body p,
+        .markdown-body li,
+        .markdown-body strong,
+        .markdown-body em,
+        .markdown-body blockquote {
+            color: var(--text-primary) !important;
+        }
+        .markdown-body blockquote {
+            border-left: 3px solid var(--accent) !important;
+            background: var(--bg-elevated) !important;
+            padding: 0.5rem 1rem !important;
+        }
+        .markdown-body h1,
+        .markdown-body h2,
+        .markdown-body h3,
+        .markdown-body h4 {
+            color: var(--text-primary) !important;
+            border-color: var(--border) !important;
+        }
+        .markdown-body a {
+            color: var(--accent) !important;
+        }
+        .markdown-body hr {
+            border-color: var(--border) !important;
+        }
+        .markdown-body table {
+            border-color: var(--border) !important;
+        }
+        .markdown-body td,
+        .markdown-body th {
+            background-color: var(--card) !important;
+            border-color: var(--border) !important;
+        }
+        .markdown-body thead tr,
+        .markdown-body thead th {
+            background-color: var(--bg-elevated) !important;
+        }
+
         .math-instant {
             display: inline;
+        }
+
+        @media print {
+            @page {
+                margin: 14mm 12mm;
+            }
+
+            * {
+                animation: none !important;
+                transition: none !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+                filter: none !important;
+            }
+
+            html,
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-size: 16pt !important;
+                line-height: 1.65 !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            body > nav,
+            header,
+            footer,
+            #task-toast-container,
+            #ai-command-overlay,
+            #cookie-banner,
+            .md\:hidden.fixed.bottom-0,
+            .no-print,
+            .print\:hidden {
+                display: none !important;
+            }
+
+            main {
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: none !important;
+                width: 100% !important;
+            }
+
+            main > * {
+                width: 100% !important;
+            }
+
+            h1,
+            h2,
+            h3,
+            h4,
+            h5,
+            h6,
+            p,
+            li,
+            td,
+            th,
+            span,
+            a,
+            label {
+                color: #000000 !important;
+            }
+
+            h1 {
+                font-size: 26pt !important;
+                line-height: 1.2 !important;
+                text-align: center !important;
+                margin: 0 0 0.5rem !important;
+            }
+
+            h2 {
+                font-size: 19pt !important;
+                line-height: 1.25 !important;
+                margin: 1.25rem 0 0.35rem !important;
+                padding-bottom: 0.2rem !important;
+                border-bottom: 1px solid #d8d8d8 !important;
+            }
+
+            h3 {
+                font-size: 15.5pt !important;
+                line-height: 1.25 !important;
+                margin: 1rem 0 0.3rem !important;
+            }
+
+            p,
+            li,
+            td,
+            th,
+            span,
+            a,
+            label {
+                font-size: 16pt !important;
+                line-height: 1.7 !important;
+            }
+
+            p {
+                margin: 0 0 0.85rem !important;
+            }
+
+            ul,
+            ol {
+                margin: 0 0 0.85rem 1.2rem !important;
+            }
+
+            a {
+                color: #000000 !important;
+                text-decoration: underline !important;
+            }
+
+            img,
+            svg {
+                max-width: 100% !important;
+                break-inside: avoid;
+            }
+
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+
+            table td,
+            table th {
+                padding: 0.35rem 0.5rem !important;
+            }
+
+            tr,
+            img,
+            pre,
+            blockquote {
+                break-inside: avoid;
+            }
+
+            img {
+                max-height: 85vh !important;
+                object-fit: contain !important;
+            }
         }
     </style>
 </head>
 
-<body class="bg-[#f5f5f7] text-[#1d1d1f] transition-all min-h-screen flex flex-col">
-    <!-- Navbar -->
-    <nav
-        class="bg-white/80 backdrop-blur-md m-4 px-5 py-3 flex items-center justify-between shadow-sm rounded-2xl border border-gray-200 sticky top-4 z-40">
-        <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-2">
-            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Helix AI"
-                class="h-10 mix-blend-multiply">
-            <span class="font-bold text-xl tracking-tight text-[#1d1d1f] font-outfit block">Helix AI</span>
+<body class="transition-all min-h-screen flex flex-col">
+    <!-- Floating Spatial Capsule Navbar -->
+    <nav class="mx-2 sm:mx-6 my-2 sm:my-3 px-3 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between rounded-2xl border sticky top-2 sm:top-3 z-40 transition-all duration-300" 
+         style="background-color: var(--nav-bg); border-color: var(--border); backdrop-filter: blur(28px) saturate(200%); -webkit-backdrop-filter: blur(28px) saturate(200%); box-shadow: var(--spatial-shadow);">
+        
+        <!-- Brand Logo & Tagline -->
+        <a href="{{ url_for('dashboard.index') }}" class="flex items-center gap-2 sm:gap-2.5 group min-w-0 shrink-0">
+            <img src="{{ url_for('static', filename='images/noteedhalf.png') }}" alt="NoteEd"
+                class="h-7 sm:h-8 w-auto transition-transform duration-300 group-hover:scale-105 shrink-0" style="max-height: 32px;">
+            <div class="flex flex-col leading-tight min-w-0">
+                <span class="font-bold text-sm sm:text-base lg:text-lg tracking-tight font-outfit truncate" style="color: var(--text-primary);">NoteEd</span>
+                <span class="hidden sm:block text-[9px] font-semibold tracking-wider uppercase opacity-70" style="color: var(--text-muted);">AI Study Partner</span>
+            </div>
         </a>
 
-        <!-- Center Nav Links (desktop) -->
-        <div class="hidden lg:flex items-center space-x-4">
+        <!-- Center Desktop Nav Links -->
+        <div class="hidden md:flex items-center space-x-1 overflow-x-auto no-scrollbar">
             {% if current_user %}
-            <a href="/search"
-                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="search" class="w-4 h-4"></i> Search
-            </a>
-            <a href="/analytics"
-                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Analytics
-            </a>
+            <button onclick="openCommandBar()"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all hover:bg-black/5 dark:hover:bg-white/5 border border-transparent hover:border-white/10"
+                style="color: var(--text-secondary);"
+                title="Search notes and AI actions (Cmd+K)">
+                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                <span>Search</span>
+                <kbd class="text-[9px] px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono text-gray-400">⌘K</kbd>
+            </button>
             <a href="/chat"
-                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="message-square" class="w-4 h-4"></i> AI Chat
-            </a>
-            <a href="/leaderboard"
-                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="trophy" class="w-4 h-4"></i> Leaderboard
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-secondary);">
+                <i data-lucide="message-square" class="w-3.5 h-3.5 text-blue-400"></i> AI Chat
             </a>
             <a href="/bookmarks"
-                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="bookmark" class="w-4 h-4"></i> Bookmarks
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-secondary);">
+                <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-400"></i> Bookmarks
             </a>
-            <a href="/support"
-                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="help-circle" class="w-4 h-4"></i> Support
+            <a href="{{ url_for('planner.view_planner') }}"
+                class="px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all hover:bg-black/5 dark:hover:bg-white/5"
+                style="color: var(--text-secondary);">
+                <i data-lucide="calendar" class="w-3.5 h-3.5 text-purple-400"></i> Planner
             </a>
-            <button onclick="openCommandBar()"
-                class="text-sm font-medium text-gray-500 hover:text-[#1d1d1f] transition flex items-center gap-1.5">
-                <i data-lucide="terminal" class="w-4 h-4"></i> Command <kbd
-                    class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-gray-100 border border-gray-200 font-mono text-gray-500">Ctrl+K</kbd>
-            </button>
             {% endif %}
         </div>
 
-        <div class="flex items-center space-x-2 md:space-x-3 shrink-0">
+        <!-- Right User & Action Cluster -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {% if current_user %}
             <a href="{{ url_for('study.paste_syllabus') }}"
-                class="inline-flex p-2 md:px-4 md:py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition items-center justify-center"
-                aria-label="Import">
-                <i data-lucide="download" class="w-4 h-4 md:mr-1.5"></i> <span class="hidden md:inline">Import</span>
+                class="hidden sm:inline-flex px-3 py-1.5 rounded-full text-xs font-bold transition items-center gap-1.5 border hover:opacity-95 transform hover:-translate-y-0.5"
+                style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);"
+                aria-label="Import syllabus">
+                <i data-lucide="file-plus" class="w-3.5 h-3.5 text-emerald-500"></i> <span>Import</span>
             </a>
-            <a href="{{ url_for('planner.view_planner') }}"
-                class="inline-flex p-2 md:px-4 md:py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition items-center justify-center"
-                aria-label="Planner">
-                <i data-lucide="calendar" class="w-4 h-4 md:mr-1.5"></i> <span class="hidden md:inline">Planner</span>
+            <a href="{{ url_for('billing.upgrade_page') }}"
+                class="inline-flex px-3.5 py-1.5 rounded-full text-xs font-bold transition items-center gap-1.5 text-white shadow-sm hover:opacity-95 transform hover:-translate-y-0.5"
+                style="background: var(--accent-gradient); box-shadow: 0 2px 10px var(--accent-glow);"
+                aria-label="Upgrade">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                <span>{% if current_user.subscription_tier == 'premium' %}Pro{% else %}Upgrade{% endif %}</span>
+            </a>
+            <a href="{{ url_for('dashboard.support') }}"
+                class="p-2 rounded-full border transition flex items-center justify-center hover:opacity-90"
+                style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);"
+                title="Help & Support"
+                aria-label="Support">
+                <i data-lucide="help-circle" class="w-4 h-4 text-emerald-500"></i>
             </a>
             <a href="/settings"
-                class="p-2 rounded-full bg-gray-100 text-gray-600 hover:text-[#1d1d1f] hover:bg-gray-200 transition flex items-center justify-center"
+                class="p-2 rounded-full border transition flex items-center justify-center hover:opacity-90"
+                style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);"
+                title="Settings"
                 aria-label="Settings">
-                <i data-lucide="settings" class="w-5 h-5"></i>
+                <i data-lucide="settings" class="w-4 h-4"></i>
             </a>
             {% else %}
             <a href="{{ url_for('auth.login') }}"
-                class="px-4 py-2 rounded-full bg-gray-100 text-[#1d1d1f] text-sm font-semibold hover:bg-gray-200 transition">
+                class="px-4 py-2 rounded-full text-xs font-bold border transition hover:opacity-90"
+                style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
                 Login
             </a>
             <a href="{{ url_for('auth.signup') }}"
-                class="px-4 py-2 rounded-full bg-[#0071e3] text-gray-900 text-sm font-semibold hover:bg-[#0077ed] transition">
+                class="px-4 py-2 rounded-full text-white text-xs font-bold transition shadow-sm hover:opacity-90"
+                style="background: var(--accent-gradient); box-shadow: 0 2px 10px var(--accent-glow);">
                 Sign Up
             </a>
             {% endif %}
+
+            <!-- Theme Switcher -->
+            <button type="button" id="themeToggleBtn" onclick="toggleTheme()" 
+                class="p-2 rounded-full border transition flex items-center justify-center hover:opacity-90 focus:outline-none" 
+                title="Toggle Light / Dark Mode" 
+                aria-label="Toggle theme" 
+                style="background-color: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                <i data-lucide="sun" id="themeSunIcon" class="w-4 h-4 hidden text-amber-500"></i>
+                <i data-lucide="moon" id="themeMoonIcon" class="w-4 h-4 hidden text-blue-400"></i>
+            </button>
         </div>
     </nav>
 
     <!-- Mobile Bottom Nav -->
     {% if current_user %}
-    <div
-        class="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-gray-200 flex justify-around py-2 px-1 shadow-lg">
+    <div class="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t flex justify-around items-center py-2 px-2 shadow-2xl transition-all"
+         style="background: var(--nav-bg); border-color: var(--border); backdrop-filter: blur(24px) saturate(200%); -webkit-backdrop-filter: blur(24px) saturate(200%); padding-bottom: max(0.5rem, env(safe-area-inset-bottom));">
         <a href="{{ url_for('dashboard.index') }}"
-            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
-            <i data-lucide="home" class="w-5 h-5"></i> Home
-        </a>
-        <a href="/search"
-            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
-            <i data-lucide="search" class="w-5 h-5"></i> Search
+            class="flex flex-col items-center justify-center text-[10px] font-semibold py-1 px-3 rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
+            style="color: var(--text-secondary);">
+            <i data-lucide="home" class="w-5 h-5 mb-0.5"></i>
+            <span>Home</span>
         </a>
         <button onclick="openCommandBar()"
-            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 font-bold gap-1 text-[#0071e3]">
-            <i data-lucide="sparkles" class="w-5 h-5"></i> AI
+            class="flex flex-col items-center justify-center text-[10px] font-semibold py-1 px-3 rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
+            style="color: var(--text-secondary);">
+            <i data-lucide="search" class="w-5 h-5 mb-0.5"></i>
+            <span>Search</span>
         </button>
         <a href="/chat"
-            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
-            <i data-lucide="message-square" class="w-5 h-5"></i> Chat
-        </a>
-        <a href="/leaderboard"
-            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
-            <i data-lucide="trophy" class="w-5 h-5"></i> Ranks
+            class="flex flex-col items-center justify-center text-[10px] font-semibold py-1 px-3 rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
+            style="color: var(--text-secondary);">
+            <i data-lucide="message-square" class="w-5 h-5 mb-0.5 text-blue-500"></i>
+            <span>Chat</span>
         </a>
         <a href="/bookmarks"
-            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
-            <i data-lucide="bookmark" class="w-5 h-5"></i> Saved
-        </a>
-        <a href="/support"
-            class="flex flex-col items-center text-[10px] py-1 px-3 rounded-lg hover:bg-gray-100 text-gray-600 gap-1">
-            <i data-lucide="help-circle" class="w-5 h-5"></i> Support
+            class="flex flex-col items-center justify-center text-[10px] font-semibold py-1 px-3 rounded-xl transition hover:bg-black/5 dark:hover:bg-white/5"
+            style="color: var(--text-secondary);">
+            <i data-lucide="bookmark" class="w-5 h-5 mb-0.5 text-amber-500"></i>
+            <span>Saved</span>
         </a>
     </div>
     {% endif %}
 
     <!-- Main Content -->
-    <main class="container mx-auto p-4 pb-20 md:pb-4 animate-slide-in">
+    <main class="container mx-auto px-3 sm:px-4 pt-2 sm:pt-4 pb-24 md:pb-6 animate-slide-in">
 
         <!-- Flashed Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -293,7 +816,7 @@
         <div class="mb-6 space-y-2">
             {% for category, message in messages %}
             <div
-                class="p-4 rounded-xl flex items-center gap-3 {% if category == 'error' %}bg-red-900/30 border border-red-500/20 text-red-200{% else %}bg-emerald-900/30 border border-emerald-500/20 text-emerald-200{% endif %} glass-card">
+                class="p-4 rounded-xl flex items-center gap-3 {% if category == 'error' %}bg-red-900/40 border border-red-500/30 text-red-200{% else %}bg-emerald-900/40 border border-emerald-500/30 text-emerald-200{% endif %}" style="box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
                 {% if category == 'error' %}
                 <span>❌</span>
                 {% else %}
@@ -330,13 +853,38 @@
                 <span class="text-gray-600">•</span>
                 <a href="/privacy-policy" class="hover:text-primary-600 transition">Privacy Policy</a>
             </div>
-            <p class="text-xs">&copy; 2026 Helix AI. Built with ❤️.</p>
+            <p class="text-xs">&copy; 2026 <strong>NoteEd</strong> — AI Study Partner. Built with ❤️.</p>
         </div>
     </footer>
 
     {% if current_user %}
     <script>
-        // Background Task Polling
+        // Background Task Polling with Live Countdown
+        const taskCountdowns = {};
+        const activeTaskIntervals = {};
+
+        function formatExactTimer(sec) {
+            if (sec <= 0) return '00:01';
+            const m = Math.floor(sec / 60);
+            const s = sec % 60;
+            const mm = m < 10 ? '0' + m : m;
+            const ss = s < 10 ? '0' + s : s;
+            return `${mm}:${ss}`;
+        }
+
+        // Tick every active countdown down by 1s exactly
+        setInterval(() => {
+            Object.keys(taskCountdowns).forEach(taskId => {
+                if (taskCountdowns[taskId] > 1) {
+                    taskCountdowns[taskId]--;
+                    const cdEl = document.getElementById(`countdown-${taskId}`);
+                    if (cdEl) {
+                        cdEl.textContent = formatExactTimer(taskCountdowns[taskId]);
+                    }
+                }
+            });
+        }, 1000);
+
         function pollTasks() {
             fetch('/api/tasks/active')
                 .then(res => res.json())
@@ -352,35 +900,68 @@
                             let toast = document.getElementById(`task-toast-${task.id}`);
                             const isNew = !toast;
 
+                            // Estimate remaining seconds (approx 7s per sub-item remaining)
+                            const remainingItems = Math.max(1, (task.total_items || 4) - (task.completed_items || 0));
+                            if (task.status === 'processing' || task.status === 'pending') {
+                                if (!taskCountdowns[task.id] || taskCountdowns[task.id] > remainingItems * 8 + 4) {
+                                    taskCountdowns[task.id] = remainingItems * 8;
+                                }
+                            } else {
+                                delete taskCountdowns[task.id];
+                            }
+
                             if (isNew) {
                                 toast = document.createElement('div');
                                 toast.id = `task-toast-${task.id}`;
-                                toast.className = 'glass-card bg-white/95 border border-gray-200 p-4 rounded-2xl shadow-lg w-72 pointer-events-auto transform transition-all animate-slide-in';
+                                toast.className = 'p-4 rounded-2xl shadow-2xl w-80 pointer-events-auto transform transition-all animate-slide-in border';
+                                toast.style.background = 'var(--card, #ffffff)';
+                                toast.style.borderColor = 'var(--border, rgba(0,0,0,0.1))';
+                                toast.style.backdropFilter = 'blur(16px)';
                             }
 
-                            let icon = '<div class="w-8 h-8 rounded-full bg-primary-100 text-[#0071e3] flex items-center justify-center animate-pulse"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"></path><path d="M12 18v4"></path><path d="M4.93 4.93l2.83 2.83"></path><path d="M16.24 16.24l2.83 2.83"></path><path d="M2 12h4"></path><path d="M18 12h4"></path><path d="M4.93 19.07l2.83-2.83"></path><path d="M16.24 7.76l2.83-2.83"></path></svg></div>';
+                            let icon = '<div class="w-9 h-9 rounded-2xl bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 animate-spin"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" stroke-dasharray="32" stroke-dashoffset="12"></circle></svg></div>';
                             let progressHtml = '';
 
                             if (task.status === 'completed') {
-                                icon = '<div class="w-8 h-8 rounded-full bg-green-100 text-green-600 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>';
+                                icon = '<div class="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>';
+                                progressHtml = `<div class="mt-2 text-xs font-bold text-emerald-500 flex items-center gap-1.5"><span>✅</span> Generation Complete!</div>`;
+                                // If completed recently, trigger a soft page reload if user is on topic page
+                                setTimeout(() => {
+                                    if (window.location.pathname.includes('/topic/') && !document.querySelector('.note-title-hidden')) {
+                                        window.location.reload();
+                                    }
+                                }, 1500);
                             } else if (task.status === 'failed') {
-                                icon = '<div class="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>';
+                                icon = '<div class="w-9 h-9 rounded-2xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></div>';
+                                progressHtml = `<div class="mt-2 text-xs font-semibold text-rose-500">Generation interrupted. Please retry.</div>`;
                             } else {
                                 const percent = task.total_items > 0 ? Math.round((task.completed_items / task.total_items) * 100) : 0;
+                                const countdownText = formatExactTimer(taskCountdowns[task.id] || remainingItems * 8);
                                 progressHtml = `
-                                <div class="w-full bg-gray-100 rounded-full h-1.5 mt-3 overflow-hidden">
-                                    <div class="bg-[#0071e3] h-1.5 rounded-full transition-all duration-500" style="width: ${percent}%"></div>
+                                <div class="w-full rounded-full h-2 mt-2.5 overflow-hidden border" style="background: var(--bg-elevated, #f1f5f9); border-color: var(--border, transparent);">
+                                    <div class="h-2 rounded-full transition-all duration-500 bg-gradient-to-r from-blue-600 to-indigo-500" style="width: ${Math.max(8, percent)}%"></div>
                                 </div>
-                                <p class="text-[10px] text-gray-500 mt-1 text-right">${task.completed_items} / ${task.total_items}</p>
+                                <div class="flex items-center justify-between mt-2 text-xs">
+                                    <span class="font-bold font-mono flex items-center gap-1.5 text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-md">
+                                        <span>⏱️</span> <span id="countdown-${task.id}">${countdownText}</span>
+                                    </span>
+                                    <span class="font-mono text-[11px] opacity-70" style="color: var(--text-muted);">${task.completed_items} / ${task.total_items} complete</span>
+                                </div>
+                                <button type="button" onclick="stopTask('${task.id}')" class="mt-2.5 w-full py-1 text-[11px] font-bold text-rose-500 hover:text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/20 transition-all flex items-center justify-center gap-1 shadow-sm">
+                                    <span>🛑</span> Stop & Show Generated Content
+                                </button>
                             `;
                             }
 
                             toast.innerHTML = `
-                            <div class="flex gap-3">
+                            <div class="flex gap-3 items-start">
                                 ${icon}
                                 <div class="flex-1 min-w-0">
-                                    <h4 class="text-xs font-bold text-gray-800 truncate">AI Generation</h4>
-                                    <p class="text-[11px] text-gray-500 truncate">${task.message}</p>
+                                    <div class="flex items-center justify-between gap-1">
+                                        <h4 class="text-xs font-bold tracking-tight truncate" style="color: var(--text-primary);">AI Study Deck Engine</h4>
+                                        <span class="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded-md bg-blue-500/10 text-blue-500 font-bold">LIVE</span>
+                                    </div>
+                                    <p class="text-[11px] mt-0.5 truncate text-gray-400">${task.message || 'Generating study deck...'}</p>
                                     ${progressHtml}
                                 </div>
                             </div>
@@ -396,6 +977,7 @@
                     Array.from(container.children).forEach(toastEl => {
                         const taskId = toastEl.id.replace('task-toast-', '');
                         if (!activeTaskIds.has(taskId)) {
+                            delete taskCountdowns[taskId];
                             toastEl.remove();
                         }
                     });
@@ -403,85 +985,124 @@
                 .catch(err => console.error('Task poll error', err));
         }
 
-        // Poll every 3 seconds
-        setInterval(pollTasks, 3000);
-        // Initial poll
+        function stopTask(taskId) {
+            const btn = event?.currentTarget;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span>⏳</span> Stopping & saving...';
+            }
+            fetch(`/api/tasks/${taskId}/cancel`, { method: 'POST' })
+                .then(res => res.json())
+                .then(() => {
+                    setTimeout(() => {
+                        if (window.location.pathname.includes('/topic/')) {
+                            window.location.reload();
+                        } else {
+                            pollTasks();
+                        }
+                    }, 500);
+                })
+                .catch(err => {
+                    console.error('Error stopping task', err);
+                    pollTasks();
+                });
+        }
+
+        // Poll every 2.5 seconds
+        setInterval(pollTasks, 2500);
         pollTasks();
     </script>
     {% endif %}
 
-    <!-- AI Command Bar Modal -->
+    <!-- Universal Quick Search & Command Palette Modal -->
     <div id="ai-command-overlay" class="fixed inset-0 z-[100] hidden">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeCommandBar()"></div>
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-md transition-opacity" onclick="closeCommandBar()"></div>
 
-        <!-- Modal -->
-        <div class="relative flex items-start justify-center pt-[15vh]">
-            <div
-                class="w-full max-w-2xl mx-4 glass-card border border-white/10 shadow-2xl shadow-primary-500/10 overflow-hidden animate-fade-in">
-                <!-- Header -->
-                <div class="px-5 pt-5 pb-3 border-b border-white/5">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-lg">🤖</span>
-                            <h3 class="text-sm font-bold text-primary-300 font-outfit">AI Command Bar</h3>
-                        </div>
-                        <button onclick="closeCommandBar()"
-                            class="text-xs opacity-50 hover:opacity-100 transition flex items-center gap-1">
-                            <kbd
-                                class="px-1.5 py-0.5 rounded bg-white/10 border border-white/10 font-mono text-[10px]">Esc</kbd>
-                        </button>
-                    </div>
-                    <p class="text-xs opacity-50">Tell the AI what to do — it can create study plans, import syllabi,
-                        generate quizzes, and more.</p>
+        <!-- Modal Box -->
+        <div class="relative flex items-start justify-center pt-[10vh] px-4">
+            <div class="w-full max-w-2xl rounded-2xl border shadow-2xl overflow-hidden transition-all transform scale-100"
+                style="background: var(--card-elevated, #18181b); border-color: var(--border, rgba(255,255,255,0.1)); box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                
+                <!-- Search Input Bar -->
+                <div class="p-4 border-b flex items-center gap-3" style="border-color: var(--border, rgba(255,255,255,0.08));">
+                    <i data-lucide="search" class="w-5 h-5 text-gray-400 shrink-0"></i>
+                    <input type="text" id="global-search-input"
+                        placeholder="Search topics, subjects, notes, or ask AI..."
+                        class="w-full bg-transparent border-0 text-sm sm:text-base focus:outline-none placeholder:text-gray-500 font-sans"
+                        style="color: var(--text-primary);"
+                        autocomplete="off">
+                    <kbd class="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-mono border text-gray-400"
+                        style="background: var(--bg-elevated); border-color: var(--border);">ESC</kbd>
                 </div>
 
-                <!-- Input -->
-                <form id="ai-command-form" class="p-5">
-                    <div class="flex items-center gap-3">
-                        <div class="flex-1 relative">
-                            <input type="text" id="ai-command-input"
-                                placeholder='Ask AI anything... e.g. "Create 5th sem DBMS normalization"'
-                                class="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm focus:outline-none focus:border-primary-500/50 focus:ring-2 focus:ring-primary-500/20 transition placeholder:opacity-40"
-                                autocomplete="off">
+                <!-- Results & Quick Jumps Area -->
+                <div id="search-results-area" class="max-h-[60vh] overflow-y-auto p-4 custom-scroll space-y-4">
+                    
+                    <!-- Default Quick Actions (Shown when search is empty) -->
+                    <div id="search-default-actions">
+                        <div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2 px-2">Quick Navigation</div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <a href="/chat" class="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border transition"
+                                style="border-color: var(--border); color: var(--text-primary);">
+                                <div class="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                                    <i data-lucide="message-square" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-bold">AI Study Chat</div>
+                                    <div class="text-[11px] text-gray-500 truncate">Ask any academic question</div>
+                                </div>
+                            </a>
+                            <a href="/bookmarks" class="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border transition"
+                                style="border-color: var(--border); color: var(--text-primary);">
+                                <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+                                    <i data-lucide="bookmark" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-bold">Bookmarked Notes</div>
+                                    <div class="text-[11px] text-gray-500 truncate">Saved study materials</div>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('planner.view_planner') }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border transition"
+                                style="border-color: var(--border); color: var(--text-primary);">
+                                <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0">
+                                    <i data-lucide="calendar" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-bold">Study Planner</div>
+                                    <div class="text-[11px] text-gray-500 truncate">Schedules & revision targets</div>
+                                </div>
+                            </a>
+                            <a href="{{ url_for('study.paste_syllabus') }}" class="flex items-center gap-3 p-3 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border transition"
+                                style="border-color: var(--border); color: var(--text-primary);">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center shrink-0">
+                                    <i data-lucide="file-plus" class="w-4 h-4"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-bold">Import Syllabus</div>
+                                    <div class="text-[11px] text-gray-500 truncate">Paste units & build decks</div>
+                                </div>
+                            </a>
                         </div>
-                        <button type="submit" id="ai-command-submit"
-                            class="px-5 py-3 rounded-xl bg-primary-600 hover:bg-primary-700 text-sm font-bold text-white transition flex items-center gap-2 shrink-0">
-                            <span id="ai-cmd-btn-text">Send</span>
-                            <svg id="ai-cmd-spinner" class="hidden animate-spin h-4 w-4"
-                                xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                    stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                        </button>
                     </div>
 
-                    <!-- Response Area -->
-                    <div id="ai-command-response" class="hidden mt-4 p-4 rounded-xl text-sm border"></div>
-                </form>
+                    <!-- Dynamic Search Results List -->
+                    <div id="search-dynamic-results" class="hidden space-y-3"></div>
 
-                <!-- Quick Suggestions -->
-                <div class="px-5 pb-4 flex flex-wrap gap-2">
-                    <button type="button"
-                        onclick="fillCommand('Create syllabus for Semester 5: Subject AI, Unit 1 Intro, Topics: Agents, Search')"
-                        class="text-[11px] px-4 py-1.5 rounded-lg bg-gradient-to-r from-primary-500 to-primary-500 text-white border border-white/20 hover:opacity-90 shadow-[0_0_15px_rgba(139,92,246,0.5)] transition-all font-bold">
-                        📋 Syllabus template
-                    </button>
-                    <button type="button" onclick="fillCommand('Create a study plan for my next exam')"
-                        class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
-                        📅 Create study plan
-                    </button>
-                    <button type="button" onclick="fillCommand('Generate quiz for my weakest topic')"
-                        class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
-                        📝 Generate quiz
-                    </button>
-                    <button type="button" onclick="fillCommand('What should I study today?')"
-                        class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 border border-white/5 hover:bg-primary-600/10 hover:border-primary-500/20 transition">
-                        💡 Study suggestion
-                    </button>
+                    <!-- Ask AI Fallback Option -->
+                    <div id="search-ask-ai" class="hidden pt-2 border-t" style="border-color: var(--border);">
+                        <a id="search-ask-ai-link" href="/chat" class="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 border border-blue-500/20 transition">
+                            <i data-lucide="sparkles" class="w-4 h-4 shrink-0"></i>
+                            <span class="text-xs font-bold truncate">Ask AI Assistant: "<span id="search-ask-ai-query"></span>"</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Footer Hint -->
+                <div class="px-4 py-2.5 border-t flex items-center justify-between text-[11px] text-gray-500"
+                    style="background: var(--bg-elevated); border-color: var(--border);">
+                    <span>Navigation shortcut: <kbd class="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono text-[9px]">⌘K</kbd> / <kbd class="px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono text-[9px]">Ctrl+K</kbd></span>
+                    <span>NoteEd Global Search</span>
                 </div>
             </div>
         </div>
@@ -489,39 +1110,119 @@
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script>
-        // AI Command Bar Logic
+        // Universal Global Search Modal Logic
+        let searchDebounce = null;
+
         function openCommandBar() {
             const overlay = document.getElementById('ai-command-overlay');
             overlay.classList.remove('hidden');
             document.body.style.overflow = 'hidden';
             setTimeout(() => {
-                document.getElementById('ai-command-input').focus();
-            }, 100);
+                const inp = document.getElementById('global-search-input');
+                if (inp) {
+                    inp.focus();
+                    inp.select();
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }, 50);
         }
 
         function closeCommandBar() {
             const overlay = document.getElementById('ai-command-overlay');
-            overlay.classList.add('hidden');
-            document.body.style.overflow = '';
-            // Reset state
-            const resp = document.getElementById('ai-command-response');
-            resp.classList.add('hidden');
-            resp.className = 'hidden mt-4 p-4 rounded-xl text-sm border';
-            document.getElementById('ai-command-input').value = '';
+            if (overlay) {
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
         }
 
-        function fillCommand(text) {
-            const input = document.getElementById('ai-command-input');
-            input.value = text;
-            input.focus();
+        // Live Search Input Listener
+        const searchInput = document.getElementById('global-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                const defaultArea = document.getElementById('search-default-actions');
+                const dynamicArea = document.getElementById('search-dynamic-results');
+                const askAiArea = document.getElementById('search-ask-ai');
+                const askAiQuery = document.getElementById('search-ask-ai-query');
+                const askAiLink = document.getElementById('search-ask-ai-link');
+
+                if (!query) {
+                    defaultArea.classList.remove('hidden');
+                    dynamicArea.classList.add('hidden');
+                    askAiArea.classList.add('hidden');
+                    return;
+                }
+
+                defaultArea.classList.add('hidden');
+                dynamicArea.classList.remove('hidden');
+                askAiArea.classList.remove('hidden');
+                askAiQuery.textContent = query;
+                askAiLink.href = `/chat?q=${encodeURIComponent(query)}`;
+
+                clearTimeout(searchDebounce);
+                searchDebounce = setTimeout(async () => {
+                    dynamicArea.innerHTML = '<div class="text-xs text-gray-400 p-3 flex items-center gap-2"><div class="w-3.5 h-3.5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div> Searching...</div>';
+                    
+                    try {
+                        const res = await fetch(`/api/global-search?q=${encodeURIComponent(query)}`);
+                        if (!res.ok) throw new Error('Search failed');
+                        const data = await res.json();
+                        
+                        let html = '';
+
+                        if (data.topics && data.topics.length > 0) {
+                            html += '<div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2 px-2">Topics & Study Notes</div>';
+                            html += '<div class="space-y-1.5">';
+                            data.topics.forEach(t => {
+                                html += `
+                                    <a href="/topic/${t.id}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border transition" style="border-color: var(--border);">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <span class="text-sm">📝</span>
+                                            <span class="text-xs font-bold truncate" style="color: var(--text-primary);">${t.name}</span>
+                                        </div>
+                                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 font-medium shrink-0">${t.subject_name || 'Subject'}</span>
+                                    </a>
+                                `;
+                            });
+                            html += '</div>';
+                        }
+
+                        if (data.subjects && data.subjects.length > 0) {
+                            html += '<div class="text-[11px] font-bold uppercase tracking-wider text-gray-400 mt-4 mb-2 px-2">Subjects</div>';
+                            html += '<div class="space-y-1.5">';
+                            data.subjects.forEach(s => {
+                                html += `
+                                    <a href="/#subject-${s.id}" class="flex items-center justify-between p-2.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/5 border transition" style="border-color: var(--border);">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <span class="text-sm">📚</span>
+                                            <span class="text-xs font-bold truncate" style="color: var(--text-primary);">${s.name}</span>
+                                        </div>
+                                        <span class="text-[10px] text-gray-400 shrink-0">${s.semester_name || ''}</span>
+                                    </a>
+                                `;
+                            });
+                            html += '</div>';
+                        }
+
+                        if (!data.topics?.length && !data.subjects?.length) {
+                            html = '<div class="text-center py-6 text-gray-500 text-xs">No matching topics or subjects found. You can ask AI below!</div>';
+                        }
+
+                        dynamicArea.innerHTML = html;
+                        if (typeof lucide !== 'undefined') lucide.createIcons();
+                    } catch (err) {
+                        dynamicArea.innerHTML = '<div class="text-xs text-gray-400 p-2">Search unavailable. Use the link below to ask AI.</div>';
+                    }
+                }, 180);
+            });
         }
 
-        // Keyboard shortcut: Ctrl+K
+        // Global Shortcut: Ctrl+K / Cmd+K
         document.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
                 e.preventDefault();
                 const overlay = document.getElementById('ai-command-overlay');
-                if (overlay.classList.contains('hidden')) {
+                if (overlay && overlay.classList.contains('hidden')) {
                     openCommandBar();
                 } else {
                     closeCommandBar();
@@ -531,64 +1232,11 @@
                 closeCommandBar();
             }
         });
-
-        // Form submission
-        document.getElementById('ai-command-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const input = document.getElementById('ai-command-input');
-            const command = input.value.trim();
-            if (!command) return;
-
-            const btnText = document.getElementById('ai-cmd-btn-text');
-            const spinner = document.getElementById('ai-cmd-spinner');
-            const submitBtn = document.getElementById('ai-command-submit');
-            const responseDiv = document.getElementById('ai-command-response');
-
-            // Show loading
-            btnText.textContent = 'Processing...';
-            spinner.classList.remove('hidden');
-            submitBtn.disabled = true;
-            submitBtn.classList.add('opacity-70');
-            responseDiv.classList.add('hidden');
-
-            try {
-                const response = await fetch('/ai/command', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ command: command })
-                });
-                const data = await response.json();
-
-                responseDiv.classList.remove('hidden');
-
-                if (response.ok && data.success) {
-                    responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-emerald-900/30 border-emerald-500/20 text-emerald-200';
-                    responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>✅</span><div>${data.message || 'Command executed successfully!'}</div></div>`;
-
-                    // Auto-redirect after success
-                    if (data.redirect) {
-                        setTimeout(() => {
-                            window.location.href = data.redirect;
-                        }, 1500);
-                    }
-                } else {
-                    responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-red-900/30 border-red-500/20 text-red-200';
-                    responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>❌</span><div>${data.message || data.error || 'Something went wrong. Please try again.'}</div></div>`;
-                }
-            } catch (err) {
-                responseDiv.classList.remove('hidden');
-                responseDiv.className = 'mt-4 p-4 rounded-xl text-sm border bg-red-900/30 border-red-500/20 text-red-200';
-                responseDiv.innerHTML = `<div class="flex items-start gap-2"><span>❌</span><div>Network error. Please check your connection and try again.</div></div>`;
-            } finally {
-                btnText.textContent = 'Send';
-                spinner.classList.add('hidden');
-                submitBtn.disabled = false;
-                submitBtn.classList.remove('opacity-70');
-            }
-        });
     </script>
     <script>
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined' && lucide.createIcons) {
+            lucide.createIcons();
+        }
     </script>
 
     <!-- Cookie Consent Banner -->
@@ -671,17 +1319,82 @@
         }
     </style>
 
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker & Install App Banner -->
+    <div id="pwa-install-banner" class="fixed bottom-24 sm:bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-sm z-[99] hidden">
+        <div class="p-4 rounded-2xl shadow-2xl border flex items-center justify-between gap-3 animate-slide-in"
+             style="background: var(--card, #ffffff); border-color: var(--border, rgba(0,0,0,0.1)); backdrop-filter: blur(20px);">
+            <div class="flex items-center gap-3 min-w-0">
+                <img src="/static/images/noteedhalf.png" alt="NoteEd" class="w-10 h-10 rounded-xl shadow-sm shrink-0">
+                <div class="min-w-0">
+                    <h4 class="text-xs font-bold truncate" style="color: var(--text-primary);">Install NoteEd App</h4>
+                    <p class="text-[11px] text-gray-500 truncate">Faster access & offline study decks</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button id="pwa-install-btn" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all">
+                    Install
+                </button>
+                <button onclick="document.getElementById('pwa-install-banner').classList.add('hidden')" class="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg">
+                    ✕
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- iOS PWA Install Tooltip Modal -->
+    <div id="ios-install-modal" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+        <div class="w-full max-w-sm p-6 rounded-3xl shadow-2xl border text-center relative"
+             style="background: var(--card, #ffffff); border-color: var(--border);">
+            <button onclick="document.getElementById('ios-install-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">✕</button>
+            <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-blue-500/10 flex items-center justify-center text-2xl">📱</div>
+            <h3 class="text-base font-bold mb-2" style="color: var(--text-primary);">Install NoteEd on iOS</h3>
+            <p class="text-xs text-gray-500 mb-4">To install NoteEd on your iPhone/iPad:</p>
+            <div class="space-y-2 text-xs text-left p-3 rounded-xl mb-4" style="background: var(--bg-elevated);">
+                <p class="flex items-center gap-2"><strong>1.</strong> Tap the <strong>Share</strong> button <span class="text-base">📤</span> in Safari.</p>
+                <p class="flex items-center gap-2"><strong>2.</strong> Scroll down and select <strong>"Add to Home Screen"</strong> <span class="text-base">➕</span>.</p>
+                <p class="flex items-center gap-2"><strong>3.</strong> Tap <strong>Add</strong> in top right corner.</p>
+            </div>
+            <button onclick="document.getElementById('ios-install-modal').classList.add('hidden')" class="w-full py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs">Got it!</button>
+        </div>
+    </div>
+
     <script>
+        let deferredPrompt = null;
+
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js').then(registration => {
+                navigator.serviceWorker.register('/sw.js?v=noteed_v7').then(registration => {
                     console.log('SW registered: ', registration);
                 }).catch(registrationError => {
                     console.log('SW registration failed: ', registrationError);
                 });
             });
         }
+
+        // Catch PWA beforeinstallprompt event for Android/Chrome/Edge
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.classList.remove('hidden');
+        });
+
+        document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                deferredPrompt = null;
+                document.getElementById('pwa-install-banner')?.classList.add('hidden');
+            } else {
+                // Check if iOS device
+                const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                if (isIos) {
+                    document.getElementById('ios-install-modal')?.classList.remove('hidden');
+                } else {
+                    alert('To install NoteEd: Tap your browser menu (⋮) and select "Install app" or "Add to Home Screen".');
+                }
+            }
+        });
     </script>
 
     <!-- Unauthenticated Dashboard Interceptor -->
@@ -767,12 +1480,7 @@
             }
 
             // Instantly typeset the math equations before typing starts
-            if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-                if (typeof window.MathJax.typesetClear === 'function') {
-                    window.MathJax.typesetClear();
-                }
-                MathJax.typesetPromise([element]).catch(err => console.error(err));
-            }
+            window.typesetMath(element);
 
             let nodeIndex = 0;
             let charIndex = 0;
@@ -785,10 +1493,13 @@
                         currentItem.node.nodeValue += currentItem.fullText.substr(charIndex, chunk);
                         charIndex += chunk;
 
-                        // Scroll to bottom if we are in a scrollable container (like chat)
-                        const scrollParent = element.closest('.overflow-y-auto');
+                        // Smart scroll: only auto-scroll to bottom if user has NOT scrolled up
+                        const scrollParent = element.closest('.overflow-y-auto') || element.closest('#chat-box');
                         if (scrollParent) {
-                            scrollParent.scrollTop = scrollParent.scrollHeight;
+                            const distanceToBottom = scrollParent.scrollHeight - scrollParent.scrollTop - scrollParent.clientHeight;
+                            if (distanceToBottom < 90) {
+                                scrollParent.scrollTop = scrollParent.scrollHeight;
+                            }
                         }
 
                         setTimeout(typeNextChar, speed);
@@ -806,24 +1517,324 @@
                         onComplete();
                     } else {
                         // Only run default typesetting if no custom completion handler was provided
-                        if (typeof MathJax !== 'undefined' && MathJax.typesetPromise) {
-                            MathJax.typesetPromise([element]).then(() => {
-                                if (typeof hljs !== 'undefined') {
-                                    element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
-                                }
-                                if (typeof addCodeCopyButtons === 'function') {
-                                    addCodeCopyButtons(element);
-                                }
-                            }).catch(err => console.error('MathJax error in typewriter:', err));
-                        } else if (typeof hljs !== 'undefined') {
+                        window.typesetMath(element);
+                        if (typeof hljs !== 'undefined') {
                             element.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                        }
+                        if (typeof addCodeCopyButtons === 'function') {
+                            addCodeCopyButtons(element);
                         }
                     }
                 }
             }
             typeNextChar();
         }
+
+        // Global Theme Switcher
+        function applyTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            try {
+                localStorage.setItem('noteed_theme', theme);
+            } catch(e) {}
+
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+
+            const sun = document.getElementById('themeSunIcon');
+            const moon = document.getElementById('themeMoonIcon');
+            if (sun && moon) {
+                if (theme === 'light') {
+                    sun.classList.remove('hidden');
+                    moon.classList.add('hidden');
+                } else {
+                    sun.classList.add('hidden');
+                    moon.classList.remove('hidden');
+                }
+            }
+            window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme } }));
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            applyTheme(next);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const current = document.documentElement.getAttribute('data-theme') || 'dark';
+            applyTheme(current);
+        });
+
+        // ── PWA Native App Installation Engine ─────────────────────────────────
+        let deferredInstallPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            console.log('[PWA] beforeinstallprompt captured and ready.');
+        });
+
+        window.installNoteEdApp = function() {
+            // Check if on iOS Safari
+            const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+            if (isStandalone) {
+                alert('NoteEd is already installed as a standalone app on your device! 🎉');
+                return;
+            }
+
+            if (deferredInstallPrompt) {
+                deferredInstallPrompt.prompt();
+                deferredInstallPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('[PWA] User accepted NoteEd installation.');
+                    }
+                    deferredInstallPrompt = null;
+                });
+            } else if (isIos) {
+                const iosModal = document.getElementById('ios-install-modal');
+                if (iosModal) iosModal.classList.remove('hidden');
+            } else {
+                // Fallback instructions modal for Chrome/Edge desktop/Android
+                const helperModal = document.getElementById('pwa-helper-modal');
+                if (helperModal) {
+                    helperModal.classList.remove('hidden');
+                } else {
+                    alert('To install NoteEd:\n• Chrome/Edge: Click the install icon in the address bar (or Menu > "Install NoteEd").\n• Mobile: Tap Menu (⋮) > "Add to Home Screen" / "Install app".');
+                }
+            }
+        };
+
+        // ── Interactive First-Time Walkthrough Tour ──────────────────────────────
+        const TOUR_STEPS = [
+            {
+                badge: "Step 1 of 5",
+                icon: "🎓",
+                title: "Welcome to NoteEd AI!",
+                desc: "Your intelligent university study partner. Easily configure standard degree curriculums (B.Tech, CSE, IT, ECE) or specify custom degrees (MBA, B.Com, Degree) with 5 automated academic units!",
+                link: "/setup",
+                linkText: "Go to Syllabus Setup"
+            },
+            {
+                badge: "Step 2 of 5",
+                icon: "📐",
+                title: "Exhaustive Notes & Solved Math Problems",
+                desc: "Generate textbook-depth chapters. For mathematics and engineering, NoteEd produces 6+ step-by-step solved numerical problems with full LaTeX formulas, given data, and zero skipped arithmetic!",
+                link: "/dashboard",
+                linkText: "View My Subjects"
+            },
+            {
+                badge: "Step 3 of 5",
+                icon: "⚡",
+                title: "Flashcards & Timed MCQ Quizzes",
+                desc: "Reinforce your knowledge with spaced repetition active recall cards and 5-question timed MCQ practice tests with in-depth explanations for every answer.",
+                link: "/flashcards",
+                linkText: "Explore Flashcards"
+            },
+            {
+                badge: "Step 4 of 5",
+                icon: "🎙️",
+                title: "Viva Voce & Technical Oral Exams",
+                desc: "Prepare for high-stakes lab vivas and oral technical interviews with curated 'why', 'how', and tricky edge-case question-and-answer decks.",
+                link: "/quizzes",
+                linkText: "Explore Quizzes"
+            },
+            {
+                badge: "Step 5 of 5",
+                icon: "📲",
+                title: "Install as a Native App & Study Offline",
+                desc: "Add NoteEd directly to your phone's home screen or PC for offline study, instant access, and full-screen distraction-free learning!",
+                actionBtn: true
+            }
+        ];
+
+        let currentTourStep = 0;
+
+        window.startNoteEdTour = function(force = false) {
+            if (!force && localStorage.getItem('noteed_tour_dismissed') === 'true') {
+                return;
+            }
+            currentTourStep = 0;
+            renderTourStep();
+            const modal = document.getElementById('noteed-walkthrough-modal');
+            if (modal) modal.classList.remove('hidden');
+        };
+
+        window.nextTourStep = function() {
+            if (currentTourStep < TOUR_STEPS.length - 1) {
+                currentTourStep++;
+                renderTourStep();
+            } else {
+                closeNoteEdTour();
+            }
+        };
+
+        window.prevTourStep = function() {
+            if (currentTourStep > 0) {
+                currentTourStep--;
+                renderTourStep();
+            }
+        };
+
+        window.closeNoteEdTour = function() {
+            localStorage.setItem('noteed_tour_dismissed', 'true');
+            const modal = document.getElementById('noteed-walkthrough-modal');
+            if (modal) modal.classList.add('hidden');
+        };
+
+        function renderTourStep() {
+            const step = TOUR_STEPS[currentTourStep];
+            const badgeEl = document.getElementById('tour-step-badge');
+            const iconEl = document.getElementById('tour-step-icon');
+            const titleEl = document.getElementById('tour-step-title');
+            const descEl = document.getElementById('tour-step-desc');
+            const nextBtn = document.getElementById('tour-next-btn');
+            const prevBtn = document.getElementById('tour-prev-btn');
+            const dotsContainer = document.getElementById('tour-dots-container');
+            const actionContainer = document.getElementById('tour-action-container');
+
+            if (badgeEl) badgeEl.textContent = step.badge;
+            if (iconEl) iconEl.textContent = step.icon;
+            if (titleEl) titleEl.textContent = step.title;
+            if (descEl) descEl.textContent = step.desc;
+
+            if (prevBtn) {
+                if (currentTourStep === 0) {
+                    prevBtn.classList.add('hidden');
+                } else {
+                    prevBtn.classList.remove('hidden');
+                }
+            }
+
+            if (nextBtn) {
+                nextBtn.innerHTML = currentTourStep === TOUR_STEPS.length - 1 
+                    ? '<span>Finish & Get Started 🎉</span>' 
+                    : `<span>Next (${currentTourStep + 1}/${TOUR_STEPS.length}) →</span>`;
+            }
+
+            if (dotsContainer) {
+                dotsContainer.innerHTML = TOUR_STEPS.map((_, i) => `
+                    <div class="h-1.5 rounded-full transition-all ${i === currentTourStep ? 'w-6 bg-blue-500' : 'w-2 bg-gray-300 dark:bg-zinc-700'}"></div>
+                `).join('');
+            }
+
+            if (actionContainer) {
+                if (step.actionBtn) {
+                    actionContainer.innerHTML = `
+                        <button onclick="installNoteEdApp(); closeNoteEdTour();" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 shadow-md transition-all flex items-center justify-center gap-2">
+                            <span>📲</span> Install NoteEd App Now
+                        </button>
+                    `;
+                } else if (step.link) {
+                    actionContainer.innerHTML = `
+                        <a href="${step.link}" onclick="closeNoteEdTour()" class="inline-flex items-center gap-1.5 text-xs font-bold text-blue-500 hover:underline">
+                            <span>${step.linkText}</span> →
+                        </a>
+                    `;
+                } else {
+                    actionContainer.innerHTML = '';
+                }
+            }
+        }
+
+        // Trigger tour on first visit
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                if (!localStorage.getItem('noteed_tour_dismissed') && !window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+                    startNoteEdTour(false);
+                }
+            }, 1200);
+        });
     </script>
+
+    <!-- Interactive Walkthrough Tour Modal -->
+    <div id="noteed-walkthrough-modal" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
+        <!-- Backdrop -->
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity" onclick="closeNoteEdTour()"></div>
+
+        <!-- Tour Card -->
+        <div class="relative w-full max-w-md rounded-3xl border shadow-2xl p-6 overflow-hidden transform transition-all animate-fade-in"
+             style="background: var(--card, #ffffff); border-color: var(--border, rgba(255,255,255,0.15));">
+            
+            <div class="flex items-center justify-between mb-4">
+                <span id="tour-step-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                    Step 1 of 5
+                </span>
+                <button type="button" onclick="closeNoteEdTour()" class="text-xs font-semibold px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors" style="color: var(--text-muted);">
+                    Skip Guide ✕
+                </button>
+            </div>
+
+            <div class="text-center py-3">
+                <div id="tour-step-icon" class="text-4xl mb-3">🎓</div>
+                <h3 id="tour-step-title" class="text-lg font-bold font-outfit mb-2" style="color: var(--text-primary);">Welcome to NoteEd AI!</h3>
+                <p id="tour-step-desc" class="text-xs leading-relaxed" style="color: var(--text-secondary);">
+                    Your intelligent study partner.
+                </p>
+                <div id="tour-action-container" class="mt-4"></div>
+            </div>
+
+            <!-- Dots & Navigation -->
+            <div class="flex items-center justify-between pt-5 mt-3 border-t" style="border-color: var(--border);">
+                <div id="tour-dots-container" class="flex items-center gap-1.5"></div>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="tour-prev-btn" onclick="prevTourStep()" class="hidden px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                        ← Back
+                    </button>
+                    <button type="button" id="tour-next-btn" onclick="nextTourStep()" class="px-4 py-1.5 rounded-xl text-xs font-bold text-white shadow-md transition-all hover:opacity-90" style="background: var(--accent);">
+                        Next (1/5) →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- iOS Install Modal -->
+    <div id="ios-install-modal" class="fixed inset-0 z-[130] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('ios-install-modal').classList.add('hidden')"></div>
+        <div class="relative w-full max-w-sm rounded-3xl border shadow-2xl p-6 text-center" style="background: var(--card, #ffffff); border-color: var(--border);">
+            <div class="text-4xl mb-2">📲</div>
+            <h3 class="text-base font-bold font-outfit mb-1" style="color: var(--text-primary);">Install NoteEd on iOS</h3>
+            <p class="text-xs mb-4" style="color: var(--text-secondary);">Follow these 2 simple steps in Safari to install:</p>
+            
+            <div class="space-y-2.5 text-left text-xs p-3 rounded-2xl border" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                <div class="flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-[11px] shrink-0">1</span>
+                    <span>Tap the <strong>Share</strong> icon in the bottom Safari bar.</span>
+                </div>
+                <div class="flex items-center gap-2.5">
+                    <span class="w-6 h-6 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-[11px] shrink-0">2</span>
+                    <span>Scroll down and tap <strong>"Add to Home Screen"</strong>.</span>
+                </div>
+            </div>
+
+            <button type="button" onclick="document.getElementById('ios-install-modal').classList.add('hidden')" class="mt-4 w-full py-2.5 rounded-xl text-xs font-bold text-white shadow-md" style="background: var(--accent);">
+                Got It!
+            </button>
+        </div>
+    </div>
+
+    <!-- PWA Desktop / Browser Helper Modal -->
+    <div id="pwa-helper-modal" class="fixed inset-0 z-[130] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="document.getElementById('pwa-helper-modal').classList.add('hidden')"></div>
+        <div class="relative w-full max-w-sm rounded-3xl border shadow-2xl p-6 text-center" style="background: var(--card, #ffffff); border-color: var(--border);">
+            <div class="text-4xl mb-2">💻</div>
+            <h3 class="text-base font-bold font-outfit mb-1" style="color: var(--text-primary);">Install NoteEd App</h3>
+            <p class="text-xs mb-4" style="color: var(--text-secondary);">To install in your browser:</p>
+            
+            <div class="space-y-2.5 text-left text-xs p-3.5 rounded-2xl border" style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);">
+                <p>• <strong>Chrome / Edge:</strong> Click the <strong>Install App (⊕)</strong> icon on the right side of the address bar.</p>
+                <p>• <strong>Mobile Browser:</strong> Tap the <strong>three dots menu (⋮)</strong> and select <strong>"Install App"</strong> or <strong>"Add to Home screen"</strong>.</p>
+            </div>
+
+            <button type="button" onclick="document.getElementById('pwa-helper-modal').classList.add('hidden')" class="mt-4 w-full py-2.5 rounded-xl text-xs font-bold text-white shadow-md" style="background: var(--accent);">
+                Understood
+            </button>
+        </div>
+    </div>
 </body>
 
 </html>
