@@ -1,135 +1,149 @@
 <div align="center">
 
-# ⚡ MAHESH VILASAGARAM
-### *AI-Driven Product Builder & Software Engineer*
+# ⚡ NoteEd — AI Study Partner
+### *AI-Driven University Study Companion & Academic Exam Engine*
 
 <a href="https://git.io/typing-svg">
-  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=3B82F6&center=true&vcenter=true&width=650&lines=AI-Driven+Product+Builder+%26+Full-Stack+Engineer;Building+Practical+AI-Powered+Applications;Created+Helix+AI%2C+BunkCalc+%26+DSA+Learner;Backend+APIs+(FastAPI%2FFlask)+%26+OCR+Automation" alt="Typing Banner" />
+  <img src="https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=22&pause=1000&color=3B82F6&center=true&vcenter=true&width=680&lines=AI-Powered+University+Syllabus+%26+Exam+Engine;Comprehensive+Textbook+Notes+%26+Solved+Math+Problems;Active+Recall+Flashcards%2C+MCQ+Quizzes+%26+Viva+Voce;Context-Aware+AI+Tutor+Chat+%26+Offline+PWA" alt="Typing Banner" />
 </a>
 
 <br/><br/>
 
-[![GitHub Followers](https://img.shields.io/github/followers/themaheshbuilds?style=for-the-badge&logo=github&color=181717)](https://github.com/themaheshbuilds)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect_Me-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/mahesh-vilasagaram)
-[![Email](https://img.shields.io/badge/Email-Contact_Direct-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:vilasagarammahesh90@gmail.com)
-[![Location](https://img.shields.io/badge/Location-India-FF9933?style=for-the-badge&logo=googlemaps&logoColor=white)](#)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-NoteEd-181717?style=for-the-badge&logo=github)](https://github.com/themaheshbuilds/NoteEd)
+[![Python Version](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Framework](https://img.shields.io/badge/Flask-2.x-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Database](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
+[![PWA Ready](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)](#)
 
 ---
 
 </div>
 
-## 👨💻 About Me
+## 📖 About NoteEd
 
-I am a Computer Science developer focused on building practical AI-powered applications. I enjoy turning ideas into working products rather than just learning theory, leveraging modern AI coding tools to rapidly design, prototype, and ship real-world software.
+**NoteEd** is a full-stack, AI-powered academic study platform engineered for university students across **Engineering (B.Tech), Management (MBA), Commerce (B.Com), and General Degree programs**. 
 
-- 🔭 **Currently working on**: AI-based tools like note organizers, code editors, and study assistants.
-- 🧠 **Learning & Refining**: Python, FastAPI, Flask, AI APIs, and System Design fundamentals.
-- 🛠️ **Workflow**: AI-Driven Product Development (turning concepts into deployed full-stack apps).
-- 🚀 **Featured Projects**: Helix AI, BunkCalc, CA Ledger, DSA Learner, MARVIN (AI assistant), and FilmyFeed.
-- 🎯 **Career Goal**: Build real-world AI products and land a strong software developer role at a top tech company.
+Instead of generating superficial summaries, NoteEd structures every subject into an exhaustive **5-Unit academic syllabus** with **step-by-step solved numerical calculations**, **spaced repetition flashcards**, **timed MCQ practice exams**, **Viva Voce oral interview decks**, and a **context-aware AI Tutor Chat**.
+
+- 🎓 **Universal Curriculum**: Pre-configured standard syllabus branches + automated 5-unit custom degree curriculum generator.
+- 📐 **Solved Mathematics Engine**: 75%+ numerical problem-solving weighting with complete LaTeX arithmetic derivations.
+- ⚡ **Multi-Modal Active Recall**: Flashcards, timed MCQ quizzes with explanations, and viva interview preparation.
+- 📱 **Native PWA Experience**: Installable on Android, iOS, Windows, and Mac with offline capabilities and smooth responsive UI.
 
 > [!TIP]
-> ### ⚡ Personal Philosophy
-> *"Build first. Improve later. Consistency beats motivation."*
+> ### ⚡ Educational Philosophy
+> *"True conceptual mastery comes from step-by-step worked practice, active recall, and instant feedback."*
 
 ---
 
-## 📌 Focus Areas
+## 📌 Core Features
 
-- 🤖 **AI-Powered Applications**: Building LLM-driven tools, intelligent assistants, and workflow automations.
-- ⚙️ **Backend & APIs**: Building web servers and data pipelines with Python (FastAPI / Flask).
-- 📄 **OCR & Automation Tools**: Multi-modal document processing, PDF parsing, and vision workflows.
-- 🧮 **Problem-Solving & Fundamentals**: Practicing core CS principles and DSA fundamentals.
+- 📚 **Automated 5-Unit Syllabus Builder**: Select standard branches or specify custom degrees (MBA, Degree, etc.) with automated unit structuring.
+- 📝 **Exhaustive Textbook Notes**: Long-form academic chapters featuring definitions, architecture, real-world applications, and cheat sheets.
+- 🧮 **Step-by-Step Solved Math Problems**: 6+ fully worked numerical practice problems per topic (Given Data $\rightarrow$ Formula $\rightarrow$ Substitution $\rightarrow$ Step-by-Step Derivation $\rightarrow$ Boxed Final Answer).
+- ⚡ **Spaced Repetition Flashcards**: Interactive confidence rating (Easy, Medium, Hard) to optimize active recall.
+- 🎯 **Timed MCQ Quizzes & Analytics**: Exam-level multiple-choice tests with detailed explanations and real-time accuracy scoring.
+- 🎙️ **Viva Voce & Technical Oral Exams**: Master tricky interview questions, edge cases, and oral examination concepts.
+- 💬 **Embedded AI Tutor Chat**: Floating, expandable AI assistant with free-scrolling typewriter streaming and document Q&A.
+- 🛑 **Live Generation Control**: Progressive generation pipeline with real-time exact digital countdown timer and *"Stop & Show Generated Content"* button.
 
 ---
 
-## 🛠️ Technologies Powering My Projects
-
-*Below are the core frameworks, databases, and services integrated across my projects:*
+## 🛠️ Technology Stack
 
 <div align="center">
 
-### **Languages & Core**
+### **Backend & AI Gateway**
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![SQL](https://img.shields.io/badge/SQL-003B57?style=for-the-badge&logo=postgresql&logoColor=white)
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
+![Groq](https://img.shields.io/badge/Groq_Cloud-F05A28?style=for-the-badge&logo=fastapi&logoColor=white)
+![Google Gemini](https://img.shields.io/badge/Google_Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![OpenRouter](https://img.shields.io/badge/OpenRouter-6366F1?style=for-the-badge&logo=openai&logoColor=white)
 
 ### **Frontend & UI Systems**
-![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![MathJax 3](https://img.shields.io/badge/MathJax_LaTeX-2E7D32?style=for-the-badge&logo=latex&logoColor=white)
 
-### **Backend Frameworks & APIs**
-![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![Flask](https://img.shields.io/badge/Flask-000000?style=for-the-badge&logo=flask&logoColor=white)
-![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71100?style=for-the-badge&logo=sqlalchemy&logoColor=white)
-![JWT](https://img.shields.io/badge/JWT-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
-
-### **Databases & Cloud Hosting**
+### **Databases & Cloud Architecture**
 ![Supabase](https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)
-![Neon Database](https://img.shields.io/badge/Neon_DB-00E599?style=for-the-badge&logo=postgresql&logoColor=black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white)
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)
-![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![PWA](https://img.shields.io/badge/PWA_Service_Worker-5A0FC8?style=for-the-badge&logo=pwa&logoColor=white)
 
 </div>
 
 ---
 
-## 🚀 Projects Showcase
+## 🚀 Application Architecture
 
 <div align="center">
 
-| Project | Description | Stack |
+| Module | Description | Location |
 | :--- | :--- | :--- |
-| 🧬 **[Helix AI](https://github.com/themaheshbuilds/Helix)** | AI study assistant, syllabus navigator & mock test studio | `Python` `Flask` `Supabase` `Vercel` |
-| 💼 **[LinkedIn AI Handler](https://github.com/themaheshbuilds/linkedin-ai-handler)** | Automated LinkedIn post generator, bio creator & recruiter reply helper | `Python` `Flask` `Vercel` `AI Prompting` |
-| 📊 **[BunkCalc](https://github.com/themaheshbuilds/BunkCalc)** | Smart attendance manager and bunk predictor application | `React 18` `Vite` `Neon Postgres` `LocalStorage` |
-| 📑 **[CA Ledger](https://github.com/themaheshbuilds/ca)** | Role-based CA ledger management & approval system | `React` `Tailwind` `Python` `JWT` |
-| ⚡ **[DSA Learner](https://github.com/themaheshbuilds/dsa-learner)** | Enterprise DSA problem solving & evaluation platform | `Python` `Flask` `SQLAlchemy` `Neon` |
-| 🤖 **MARVIN** | Personal AI Assistant & workflow automation tool | `Python` `FastAPI` `AI APIs` |
-| 🎬 **FilmyFeed** | Movie discovery & review platform | `React` `Tailwind` `REST APIs` |
+| 🎓 **Syllabus & Curriculum Engine** | Preloaded academic datasets + custom degree auto-generators | [`data/syllabus/`](file:///c:/Users/vilas/Desktop/My%20Projects/NoteEd/data/syllabus) |
+| 🤖 **Multi-Provider AI Gateway** | Failover rotation across Groq, Gemini, and OpenRouter | [`services/ai_service.py`](file:///c:/Users/vilas/Desktop/My%20Projects/NoteEd/services/ai_service.py) |
+| ⚙️ **Background Task Engine** | Multi-step asynchronous generation with live progress | [`services/task_service.py`](file:///c:/Users/vilas/Desktop/My%20Projects/NoteEd/services/task_service.py) |
+| 🗄️ **Hybrid Database Layer** | Supabase Postgres with local SQLite automatic fallback | [`services/db_service.py`](file:///c:/Users/vilas/Desktop/My%20Projects/NoteEd/services/db_service.py) |
+| 📱 **Progressive Web App (PWA)** | Service Worker v7, install triggers, and offline caching | [`static/sw.js`](file:///c:/Users/vilas/Desktop/My%20Projects/NoteEd/static/sw.js) |
+| 🎨 **Kiraak Design System** | Modern dark/light UI, MathJax without horizontal scrolls | [`templates/`](file:///c:/Users/vilas/Desktop/My%20Projects/NoteEd/templates) |
 
 </div>
 
 ---
 
-## 📊 GitHub Performance
+## ⚡ Quickstart & Local Setup
 
-<div align="center">
+### 1. Clone the Repository
+```bash
+git clone https://github.com/themaheshbuilds/NoteEd.git
+cd NoteEd
+```
 
-<table width="100%">
-  <tr>
-    <td width="50%" align="center">
-      <img src="https://github-readme-stats.vercel.app/api?username=themaheshbuilds&show_icons=true&theme=radial&hide_border=true&title_color=3B82F6&icon_color=3B82F6" width="100%" />
-    </td>
-    <td width="50%" align="center">
-      <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=themaheshbuilds&layout=compact&theme=radial&hide_border=true&title_color=3B82F6" width="100%" />
-    </td>
-  </tr>
-</table>
+### 2. Create Virtual Environment & Install Dependencies
+```bash
+python -m venv venv
+# Windows
+venv\Scripts\activate
+# Linux / Mac
+source venv/bin/activate
 
-<br/>
+pip install -r requirements.txt
+```
 
-<img src="https://github-readme-streak-stats.herokuapp.com/?user=themaheshbuilds&theme=radial&hide_border=true&stroke=3B82F6" width="98%" />
+### 3. Configure Environment Variables
+Create a `.env` file in the root directory:
+```ini
+SECRET_KEY=your-secret-key-here
+GROQ_API_KEY=gsk_...
+GEMINI_API_KEY=AIzaSy...
+OPENROUTER_API_KEY=sk-or-v1-...
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your-supabase-key
+```
 
-</div>
+### 4. Run Development Server
+```bash
+python app.py
+```
+Open **`http://127.0.0.1:5000`** in your browser.
 
 ---
 
 <div align="center">
 
-### 📬 Connect With Me
-*Open for Software Engineering opportunities, technical collaborations & innovative projects.*
+### 📬 Connect & Author
+*Built with ❤️ by **Mahesh Vilasagaram***
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-0A66C2?style=for-the-badge&logo=linkedin)](https://www.linkedin.com/in/mahesh-vilasagaram)
-[![Email](https://img.shields.io/badge/Email-Send_Message-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:vilasagarammahesh90@gmail.com)
+[![Email](https://img.shields.io/badge/Email-Contact_Author-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:vilasagarammahesh90@gmail.com)
 [![GitHub](https://img.shields.io/badge/GitHub-themaheshbuilds-181717?style=for-the-badge&logo=github)](https://github.com/themaheshbuilds)
 
 <br/>
 
-<sub>© 2026 **Mahesh Vilasagaram** • Software Engineer & AI-Driven Product Builder</sub>
+<sub>© 2026 **NoteEd** • Empowering University Students with AI</sub>
 
 </div>
