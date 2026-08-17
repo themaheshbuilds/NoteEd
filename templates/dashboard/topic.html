@@ -290,7 +290,7 @@
         color: var(--text-primary);
     }
 
-    /* Direct Zero-Box Pure Text on White Paper Print Styles */
+    /* Direct Pure Notes Only Print Styles (No Buttons, No Extra Matter) */
     @media screen {
         #print-topic-header {
             display: none !important;
@@ -303,7 +303,7 @@
             size: A4 portrait;
         }
 
-        /* Universal zero-box reset */
+        /* 1. Universal zero-box reset */
         *, *::before, *::after {
             background: transparent !important;
             background-color: transparent !important;
@@ -316,20 +316,38 @@
             print-color-adjust: exact !important;
         }
 
-        /* 1. Hide everything on the whole webpage by default */
+        /* 2. Hide everything on the whole webpage by default */
         body * {
             visibility: hidden !important;
         }
 
-        /* 2. Make ONLY structured study notes and header visible */
-        #structured-content,
-        #structured-content *,
+        /* 3. Explicitly HIDE all buttons, links, icons, headers, sidebars, toolbars, and extra matter */
+        nav,
+        aside,
+        footer,
+        header,
+        button,
+        svg,
+        a,
+        .no-print,
+        .action-bar,
+        .sticky,
         #print-topic-header,
-        #print-topic-header * {
-            visibility: visible !important;
+        #mobile-topic-sheet,
+        #mobile-topic-sheet-backdrop,
+        #loading-overlay,
+        #mathjax-loading,
+        #archived-modal,
+        #toc-nav,
+        #toc-nav-mobile,
+        #raw-notes-container,
+        [role="button"],
+        .md\:hidden {
+            display: none !important;
+            visibility: hidden !important;
         }
 
-        /* 3. Pure White Background & Reset Body */
+        /* 4. Pure White Background & Reset Body */
         html, body {
             background: #ffffff !important;
             background-color: #ffffff !important;
@@ -342,11 +360,18 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
 
-        /* 4. Position notes content at top left with ZERO outer box */
+        /* 5. Make ONLY the study notes content visible and positioned at top: 0 */
+        #structured-content,
+        #structured-content *,
+        .notes-article,
+        .notes-article * {
+            visibility: visible !important;
+        }
+
         #structured-content {
             position: absolute !important;
             left: 0 !important;
-            top: 70px !important;
+            top: 0 !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
@@ -359,33 +384,22 @@
             display: block !important;
         }
 
-        #print-topic-header {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
+        .notes-article {
             display: block !important;
-            margin-bottom: 16pt !important;
-            padding-bottom: 4pt !important;
-            border: none !important;
-            text-align: left !important;
-        }
-        #print-topic-header h1 {
-            font-size: 20pt !important;
-            font-weight: 800 !important;
-            color: #000000 !important;
-            margin: 0 0 2pt 0 !important;
-            border: none !important;
-        }
-        #print-topic-header p,
-        #print-topic-header span {
-            font-size: 9.5pt !important;
-            font-weight: 600 !important;
-            color: #333333 !important;
-            border: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
         }
 
-        /* 5. Headings - Bold Pure Black Text (Zero Borders/Boxes) */
+        #structured-content button,
+        #structured-content svg,
+        #structured-content a {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* 6. Pure Text Headings */
         #structured-content h1,
         #structured-content h2,
         #structured-content h3,
@@ -398,10 +412,10 @@
         }
 
         #structured-content h1 {
-            font-size: 17pt !important;
+            font-size: 18pt !important;
             font-weight: 800 !important;
-            margin-top: 18pt !important;
-            margin-bottom: 6pt !important;
+            margin-top: 0 !important;
+            margin-bottom: 8pt !important;
         }
 
         #structured-content h2 {
@@ -425,7 +439,7 @@
             margin-bottom: 2pt !important;
         }
 
-        /* 6. Paras & Lists - Pure Black Text */
+        /* 7. Paras & Lists - Pure Black Text */
         #structured-content p {
             font-size: 10.5pt !important;
             line-height: 1.65 !important;
@@ -464,7 +478,7 @@
             break-inside: avoid !important;
         }
 
-        /* 7. Codes - Pure Monospace Plain Text (Zero Boxes) */
+        /* 8. Codes - Pure Monospace Plain Text (Zero Boxes) */
         #structured-content pre,
         #structured-content code,
         #structured-content pre code {
@@ -484,7 +498,7 @@
             break-inside: avoid !important;
         }
 
-        /* 8. Tables - Clean Plain Text Alignment */
+        /* 9. Tables - Plain Text Rows */
         #structured-content table {
             width: 100% !important;
             border-collapse: collapse !important;
@@ -511,7 +525,7 @@
             border-bottom: 1pt solid #000000 !important;
         }
 
-        /* 9. LaTeX / MathJax */
+        /* 10. LaTeX / MathJax */
         #structured-content mjx-container,
         #structured-content .MathJax {
             font-size: 11pt !important;
@@ -531,17 +545,6 @@
         #structured-content mjx-container * {
             color: #000000 !important;
             fill: #000000 !important;
-        }
-
-        /* 10. Hide Interactive Elements */
-        #structured-content button,
-        .no-print,
-        nav,
-        aside,
-        footer,
-        header {
-            display: none !important;
-            visibility: hidden !important;
         }
     }
 </style>
