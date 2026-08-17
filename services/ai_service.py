@@ -402,7 +402,7 @@ class AIService:
     def generate_chat_response(self, user_prompt, context_text, chat_history=None,
                                image_base64=None, topic_id=None):
         """
-        Chat with a document through OmniRoute.
+        Chat with document/topic context using high-speed multi-provider failover.
         chat_history is a list of dicts: [{"role": "user"/"assistant", "content": "..."}]
         """
         # Check cache first
@@ -410,11 +410,8 @@ class AIService:
         if cached:
             return cached
 
-        api_key, base_url, chat_model, vision_model = self._get_omni_config()
-        if not self._is_configured():
-            return "No AI gateway configured. Please set OMNIROUTE_BASE_URL and OMNIROUTE_API_KEY in your environment."
-
-        context_text = context_text[:30000] if context_text else ""
+        # Trim context to 12,000 chars to avoid TPM payload limits on fast providers
+        context_text = context_text[:12000] if context_text else ""
 
         system_prompt = self.HELIX_SYSTEM_PROMPT + f"""
 
@@ -437,7 +434,7 @@ Document Context:
 
         messages = [{"role": "system", "content": system_prompt}]
         if chat_history:
-            for msg in chat_history[-10:]:
+            for msg in chat_history[-6:]:
                 messages.append({"role": msg["role"], "content": msg["content"]})
 
         if image_base64:
@@ -451,60 +448,79 @@ Document Context:
         else:
             messages.append({"role": "user", "content": user_prompt})
 
-        model_to_use = vision_model if image_base64 else chat_model
-        payload = {
-            "model": model_to_use,
-            "messages": messages,
-            "temperature": 0.7,
-            "top_p": 1,
-            "max_tokens": 4096,
-            "stream": False
-        }
+        # Get prioritized provider chain (Gemini 2.5 Flash -> OpenRouter -> Groq -> OpenAI -> etc.)
+        provider_chain = self._get_provider_chain()
+        if not provider_chain:
+            key_list, base_url_fallback, model_fallback, _, prov_name = self._get_active_provider_pool()
+            if key_list:
+                provider_chain = [{
+                    "provider": prov_name,
+                    "keys": key_list,
+                    "base_url": base_url_fallback,
+                    "model": model_fallback
+                }]
 
-        for attempt in range(4):
-            try:
-                response = requests.post(
-                    f"{base_url}/chat/completions",
-                    headers=self._make_headers(api_key),
-                    json=payload,
-                    timeout=120
-                )
+        if not provider_chain:
+            return "No AI gateway configured. Please configure your API keys in Settings."
 
-                if response.status_code == 429:
-                    print("[Chat] OmniRoute rate-limited, retrying...")
-                    time.sleep(2 ** attempt)
-                    continue
+        # Rotate across providers
+        for p_info in provider_chain:
+            p_name = p_info["provider"]
+            p_keys = p_info["keys"]
+            p_url = p_info["base_url"]
+            p_model = p_info["model"]
 
-                response.raise_for_status()
-                result = response.json()
-                content = result["choices"][0]["message"]["content"]
-
-                # Strip <think>...</think> tags (reasoning models)
-                if "<think>" in content:
-                    if "</think>" in content:
-                        content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
-                    else:
-                        content = re.sub(r'<think>', '', content).strip()
-
-                self._set_cached_response(user_prompt, content, topic_id=topic_id)
-                return content
-
-            except requests.exceptions.HTTPError as e:
-                _handle_auth_error(e)
-                status = e.response.status_code if e.response is not None else 'unknown'
-                print(f"[Chat] HTTP {status}: {e}")
-                if status in [429, 500, 502, 503]:
-                    time.sleep(2)
-                    continue
-                return f"Apologies, I encountered an error communicating with the AI ({status}). Please try again."
-            except requests.exceptions.Timeout:
-                print("[Chat] Timeout, retrying...")
+            if not p_keys:
                 continue
-            except Exception as e:
-                print(f"[Chat] Error: {e}")
-                break
 
-        return "⏳ The AI gateway is currently rate-limited. Please wait a moment and try again."
+            for key in p_keys:
+                try:
+                    payload = {
+                        "model": p_model,
+                        "messages": messages,
+                        "temperature": 0.7,
+                        "top_p": 1,
+                        "max_tokens": 2048,
+                        "stream": False
+                    }
+                    response = requests.post(
+                        f"{p_url}/chat/completions",
+                        headers=self._make_headers(key),
+                        json=payload,
+                        timeout=18
+                    )
+
+                    if response.status_code in [413, 429, 500, 502, 503, 504]:
+                        print(f"[Chat] {p_name} returned {response.status_code}, trying next provider...")
+                        continue
+
+                    response.raise_for_status()
+                    result = response.json()
+                    content = result["choices"][0]["message"]["content"]
+
+                    # Strip <think>...</think> and <pad> tags
+                    content = re.sub(r'<pad>\s*', '', content)
+                    if "<think>" in content:
+                        if "</think>" in content:
+                            content = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
+                        else:
+                            content = re.sub(r'<think>', '', content).strip()
+
+                    self._set_cached_response(user_prompt, content, topic_id=topic_id)
+                    return content
+
+                except requests.exceptions.HTTPError as e:
+                    status = e.response.status_code if e.response is not None else 'unknown'
+                    print(f"[Chat] {p_name} HTTP {status}: {e}, failing over...")
+                    continue
+                except requests.exceptions.Timeout:
+                    print(f"[Chat] {p_name} timed out, failing over...")
+                    continue
+                except Exception as e:
+                    print(f"[Chat] {p_name} error: {e}, failing over...")
+                    continue
+
+        return "Apologies, the AI assistant is currently experiencing high load. Please try your question again in a moment."
 
     # ── Explain topic ─────────────────────────────────────────────────────────
 
