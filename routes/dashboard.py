@@ -440,14 +440,14 @@ def view_topic(topic_id):
     )
 
     print_setting = db_service.query("SELECT key_value FROM system_settings WHERE key_name = 'ADMIN_PRINT_MODE'", one=True)
-    print_mode = print_setting["key_value"] if print_setting else "admin_only"
+    print_mode = (print_setting["key_value"] if print_setting else "disabled").strip().lower()
     
-    if print_mode == "all_users":
+    if print_mode in ["all_users", "enabled", "true", "on"]:
         allow_print = True
-    elif print_mode == "disabled":
-        allow_print = False
-    else:  # "admin_only"
+    elif print_mode == "admin_only":
         allow_print = is_admin
+    else:  # "disabled", "off", "false", "0"
+        allow_print = False
 
     copy_setting = db_service.query("SELECT key_value FROM system_settings WHERE key_name = 'ADMIN_COPY_MODE'", one=True)
     copy_mode = copy_setting["key_value"] if copy_setting else "admin_only"
