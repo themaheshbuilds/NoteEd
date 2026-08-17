@@ -290,7 +290,81 @@
         color: var(--text-primary);
     }
 
-    /* Print overlay - full-screen clean white notes viewer (no browser dialog) */
+    /* Overlay toolbar (hidden when printing) */
+    #notes-print-overlay .overlay-toolbar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000001;
+        background: rgba(255,255,255,0.97);
+        border-bottom: 1px solid #e8e8e8;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 1px 8px rgba(0,0,0,0.06);
+    }
+    #notes-print-overlay .overlay-close {
+        padding: 6px 14px;
+        border-radius: 8px;
+        border: 1.5px solid rgba(0,0,0,0.15);
+        background: transparent;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #555;
+        transition: all 0.15s ease;
+        font-family: 'Inter', sans-serif;
+    }
+    #notes-print-overlay .overlay-close:hover { background: #f3f3f3; color: #111; }
+    #notes-print-overlay .overlay-print-btn {
+        padding: 7px 18px;
+        border-radius: 8px;
+        border: none;
+        background: #111;
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 13px;
+        font-weight: 700;
+        transition: all 0.15s ease;
+        font-family: 'Inter', sans-serif;
+    }
+    #notes-print-overlay .overlay-print-btn:hover { background: #333; }
+    /* Push content below toolbar */
+    #notes-print-overlay .overlay-content {
+        max-width: 780px;
+        margin: 0 auto;
+        padding: 76px 48px 80px;
+    }
+
+    /* === @media print: hide EVERYTHING except the overlay === */
+    @media print {
+        body > *:not(#notes-print-overlay) { display: none !important; }
+        #notes-print-overlay {
+            display: block !important;
+            position: static !important;
+            overflow: visible !important;
+            background: #ffffff !important;
+        }
+        #overlay-toolbar, .overlay-toolbar {
+            display: none !important;
+        }
+        #notes-print-overlay .overlay-content {
+            padding: 0 !important;
+            max-width: 100% !important;
+        }
+        #notes-print-overlay::before { display: none !important; }
+        @page { margin: 15mm 18mm; size: A4 portrait; }
+    }
     #notes-print-overlay {
         display: none;
         position: fixed;
@@ -478,7 +552,14 @@
 
 <!-- Pure Notes Print Overlay (no browser dialog, no buttons, just content) -->
 <div id="notes-print-overlay" role="dialog" aria-label="Print Notes View">
-    <button class="overlay-close" onclick="closePrintOverlay()" title="Close (Esc)">✕</button>
+    <!-- Toolbar: only visible on screen, hidden when printing -->
+    <div class="overlay-toolbar" id="overlay-toolbar">
+        <button class="overlay-close" onclick="closePrintOverlay()" title="Close (Esc)">✕ Close</button>
+        <button class="overlay-print-btn" onclick="window.print()" title="Print (Ctrl+P)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Print / Save PDF
+        </button>
+    </div>
     <div class="overlay-content">
         <div class="ov-header">
             <h1 id="overlay-topic-title">Study Notes</h1>
