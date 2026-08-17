@@ -290,7 +290,10 @@
         color: var(--text-primary);
     }
 
-    .print-document-header { display: none; }
+    .print-document-header,
+    .print-watermark { 
+        display: none; 
+    }
 
     @media print {
         @page {
@@ -307,8 +310,8 @@
             text-shadow: none !important;
             filter: none !important;
             border-radius: 0 !important;
-            -webkit-print-color-adjust: economy !important;
-            print-color-adjust: economy !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         /* 2. Hide all chrome, navbars, sidebars, buttons, tools, overlays */
@@ -317,12 +320,41 @@
         .print\:hidden, #chat-print-container, #mobile-chat-fab,
         #loading-overlay, #mathjax-loading, #raw-notes-container,
         #history-drawer, #history-drawer-backdrop, #task-toast-container,
-        #mobile-topic-sheet, #mobile-topic-sheet-backdrop, .print-watermark,
+        #mobile-topic-sheet, #mobile-topic-sheet-backdrop,
         .card-icon, [class*="badge"], [class*="pill"] {
             display: none !important;
         }
 
-        /* 3. Pure clean white paper canvas */
+        /* 3. Watermark: Precisely centered diagonally across every printed page */
+        .print-watermark {
+            display: flex !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            align-items: center !important;
+            justify-content: center !important;
+            pointer-events: none !important;
+            z-index: 99999 !important;
+        }
+        .print-watermark span {
+            font-family: 'Inter', -apple-system, sans-serif !important;
+            font-size: 36pt !important;
+            font-weight: 800 !important;
+            color: #000000 !important;
+            opacity: 0.075 !important;
+            transform: rotate(-32deg) !important;
+            letter-spacing: 5px !important;
+            text-transform: uppercase !important;
+            white-space: nowrap !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* 4. Pure clean white paper canvas */
         html, body {
             display: block !important;
             visibility: visible !important;
@@ -340,23 +372,7 @@
             width: 100% !important;
         }
 
-        /* 4. Reset layout wrappers completely to plain natural document flow */
-        main, .flex-col, .flex-1, #main-scroll-area, .max-w-4xl, .min-h-\[calc\(100vh-100px\)\], .notes-article, #structured-content {
-            display: block !important;
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            height: auto !important;
-            min-height: auto !important;
-            overflow: visible !important;
-            border: none !important;
-            border-radius: 0 !important;
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-
-        /* 5. Clean Academic Print Header */
+        /* 5. Document Header */
         .print-document-header {
             display: block !important;
             text-align: left;
@@ -380,7 +396,22 @@
             letter-spacing: 0.5px;
         }
 
-        /* 6. Continuous Natural Article Flow (No Box Outlines) */
+        /* 6. Main Notes Flow: Only the text, pure & simple */
+        main, .flex-col, .flex-1, #main-scroll-area, .max-w-4xl, .min-h-\[calc\(100vh-100px\)\], .notes-article, #structured-content {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            height: auto !important;
+            min-height: auto !important;
+            overflow: visible !important;
+            border: none !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+
         .learning-card {
             border: none !important;
             box-shadow: none !important;
@@ -395,7 +426,7 @@
             margin: 0 0 6pt 0 !important;
         }
 
-        /* 7. Clean Typography Matching Notes */
+        /* 7. Typography */
         h1, h2, h3, h4, .card-title {
             color: #000000 !important;
             page-break-after: avoid;
@@ -421,7 +452,7 @@
             margin-bottom: 8pt !important;
         }
 
-        /* 8. MathJax Equations Centered & Sharp */
+        /* 8. LaTeX MathJax */
         mjx-container, .MathJax, .MathJax_Display {
             color: #000000 !important;
             background: transparent !important;
@@ -436,7 +467,7 @@
             stroke: #000000 !important;
         }
 
-        /* 9. Markdown Tables (Clean Minimalist Grid) */
+        /* 9. Markdown Tables */
         table, .notes-article table {
             width: 100% !important;
             border-collapse: collapse !important;
@@ -474,6 +505,10 @@
         }
     }
 </style>
+
+<div class="print-watermark" aria-hidden="true">
+    <span>NoteEd AI &bull; Study Notes</span>
+</div>
 
 <div class="print-document-header">
     <h1>{{ topic.name }}</h1>
