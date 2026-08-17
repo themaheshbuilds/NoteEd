@@ -1590,15 +1590,19 @@
     const allowPrint = {{ 'true' if allow_print else 'false' }};
 
     function printTopicNotes() {
-        const content = document.getElementById('structured-content');
-        if (!content) return;
-
-        let printCanvas = document.getElementById('noteed-print-canvas');
-        if (printCanvas) {
-            printCanvas.remove();
+        const content = document.querySelector('.notes-article') || document.getElementById('structured-content');
+        if (!content) {
+            alert('No study notes available to print.');
+            return;
         }
 
-        printCanvas = document.createElement('div');
+        // Clean up any old print canvas or chat print container
+        let oldPrint = document.getElementById('noteed-print-canvas');
+        if (oldPrint) oldPrint.remove();
+        let oldChat = document.getElementById('chat-print-container');
+        if (oldChat) oldChat.remove();
+
+        const printCanvas = document.createElement('div');
         printCanvas.id = 'noteed-print-canvas';
 
         // Clone the structured notes
@@ -1613,16 +1617,204 @@
         }
 
         printCanvas.innerHTML = `
-            <div class="print-watermark-canvas" aria-hidden="true">
+            <div class="print-watermark-overlay" aria-hidden="true">
                 <span>NoteEd AI</span>
             </div>
-            <div class="print-canvas-header">
-                <h1>{{ topic.name }}</h1>
-                <p>{{ topic.subject_name }}{% if topic.unit_name %} - {{ topic.unit_name }}{% endif %}</p>
+            <div class="print-document-sheet">
+                <div class="print-doc-header">
+                    <h1 class="print-doc-title">{{ topic.name }}</h1>
+                    <p class="print-doc-subtitle">{{ topic.subject_name }}{% if topic.unit_name %} - {{ topic.unit_name }}{% endif %}</p>
+                </div>
+                <div class="print-doc-content">
+                    ${cloned.innerHTML}
+                </div>
             </div>
-            <div class="print-canvas-body">
-                ${cloned.innerHTML}
-            </div>
+            <style id="noteed-notes-print-style">
+                @media screen {
+                    #noteed-print-canvas { display: none !important; }
+                }
+                @media print {
+                    @page {
+                        margin: 16mm 14mm;
+                        size: A4 portrait;
+                    }
+                    *, *::before, *::after {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    body > *:not(#noteed-print-canvas) {
+                        display: none !important;
+                    }
+                    html, body {
+                        background: #ffffff !important;
+                        background-color: #ffffff !important;
+                        color: #111111 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        height: auto !important;
+                        min-height: auto !important;
+                        overflow: visible !important;
+                    }
+                    #noteed-print-canvas {
+                        display: block !important;
+                        width: 100% !important;
+                        background: #ffffff !important;
+                        color: #111111 !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+                    }
+                    .print-watermark-overlay {
+                        display: flex !important;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        bottom: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        pointer-events: none !important;
+                        z-index: 99999 !important;
+                    }
+                    .print-watermark-overlay span {
+                        font-family: 'Inter', -apple-system, sans-serif !important;
+                        font-size: 54pt !important;
+                        font-weight: 800 !important;
+                        color: #000000 !important;
+                        opacity: 0.055 !important;
+                        transform: rotate(-35deg) !important;
+                        letter-spacing: 8px !important;
+                        text-transform: uppercase !important;
+                        white-space: nowrap !important;
+                    }
+                    .print-document-sheet {
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+                    .print-doc-header {
+                        text-align: center !important;
+                        margin-top: 10pt !important;
+                        margin-bottom: 24pt !important;
+                    }
+                    .print-doc-title {
+                        font-size: 24pt !important;
+                        font-weight: 800 !important;
+                        color: #000000 !important;
+                        margin: 0 0 6pt 0 !important;
+                        letter-spacing: -0.02em !important;
+                        text-align: center !important;
+                    }
+                    .print-doc-subtitle {
+                        font-size: 11pt !important;
+                        font-weight: 500 !important;
+                        color: #555555 !important;
+                        margin: 0 !important;
+                        text-align: center !important;
+                    }
+                    .print-doc-content {
+                        width: 100% !important;
+                        color: #111111 !important;
+                    }
+                    .print-doc-content .learning-card,
+                    .print-doc-content .notes-article,
+                    .print-doc-content .markdown-body,
+                    .print-doc-content #structured-content {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        padding: 0 !important;
+                        margin: 0 0 12pt 0 !important;
+                    }
+                    .print-doc-content h1,
+                    .print-doc-content h2 {
+                        font-size: 14pt !important;
+                        font-weight: 800 !important;
+                        color: #000000 !important;
+                        border-bottom: 1px solid #e5e7eb !important;
+                        padding-bottom: 4pt !important;
+                        margin-top: 20pt !important;
+                        margin-bottom: 8pt !important;
+                        page-break-after: avoid;
+                        text-align: left !important;
+                    }
+                    .print-doc-content h3,
+                    .print-doc-content h4,
+                    .print-doc-content .card-title {
+                        font-size: 11.5pt !important;
+                        font-weight: 700 !important;
+                        color: #000000 !important;
+                        border: none !important;
+                        padding-bottom: 0 !important;
+                        margin-top: 14pt !important;
+                        margin-bottom: 4pt !important;
+                        page-break-after: avoid;
+                        text-align: left !important;
+                    }
+                    .print-doc-content p,
+                    .print-doc-content li {
+                        color: #111111 !important;
+                        font-size: 10.5pt !important;
+                        line-height: 1.65 !important;
+                        margin-bottom: 9pt !important;
+                    }
+                    .print-doc-content ul,
+                    .print-doc-content ol {
+                        padding-left: 22px !important;
+                        margin-bottom: 10pt !important;
+                    }
+                    .print-doc-content mjx-container,
+                    .print-doc-content .MathJax,
+                    .print-doc-content .MathJax_Display {
+                        display: block !important;
+                        text-align: center !important;
+                        margin: 14pt auto !important;
+                        font-size: 13pt !important;
+                        color: #000000 !important;
+                        page-break-inside: avoid;
+                    }
+                    .print-doc-content mjx-container * {
+                        color: #000000 !important;
+                        fill: #000000 !important;
+                        stroke: #000000 !important;
+                    }
+                    .print-doc-content table {
+                        width: 100% !important;
+                        border-collapse: collapse !important;
+                        margin: 12pt 0 !important;
+                        page-break-inside: avoid;
+                        border: 1px solid #d0d0d0 !important;
+                    }
+                    .print-doc-content th,
+                    .print-doc-content td {
+                        border: 1px solid #d0d0d0 !important;
+                        padding: 6pt 8pt !important;
+                        color: #111111 !important;
+                        font-size: 9.5pt !important;
+                    }
+                    .print-doc-content th {
+                        background-color: #f5f5f5 !important;
+                        font-weight: 700 !important;
+                        border-bottom: 1.5px solid #999999 !important;
+                    }
+                    .print-doc-content pre {
+                        background-color: #f8f9fa !important;
+                        border: 1px solid #e2e4e8 !important;
+                        border-radius: 4px !important;
+                        padding: 8pt !important;
+                        font-family: 'Consolas', 'Courier New', monospace !important;
+                        font-size: 9pt !important;
+                        color: #000000 !important;
+                        white-space: pre-wrap !important;
+                        word-break: break-word !important;
+                        page-break-inside: avoid;
+                        margin: 8pt 0 !important;
+                    }
+                }
+            </style>
         `;
         document.body.appendChild(printCanvas);
 
