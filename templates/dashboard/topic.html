@@ -298,25 +298,27 @@
             size: A4 portrait;
         }
 
-        /* 1. Universal reset: Pure white background, pure dark text */
+        /* 1. Universal clean print: Pure white background, pure dark text, zero boxes/shadows */
         *, *::before, *::after {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
+            background: transparent !important;
+            background-color: transparent !important;
             color: #111111 !important;
             box-shadow: none !important;
             text-shadow: none !important;
             filter: none !important;
+            border-radius: 0 !important;
             -webkit-print-color-adjust: economy !important;
             print-color-adjust: economy !important;
         }
 
-        /* 2. Hide all interactive and screen-only elements */
+        /* 2. Hide all chrome, navbars, sidebars, buttons, tools, overlays */
         nav, aside, footer, header, button, form, a, select,
         .sticky, .no-print, .mini-quiz, .chat-section, .files-section,
         .print\:hidden, #chat-print-container, #mobile-chat-fab,
         #loading-overlay, #mathjax-loading, #raw-notes-container,
         #history-drawer, #history-drawer-backdrop, #task-toast-container,
-        #mobile-topic-sheet, #mobile-topic-sheet-backdrop, .print-watermark {
+        #mobile-topic-sheet, #mobile-topic-sheet-backdrop, .print-watermark,
+        .card-icon, [class*="badge"], [class*="pill"] {
             display: none !important;
         }
 
@@ -331,15 +333,15 @@
             background-color: #ffffff !important;
             color: #111111 !important;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
-            font-size: 10pt !important;
-            line-height: 1.55 !important;
+            font-size: 10.5pt !important;
+            line-height: 1.6 !important;
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
         }
 
-        /* 4. Reset layout wrappers */
-        main, .flex-col, .flex-1, #main-scroll-area, .max-w-4xl, .min-h-\[calc\(100vh-100px\)\] {
+        /* 4. Reset layout wrappers completely to plain natural document flow */
+        main, .flex-col, .flex-1, #main-scroll-area, .max-w-4xl, .min-h-\[calc\(100vh-100px\)\], .notes-article, #structured-content {
             display: block !important;
             width: 100% !important;
             max-width: 100% !important;
@@ -350,91 +352,83 @@
             overflow: visible !important;
             border: none !important;
             border-radius: 0 !important;
-            background: #ffffff !important;
-            background-color: #ffffff !important;
+            background: transparent !important;
+            box-shadow: none !important;
         }
 
         /* 5. Clean Academic Print Header */
         .print-document-header {
             display: block !important;
-            text-align: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #222222 !important;
+            text-align: left;
+            margin-bottom: 24px;
+            padding-bottom: 12px;
+            border-bottom: 1.5px solid #222222 !important;
         }
         .print-document-header h1 {
-            font-size: 17pt !important;
+            font-size: 18pt !important;
             font-weight: 800 !important;
             color: #000000 !important;
             margin: 0 0 4px 0 !important;
+            letter-spacing: -0.02em;
         }
         .print-document-header p {
-            font-size: 9pt !important;
+            font-size: 9.5pt !important;
             font-weight: 600 !important;
             color: #555555 !important;
             margin: 0 !important;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
-        /* 6. Structured Content & Articles */
-        #structured-content, .notes-article, .learning-card {
-            display: block !important;
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-            color: #111111 !important;
+        /* 6. Continuous Natural Article Flow (No Box Outlines) */
+        .learning-card {
             border: none !important;
             box-shadow: none !important;
             padding: 0 !important;
-            margin: 0 0 16px 0 !important;
-        }
-
-        .learning-card {
-            border-bottom: 1px solid #e5e5e5 !important;
-            padding-bottom: 14px !important;
-            margin-bottom: 18px !important;
+            margin: 0 0 14pt 0 !important;
             page-break-inside: auto;
         }
 
-        .card-icon { display: none !important; }
-        .card-header { border-bottom: none !important; padding: 0 !important; margin-bottom: 8px !important; }
-        .card-title {
-            font-size: 13pt !important;
+        .card-header {
+            border: none !important;
+            padding: 0 !important;
             margin: 0 0 6pt 0 !important;
-            font-weight: 700 !important;
-            color: #000000 !important;
-            border-bottom: 1.5px solid #000000 !important;
-            display: inline-block !important;
-            padding-bottom: 2px !important;
         }
 
-        /* 7. Typography */
-        h1, h2, h3, h4 {
+        /* 7. Clean Typography Matching Notes */
+        h1, h2, h3, h4, .card-title {
             color: #000000 !important;
             page-break-after: avoid;
             font-weight: 700 !important;
+            border: none !important;
+            padding: 0 !important;
+            margin-top: 14pt !important;
+            margin-bottom: 6pt !important;
         }
-        h1 { font-size: 15pt !important; margin: 12pt 0 6pt 0 !important; border-bottom: 1px solid #ddd !important; padding-bottom: 3px !important; }
-        h2 { font-size: 13pt !important; margin: 10pt 0 5pt 0 !important; border-bottom: 1px solid #eee !important; padding-bottom: 2px !important; }
-        h3 { font-size: 11pt !important; margin: 8pt 0 4pt 0 !important; }
+        h1, .card-title { font-size: 15pt !important; }
+        h2 { font-size: 13pt !important; margin-top: 16pt !important; }
+        h3 { font-size: 11.5pt !important; }
+        h4 { font-size: 10.5pt !important; }
 
         p, li {
             color: #222222 !important;
-            font-size: 9.5pt !important;
-            line-height: 1.5 !important;
+            font-size: 10pt !important;
+            line-height: 1.55 !important;
+            margin-bottom: 6pt !important;
         }
         ul, ol {
-            padding-left: 20px !important;
+            padding-left: 22px !important;
             margin-bottom: 8pt !important;
         }
 
-        /* 8. MathJax LaTeX Formulas */
+        /* 8. MathJax Equations Centered & Sharp */
         mjx-container, .MathJax, .MathJax_Display {
             color: #000000 !important;
             background: transparent !important;
-            font-size: 10.5pt !important;
+            font-size: 11pt !important;
             overflow: visible !important;
             page-break-inside: avoid;
+            margin: 8pt 0 !important;
         }
         mjx-container *, .MathJax * {
             color: #000000 !important;
@@ -442,42 +436,41 @@
             stroke: #000000 !important;
         }
 
-        /* 9. Tables */
+        /* 9. Markdown Tables (Clean Minimalist Grid) */
         table, .notes-article table {
             width: 100% !important;
             border-collapse: collapse !important;
             margin: 10pt 0 !important;
             page-break-inside: avoid;
-            border: 1px solid #333333 !important;
+            border: 1px solid #d0d0d0 !important;
         }
         th, td {
-            border: 1px solid #333333 !important;
-            padding: 5pt 7pt !important;
+            border: 1px solid #d0d0d0 !important;
+            padding: 6pt 8pt !important;
             color: #111111 !important;
-            background: #ffffff !important;
-            font-size: 9pt !important;
+            font-size: 9.5pt !important;
         }
         th {
-            background-color: #f3f3f3 !important;
+            background-color: #f5f5f5 !important;
             font-weight: 700 !important;
+            border-bottom: 1.5px solid #999999 !important;
         }
 
-        /* 10. Code blocks */
+        /* 10. Code Blocks */
         pre, code {
             font-family: 'Consolas', 'Courier New', monospace !important;
-            font-size: 8.5pt !important;
+            font-size: 9pt !important;
             color: #000000 !important;
-            background: #f8f9fa !important;
-            background-color: #f8f9fa !important;
         }
         pre {
-            border: 1px solid #cccccc !important;
-            padding: 6pt !important;
+            background-color: #f8f9fa !important;
+            border: 1px solid #e2e4e8 !important;
             border-radius: 4px !important;
+            padding: 8pt !important;
             white-space: pre-wrap !important;
             word-break: break-word !important;
             page-break-inside: avoid;
-            margin: 6pt 0 !important;
+            margin: 8pt 0 !important;
         }
     }
 </style>
@@ -1287,6 +1280,8 @@
 
     function printChat() {
         const chatMessages = document.getElementById('chat-box');
+        if (!chatMessages) return;
+
         let printContainer = document.getElementById('chat-print-container');
         if (printContainer) {
             printContainer.remove();
@@ -1294,37 +1289,55 @@
         printContainer = document.createElement('div');
         printContainer.id = 'chat-print-container';
         document.body.appendChild(printContainer);
-        
+
+        // Clone chat content and clean up interactive elements
+        const cloned = chatMessages.cloneNode(true);
+        cloned.querySelectorAll('button, svg, .animate-pulse').forEach(el => el.remove());
+
         printContainer.innerHTML = `
-            <div style="font-family: Arial, Helvetica, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px;">
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h1 style="border-bottom: 1px solid #eee; padding-bottom: 10px;">AI Chat: {{ topic.name }}</h1>
-                    <p style="color: #666; margin-top: 0;">{{ topic.subject_name }} - {{ topic.unit_name }}</p>
+            <div class="print-chat-wrapper" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #111; max-width: 100%; margin: 0; padding: 0;">
+                <div style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1.5px solid #222;">
+                    <h1 style="font-size: 18pt; font-weight: 800; color: #000; margin: 0 0 4px 0;">AI Tutor Discussion: {{ topic.name }}</h1>
+                    <p style="font-size: 9.5pt; font-weight: 600; color: #555; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">{{ topic.subject_name }} &bull; {{ topic.unit_name }} &bull; NoteEd AI</p>
                 </div>
-                ${chatMessages.innerHTML}
+                <div class="print-chat-messages" style="display: flex; flex-direction: column; gap: 14px;">
+                    ${cloned.innerHTML}
+                </div>
             </div>
             <style id="chat-print-style">
                 @media print {
                     body > *:not(#chat-print-container) { display: none !important; }
-                    #chat-print-container { display: block !important; width: 100%; background: white; }
+                    #chat-print-container { display: block !important; width: 100% !important; background: #ffffff !important; color: #111111 !important; }
+                    .print-chat-messages .flex { display: block !important; margin-bottom: 12pt !important; page-break-inside: avoid; }
+                    .print-chat-messages .ai-message, 
+                    .print-chat-messages div[class*="rounded"] {
+                        background: #f9f9f9 !important;
+                        border: 1px solid #e0e0e0 !important;
+                        border-radius: 4px !important;
+                        padding: 8pt 12pt !important;
+                        color: #111111 !important;
+                        max-width: 100% !important;
+                        box-shadow: none !important;
+                    }
+                    .print-chat-messages .prose { max-width: 100% !important; color: #111111 !important; }
+                    .print-chat-messages * { color: #111111 !important; }
                 }
                 @media screen {
                     #chat-print-container { display: none; }
                 }
             </style>
         `;
-        
-        // First typeset MathJax
+
         if (window.typesetMath) {
             window.typesetMath(printContainer);
         }
-        
+
         setTimeout(() => {
             window.print();
             setTimeout(() => {
                 if (printContainer) printContainer.remove();
             }, 500);
-        }, 500);
+        }, 300);
     }
     
     // Chat history drawer functions
