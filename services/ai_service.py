@@ -100,7 +100,7 @@ class AIService:
             "total_keys": total_keys,
             "gemini": {"count": len(gemini_keys), "keys": gemini_keys, "name": "Google Gemini", "default_model": get_val("GEMINI_MODEL", "gemini-2.5-flash")},
             "openrouter": {"count": len(openrouter_keys), "keys": openrouter_keys, "name": "OpenRouter", "default_model": get_val("OPENROUTER_MODEL", "google/gemma-4-26b-a4b-it:free")},
-            "groq": {"count": len(groq_keys), "keys": groq_keys, "name": "Groq", "default_model": get_val("GROQ_MODEL", "llama-3.3-70b-versatile")},
+            "groq": {"count": len(groq_keys), "keys": groq_keys, "name": "Groq", "default_model": get_val("GROQ_MODEL", "qwen/qwen3.6-27b")},
             "openai": {"count": len(openai_keys), "keys": openai_keys, "name": "OpenAI", "default_model": get_val("OPENAI_MODEL", "gpt-4o-mini")},
             "nvidia": {"count": len(nvidia_keys), "keys": nvidia_keys, "name": "NVIDIA NIM", "default_model": get_val("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")},
             "omniroute": {"count": len(omni_keys), "keys": omni_keys, "name": "OmniRoute Gateway", "base_url": get_val("OMNIROUTE_BASE_URL", "http://localhost:20128/v1"), "default_model": get_val("OMNIROUTE_MODEL", "openrouter/free")}
@@ -738,24 +738,55 @@ Document Context:
                 return s
             return data
 
-        def sanitize_latex(t):
-            t = re.sub(r'(?<!\\)\\f(?=[a-zA-Z])', r'\\\\f', t)
-            t = re.sub(r'(?<!\\)\\r(?=[a-zA-Z])', r'\\\\r', t)
-            t = re.sub(r'(?<!\\)\\t(?=[a-zA-Z])', r'\\\\t', t)
-            t = re.sub(r'(?<!\\)\\b(?=[a-zA-Z])', r'\\\\b', t)
-            t = re.sub(r'(?<!\\)\\n(?=abla|u\b|eq|otin|rightarrow|exists)', r'\\\\n', t)
-            t = re.sub(r'(?<!\\)\\(?![\\\"/bfnrtu])', r'\\\\', t)
-            return t
+        def repair_json_strings(json_str):
+            """
+            Safely escapes unescaped backslashes inside JSON string literals
+            without breaking valid JSON syntax or valid escapes.
+            """
+            out = []
+            in_string = False
+            i = 0
+            n = len(json_str)
+            while i < n:
+                c = json_str[i]
+                if c == '"':
+                    bs_count = 0
+                    j = i - 1
+                    while j >= 0 and json_str[j] == '\\':
+                        bs_count += 1
+                        j -= 1
+                    if bs_count % 2 == 0:
+                        in_string = not in_string
+                    out.append(c)
+                    i += 1
+                elif in_string and c == '\\':
+                    bs_start = i
+                    while i < n and json_str[i] == '\\':
+                        i += 1
+                    bs_len = i - bs_start
+                    next_char = json_str[i] if i < n else ''
+                    if next_char not in ['"', '\\', '/']:
+                        out.append('\\' * (bs_len * 2))
+                    else:
+                        out.append('\\' * bs_len)
+                else:
+                    out.append(c)
+                    i += 1
+            return ''.join(out)
 
-        # 1. Try direct parse on sanitized text
-        sanitized = sanitize_latex(text)
-        result = _try_parse(sanitized)
+        # 1. Try direct parse on raw and repaired text
+        result = _try_parse(text)
+        if result:
+            return clean_strings(result)
+
+        repaired_raw = repair_json_strings(text)
+        result = _try_parse(repaired_raw)
         if result:
             return clean_strings(result)
 
         # 2. Try extracting json block from ```json ... ```
         extracted_text = None
-        json_match = re.search(r'```json\s*\n?(.*?)\n?```', text, re.DOTALL)
+        json_match = re.search(r'```(?:json)?\s*\n?(.*?)\n?```', text, re.DOTALL)
         if json_match:
             extracted_text = json_match.group(1).strip()
         else:
@@ -765,14 +796,11 @@ Document Context:
                 extracted_text = text[first_brace:last_brace+1].strip()
 
         if extracted_text:
-            sanitized_ext = sanitize_latex(extracted_text)
-            result = _try_parse(sanitized_ext)
+            result = _try_parse(extracted_text)
             if result:
                 return clean_strings(result)
-
-            aggressive = re.sub(r'\\(?![\\\"/bfnrtu])', '', extracted_text)
-            aggressive = re.sub(r',\s*([}\]])', r'\1', aggressive)
-            result = _try_parse(aggressive)
+            repaired_ext = repair_json_strings(extracted_text)
+            result = _try_parse(repaired_ext)
             if result:
                 return clean_strings(result)
 
@@ -951,14 +979,7 @@ CRITICAL JSON OUTPUT RULES:
             return text.strip()
 
         provider_idx = 0
-        total_attempts = max(retries, len(provider_chain) * 3)
-
-        for attempt in range(total_attempts):
-            curr_pool = provider_chain[provider_idx % len(provider_chain)]
-            p_name = curr_pool["provider"]
-            p_keys = curr_pool["keys"]
-            endpoint = curr_pool["base_url"]
-        partial_text = ""
+        total_attempts = max(retries, len(provider_chain) * 2)
 
         # Auto-detect JSON response requirement
         is_json = any(k in prompt.lower() for k in ["strict json", "return json", "json object", "{\\n", '{"notes"'])
@@ -966,49 +987,49 @@ CRITICAL JSON OUTPUT RULES:
         if is_json and "JSON" not in system_instruction:
             system_instruction += "\n\nCRITICAL: Output must be ONLY valid raw JSON with zero markdown or conversational preamble."
 
-        for attempt in range(retries):
-            # Select provider configuration
+        for attempt in range(total_attempts):
             current_provider_conf = provider_chain[provider_idx % len(provider_chain)]
             p_name = current_provider_conf["provider"]
-            endpoint = base_url or current_provider_conf["base_url"]
-            model = chat_model or current_provider_conf["model"]
+            endpoint = current_provider_conf["base_url"]
+            model = current_provider_conf["model"]
 
             # Key rotation per attempt
             key_pool = current_provider_conf.get("keys", [])
-            api_key = key or (self._get_next_key_from_pool(p_name, key_pool) if key_pool else self.api_key)
+            api_key = self._get_next_key_from_pool(p_name, key_pool) if key_pool else self.api_key
 
             messages = [
                 {"role": "system", "content": system_instruction},
                 {"role": "user", "content": prompt}
             ]
 
+            # Cap token limit per provider to prevent 413 Payload Too Large
+            effective_tokens = max_tokens
+            if p_name == "groq" and effective_tokens > 4096:
+                effective_tokens = 4096
+
             payload = {
                 "model": model,
                 "messages": messages,
                 "temperature": 0.4,
                 "top_p": 1,
-                "max_tokens": max_tokens,
-                "response_format": {"type": "json_object"} if is_json else None,
+                "max_tokens": effective_tokens,
                 "stream": False
             }
-            # Remove response_format if None
-            if not is_json:
-                payload.pop("response_format", None)
 
             try:
+                # Groq and fast endpoints respond in 1-4s; set timeout to 25s
                 response = requests.post(
                     f"{endpoint}/chat/completions",
                     headers=self._make_headers(api_key),
                     json=payload,
-                    timeout=30
+                    timeout=25
                 )
                 
-                if response.status_code == 429:
-                    print(f"[{p_name.upper()}] HTTP 429 Rate Limit hit. Immediately failing over to next provider...")
-                    last_error = Exception(f"429 Rate Limit on {p_name}")
-                    provider_idx += 1
-                    time.sleep(1)
-                    continue
+                if response.status_code != 200:
+                    try:
+                        print(f"[{p_name.upper()}] HTTP {response.status_code}: {response.text[:150]}")
+                    except Exception:
+                        pass
 
                 response.raise_for_status()
 
@@ -1019,13 +1040,17 @@ CRITICAL JSON OUTPUT RULES:
                 result = self._extract_json(content)
                 if result:
                     return result
-                print(f"[{p_name.upper()}] Empty JSON extraction. Retrying...")
+                try:
+                    print(f"[{p_name.upper()}] Empty JSON extracted. Switching to next provider...")
+                except Exception:
+                    pass
+                provider_idx += 1
 
             except requests.exceptions.HTTPError as e:
                 _handle_auth_error(e)
                 status = e.response.status_code if e.response is not None else 'unknown'
                 try:
-                    print(f"[{p_name.upper()}] HTTP {status}: {str(e)[:100]}")
+                    print(f"[{p_name.upper()}] HTTP {status}: {str(e)[:100]}. Switching provider...")
                 except Exception:
                     pass
                 last_error = e
@@ -1038,10 +1063,8 @@ CRITICAL JSON OUTPUT RULES:
                 last_error = e
                 provider_idx += 1
 
-            time.sleep(1)
-
-        print("[AI Service] All retries exhausted across provider chain.")
-        raise RateLimitExhaustedError("All AI providers exhausted. " + str(last_error))
+        print("[AI Service] Provider chain exhausted. Returning empty result for fallback.")
+        return {}
 
     # ── Study material generation ─────────────────────────────────────────────
 
@@ -1277,24 +1300,10 @@ CRITICAL JSON OUTPUT RULES:
                     pass
 
             try:
-                # Rotate key per sub-task to guarantee 0 rate limit conflicts
-                assigned_provider = provider_chain[(s_idx - 1) % len(provider_chain)] if provider_chain else None
-                assigned_key = None
-                assigned_url = None
-                assigned_model = None
-                if assigned_provider:
-                    p_keys = assigned_provider.get("keys", [])
-                    assigned_key = self._get_next_key_from_pool(assigned_provider["provider"], p_keys)
-                    assigned_url = assigned_provider.get("base_url")
-                    assigned_model = assigned_provider.get("model")
-
                 data = self._generate_partial(
                     prompt_text, 
                     max_tokens=max_tok, 
-                    retries=2, 
-                    key=assigned_key, 
-                    base_url=assigned_url, 
-                    chat_model=assigned_model, 
+                    retries=4, 
                     custom_instr=custom_instr
                 )
                 if data:
