@@ -1635,12 +1635,13 @@
                 }
                 @media print {
                     @page {
-                        margin: 16mm 14mm;
+                        margin: 18mm 16mm;
                         size: A4 portrait;
                     }
                     *, *::before, *::after {
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
+                        box-sizing: border-box !important;
                     }
                     body > *:not(#noteed-print-canvas) {
                         display: none !important;
@@ -1658,11 +1659,13 @@
                     #noteed-print-canvas {
                         display: block !important;
                         width: 100% !important;
+                        max-width: 100% !important;
                         background: #ffffff !important;
                         color: #111111 !important;
                         margin: 0 !important;
                         padding: 0 !important;
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+                        -webkit-font-smoothing: antialiased !important;
                     }
                     .print-watermark-overlay {
                         display: flex !important;
@@ -1680,7 +1683,7 @@
                     }
                     .print-watermark-overlay span {
                         font-family: 'Inter', -apple-system, sans-serif !important;
-                        font-size: 54pt !important;
+                        font-size: 56pt !important;
                         font-weight: 800 !important;
                         color: #000000 !important;
                         opacity: 0.055 !important;
@@ -1697,16 +1700,19 @@
                     }
                     .print-doc-header {
                         text-align: center !important;
-                        margin-top: 10pt !important;
-                        margin-bottom: 24pt !important;
+                        margin-top: 12pt !important;
+                        margin-bottom: 26pt !important;
+                        padding-bottom: 0 !important;
+                        border: none !important;
                     }
                     .print-doc-title {
-                        font-size: 24pt !important;
+                        font-size: 26pt !important;
                         font-weight: 800 !important;
                         color: #000000 !important;
                         margin: 0 0 6pt 0 !important;
-                        letter-spacing: -0.02em !important;
+                        letter-spacing: -0.03em !important;
                         text-align: center !important;
+                        line-height: 1.2 !important;
                     }
                     .print-doc-subtitle {
                         font-size: 11pt !important;
@@ -1714,6 +1720,7 @@
                         color: #555555 !important;
                         margin: 0 !important;
                         text-align: center !important;
+                        letter-spacing: 0.15px !important;
                     }
                     .print-doc-content {
                         width: 100% !important;
@@ -1728,18 +1735,21 @@
                         background: transparent !important;
                         padding: 0 !important;
                         margin: 0 0 12pt 0 !important;
+                        width: 100% !important;
                     }
                     .print-doc-content h1,
                     .print-doc-content h2 {
-                        font-size: 14pt !important;
+                        font-size: 14.5pt !important;
                         font-weight: 800 !important;
                         color: #000000 !important;
-                        border-bottom: 1px solid #e5e7eb !important;
-                        padding-bottom: 4pt !important;
-                        margin-top: 20pt !important;
-                        margin-bottom: 8pt !important;
+                        border-bottom: 1px solid #e2e8f0 !important;
+                        padding-bottom: 5pt !important;
+                        margin-top: 22pt !important;
+                        margin-bottom: 10pt !important;
                         page-break-after: avoid;
                         text-align: left !important;
+                        width: 100% !important;
+                        display: block !important;
                     }
                     .print-doc-content h3,
                     .print-doc-content h4,
@@ -1749,32 +1759,44 @@
                         color: #000000 !important;
                         border: none !important;
                         padding-bottom: 0 !important;
-                        margin-top: 14pt !important;
-                        margin-bottom: 4pt !important;
+                        margin-top: 16pt !important;
+                        margin-bottom: 5pt !important;
                         page-break-after: avoid;
                         text-align: left !important;
+                        width: 100% !important;
+                        display: block !important;
                     }
-                    .print-doc-content p,
-                    .print-doc-content li {
-                        color: #111111 !important;
+                    .print-doc-content p {
+                        color: #1a1a1a !important;
                         font-size: 10.5pt !important;
                         line-height: 1.65 !important;
-                        margin-bottom: 9pt !important;
+                        margin: 0 0 10pt 0 !important;
+                        text-align: justify !important;
+                        text-justify: inter-word !important;
+                    }
+                    .print-doc-content li {
+                        color: #1a1a1a !important;
+                        font-size: 10.5pt !important;
+                        line-height: 1.65 !important;
+                        margin-bottom: 4pt !important;
+                        text-align: justify !important;
                     }
                     .print-doc-content ul,
                     .print-doc-content ol {
-                        padding-left: 22px !important;
-                        margin-bottom: 10pt !important;
+                        padding-left: 20pt !important;
+                        margin: 0 0 10pt 0 !important;
+                        text-align: left !important;
                     }
                     .print-doc-content mjx-container,
                     .print-doc-content .MathJax,
                     .print-doc-content .MathJax_Display {
                         display: block !important;
                         text-align: center !important;
-                        margin: 14pt auto !important;
+                        margin: 16pt auto !important;
                         font-size: 13pt !important;
                         color: #000000 !important;
                         page-break-inside: avoid;
+                        width: 100% !important;
                     }
                     .print-doc-content mjx-container * {
                         color: #000000 !important;
@@ -1784,16 +1806,18 @@
                     .print-doc-content table {
                         width: 100% !important;
                         border-collapse: collapse !important;
-                        margin: 12pt 0 !important;
+                        margin: 14pt 0 !important;
                         page-break-inside: avoid;
                         border: 1px solid #d0d0d0 !important;
                     }
                     .print-doc-content th,
                     .print-doc-content td {
                         border: 1px solid #d0d0d0 !important;
-                        padding: 6pt 8pt !important;
+                        padding: 6pt 10pt !important;
                         color: #111111 !important;
                         font-size: 9.5pt !important;
+                        text-align: left !important;
+                        vertical-align: top !important;
                     }
                     .print-doc-content th {
                         background-color: #f5f5f5 !important;
@@ -1804,14 +1828,15 @@
                         background-color: #f8f9fa !important;
                         border: 1px solid #e2e4e8 !important;
                         border-radius: 4px !important;
-                        padding: 8pt !important;
+                        padding: 10pt 12pt !important;
                         font-family: 'Consolas', 'Courier New', monospace !important;
                         font-size: 9pt !important;
                         color: #000000 !important;
                         white-space: pre-wrap !important;
                         word-break: break-word !important;
                         page-break-inside: avoid;
-                        margin: 8pt 0 !important;
+                        margin: 12pt 0 !important;
+                        width: 100% !important;
                     }
                 }
             </style>
