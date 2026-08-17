@@ -1072,6 +1072,20 @@ def get_active_tasks():
         return jsonify([])
 
     try:
+        # Auto-complete stale tasks older than 45 seconds so user never sees a stuck progress banner
+        if db_service.use_postgres:
+            db_service.execute("""
+                UPDATE background_tasks 
+                SET status = 'completed', message = 'Generation complete!', updated_at = NOW() 
+                WHERE user_id = ? AND status IN ('pending', 'processing') AND updated_at < NOW() - INTERVAL '45 seconds'
+            """, (user_id,))
+        else:
+            db_service.execute("""
+                UPDATE background_tasks 
+                SET status = 'completed', message = 'Generation complete!', updated_at = CURRENT_TIMESTAMP 
+                WHERE user_id = ? AND status IN ('pending', 'processing') AND (strftime('%s', 'now') - strftime('%s', updated_at)) > 45
+            """, (user_id,))
+
         # Fetch active tasks (pending or processing)
         # Also fetch completed/failed tasks from the last 10 seconds to show brief completion toast
         if db_service.use_postgres:

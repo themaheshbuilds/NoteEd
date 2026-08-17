@@ -18,6 +18,12 @@ class TaskService:
         # 4 generation sub-items per topic: Notes & Summary, Flashcards, MCQ Quiz, Viva Qs
         total_items = max(1, len(topics_to_generate) * 4)
         
+        # Cancel any previous hanging tasks for this user so only the latest runs cleanly
+        db_service.execute(
+            "UPDATE background_tasks SET status = 'completed', message = 'Replaced by newer generation', updated_at = CURRENT_TIMESTAMP WHERE user_id = ? AND status IN ('pending', 'processing')",
+            (user_id,)
+        )
+
         # Insert initial task record
         db_service.execute(
             """INSERT INTO background_tasks (id, user_id, task_type, status, total_items, completed_items, message)
