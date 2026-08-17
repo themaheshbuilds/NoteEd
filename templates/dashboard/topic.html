@@ -607,88 +607,10 @@
     <div class="flex flex-col xl:flex-row flex-1 overflow-y-auto xl:overflow-hidden">
 
         <!-- Center: Main Learning Content -->
-                <!-- Notes Studio Action Bar (Responsive & Modern) -->
-                {% if notes %}
-                <div id="notes-studio-bar" class="mb-5 p-2 sm:p-2.5 rounded-2xl border flex flex-wrap items-center justify-between gap-2.5 shadow-sm transition-all"
-                     style="background: var(--bg-elevated); border-color: var(--border);">
-                    <!-- Left: View Mode Toggle & Subject Badge -->
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        <div class="inline-flex p-0.5 rounded-xl border" style="background: var(--bg-primary); border-color: var(--border);">
-                            <button id="view-mode-reading-btn" onclick="setNoteMode('reading')"
-                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-600 text-white shadow-sm">
-                                <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
-                                <span>Reading View</span>
-                            </button>
-                            <button id="view-mode-editor-btn" onclick="setNoteMode('editor')"
-                                class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-gray-500 hover:text-[#1d1d1f] dark:hover:text-zinc-200">
-                                <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
-                                <span>Live Editor</span>
-                            </button>
-                        </div>
-                        
-                        <span id="topic-lang-badge" class="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-500/10 text-blue-500 border border-blue-500/20">
-                            <i data-lucide="code" class="w-3 h-3"></i>
-                            <span id="topic-lang-name">{{ topic.subject_name }}</span>
-                        </span>
-                    </div>
-
-                    <!-- Right: Actions (Save, Section AI, Copy, Print, PDF, Regenerate) -->
-                    <div class="flex items-center gap-1.5 flex-wrap">
-                        <!-- Save Button (Active in Editor Mode) -->
-                        <button id="save-notes-btn" onclick="saveEditorNotes()"
-                            class="hidden px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 cursor-pointer">
-                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                            <span>Save Changes</span>
-                        </button>
-
-                        <!-- Section AI Guidance Button -->
-                        <button onclick="openSectionAiModal()" id="section-ai-trigger-btn"
-                            class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 hover:border-purple-500/40 bg-purple-500/10 text-purple-500 border-purple-500/30 cursor-pointer"
-                            title="Regenerate or enhance a specific section with AI">
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-500"></i>
-                            <span class="hidden sm:inline">Section AI</span>
-                        </button>
-
-                        <!-- Copy Button (Guarded by allow_copy) -->
-                        {% if allow_copy %}
-                        <button onclick="copyTopicNotes()" id="copy-notes-btn"
-                            class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 hover:border-gray-400"
-                            style="background: var(--bg-primary); border-color: var(--border); color: var(--text-primary);"
-                            title="Copy study notes to clipboard">
-                            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-                            <span class="hidden sm:inline">Copy</span>
-                        </button>
-                        {% endif %}
-
-                        <!-- Print Button (Guarded by allow_print) -->
-                        {% if allow_print %}
-                        <button onclick="printTopicNotes()" id="print-notes-btn"
-                            class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 hover:opacity-90 bg-indigo-500/10 text-indigo-500 border-indigo-500/30 cursor-pointer"
-                            title="Print study notes with clean layout">
-                            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                            <span>Print</span>
-                        </button>
-                        {% endif %}
-
-                        <!-- Export PDF Button -->
-                        <button onclick="openPdfExportModal()" id="export-pdf-btn"
-                            class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 hover:opacity-90 bg-rose-500/10 text-rose-500 border-rose-500/30 cursor-pointer"
-                            title="Customize and export notes as PDF">
-                            <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
-                            <span>PDF</span>
-                        </button>
-
-                        <!-- Configure / Regenerate Button -->
-                        <button onclick="openGenerationConfigModal(true)" id="configure-regen-btn"
-                            class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 flex items-center gap-1.5 hover:border-blue-500/40"
-                            style="background: var(--bg-primary); border-color: var(--border); color: var(--text-primary);"
-                            title="Regenerate notes with customized AI settings">
-                            <i data-lucide="sliders" class="w-3.5 h-3.5 text-blue-500"></i>
-                            <span class="hidden md:inline">Settings</span>
-                        </button>
-                    </div>
-                </div>
-                {% endif %}
+        <div
+            class="flex-1 xl:custom-scroll overflow-visible xl:overflow-y-auto px-4 py-5 sm:px-8 sm:py-8 lg:p-10 relative scroll-smooth"
+            id="main-scroll-area">
+            <div class="max-w-4xl mx-auto pb-44 sm:pb-24">
 
                 <!-- Raw Notes Container (Hidden, used as source) -->
                 <div id="raw-notes-container">
@@ -700,54 +622,7 @@
                     {% endif %}
                 </div>
 
-                <!-- In-Place Live Note Editor (Hidden by default, active in Editor Mode) -->
-                <div id="note-editor-container" class="hidden mb-6 space-y-4">
-                    <!-- Formatting Toolbar -->
-                    <div class="p-2 rounded-2xl border flex flex-wrap items-center gap-1.5 shadow-sm"
-                         style="background: var(--bg-elevated); border-color: var(--border);">
-                        <button onclick="insertEditorFormat('bold')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs font-bold" title="Bold (**text**)">
-                            <strong>B</strong>
-                        </button>
-                        <button onclick="insertEditorFormat('italic')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs italic" title="Italic (*text*)">
-                            <em>I</em>
-                        </button>
-                        <button onclick="insertEditorFormat('h2')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs font-bold" title="Heading 2 (## Title)">
-                            H2
-                        </button>
-                        <button onclick="insertEditorFormat('h3')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs font-bold" title="Heading 3 (### Subtitle)">
-                            H3
-                        </button>
-                        <button onclick="insertEditorFormat('code')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs font-mono" title="Code Block (```)">
-                            &lt;/&gt;
-                        </button>
-                        <button onclick="insertEditorFormat('math')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs font-serif font-bold text-blue-500" title="LaTeX Formula ($$...$$)">
-                            &sum; fx
-                        </button>
-                        <button onclick="insertEditorFormat('ul')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs" title="Bullet List (- item)">
-                            &bull; List
-                        </button>
-                        <button onclick="insertEditorFormat('ol')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs" title="Numbered List (1. item)">
-                            1. List
-                        </button>
-                        <button onclick="insertEditorFormat('table')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs" title="Comparison Table">
-                            &#9638; Table
-                        </button>
-                        <button onclick="insertEditorFormat('quote')" class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-zinc-800 text-xs" title="Callout Quote (&gt; text)">
-                            &ldquo; Quote
-                        </button>
-                        <div class="ml-auto flex items-center gap-2">
-                            <span id="editor-char-count" class="text-[11px] text-gray-500 font-mono">0 chars</span>
-                        </div>
-                    </div>
-
-                    <!-- Textarea Editor -->
-                    <textarea id="live-notes-textarea" 
-                        class="w-full h-[650px] p-5 rounded-2xl border font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all custom-scroll resize-y"
-                        style="background: var(--bg-elevated); border-color: var(--border); color: var(--text-primary);"
-                        placeholder="Edit study notes markdown here..."></textarea>
-                </div>
-
-                <!-- Structured Learning Cards Container (Reading View) -->
+                <!-- Structured Learning Cards Container -->
                 <div id="structured-content" class="space-y-6">
                     {% if not notes %}
                     <div class="text-center py-20 rounded-2xl" style="background: var(--card); border: 1px solid var(--border);">
@@ -755,9 +630,9 @@
                         <h2 class="text-2xl font-bold mb-2" style="color: var(--text-primary);">Ready to start learning?</h2>
                         <p class="text-gray-500 max-w-md mx-auto">Generate AI-powered notes, flashcards, and quizzes customized specifically for your syllabus.</p>
                         <div class="mt-8 flex justify-center gap-3">
-                            <button onclick="openGenerationConfigModal(false)" id="generate-material-btn"
-                                class="px-6 py-3 rounded-xl bg-[#0071e3] hover:bg-[#0077ed] text-white font-bold shadow-lg transition-all transform hover:-translate-y-1 cursor-pointer">
-                                Generate Study Notes
+                            <button onclick="generateOrRegenerate(false)" id="generate-material-btn"
+                                class="px-6 py-3 rounded-xl bg-[#0071e3] hover:bg-[#0077ed] text-[#1d1d1f] font-bold shadow-lg transition-all transform hover:-translate-y-1">
+                                Generate Learning Material
                             </button>
                         </div>
                     </div>
@@ -765,7 +640,6 @@
                     <!-- JS will inject styled cards here -->
                     {% endif %}
                 </div>
-
             </div>
         </div>
 
@@ -1101,21 +975,12 @@
         rawContainers.forEach((container) => {
             fullMarkdown += container.textContent + '\n\n';
         });
-        currentRawMarkdown = fullMarkdown.trim();
-
-        // Sync live editor textarea
-        const textarea = document.getElementById('live-notes-textarea');
-        if (textarea) {
-            textarea.value = currentRawMarkdown;
-            const countEl = document.getElementById('editor-char-count');
-            if (countEl) countEl.textContent = `${currentRawMarkdown.length} chars`;
-        }
 
         const htmlContent = window.parseMarkdownWithMath 
             ? window.parseMarkdownWithMath(fullMarkdown) 
             : (typeof marked !== 'undefined' ? marked.parse(fullMarkdown) : fullMarkdown);
 
-        // 2. Parse HTML into Clean Document Flow
+        // 2. Parse HTML into Clean Document Flow (Continuous, Simple & Easy to Understand)
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
         const container = document.getElementById('structured-content');
@@ -1133,37 +998,19 @@
                 const sectionId = 'section-' + sectionCount;
                 node.id = sectionId;
                 
-                const headingText = node.textContent.trim();
-                tocList.push({ title: headingText, id: sectionId });
-
-                // Create modern heading container with subtle Section AI Assistant button
-                const headingWrapper = document.createElement('div');
-                headingWrapper.className = 'section-header-wrap group flex items-center justify-between gap-3 mt-6 mb-2.5';
-
+                // Style headings with clean, modern, well-proportioned typography
                 if (node.tagName === 'H1') {
-                    node.className = 'text-xl sm:text-2xl font-bold font-outfit tracking-tight text-[#1d1d1f] dark:text-zinc-100 flex-1';
+                    node.className = 'text-xl sm:text-2xl font-bold font-outfit tracking-tight mt-3 mb-3 text-[#1d1d1f] dark:text-zinc-100';
                 } else if (node.tagName === 'H2') {
-                    node.className = 'text-lg sm:text-xl font-bold font-outfit text-blue-600 dark:text-blue-400 flex-1';
+                    node.className = 'text-lg sm:text-xl font-bold font-outfit mt-6 mb-2.5 text-blue-600 dark:text-blue-400';
                 } else if (node.tagName === 'H3') {
-                    node.className = 'text-base sm:text-lg font-semibold font-outfit text-[#1d1d1f] dark:text-zinc-200 flex-1';
+                    node.className = 'text-base sm:text-lg font-semibold font-outfit mt-4 mb-2 text-[#1d1d1f] dark:text-zinc-200';
                 } else {
-                    node.className = 'text-sm sm:text-base font-semibold font-outfit text-gray-700 dark:text-zinc-300 flex-1';
+                    node.className = 'text-sm sm:text-base font-semibold font-outfit mt-3 mb-1.5 text-gray-700 dark:text-zinc-300';
                 }
-
-                headingWrapper.appendChild(node.cloneNode(true));
-
-                // Add Section AI quick-assist button on H2 and H3
-                if (node.tagName === 'H2' || node.tagName === 'H3') {
-                    const aiBtn = document.createElement('button');
-                    aiBtn.type = 'button';
-                    aiBtn.className = 'opacity-0 group-hover:opacity-100 transition-all text-xs font-semibold px-2.5 py-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1 cursor-pointer shrink-0 shadow-sm';
-                    aiBtn.title = `Regenerate or enhance '${headingText}' with AI`;
-                    aiBtn.innerHTML = `<span>🤖</span> <span class="hidden sm:inline">AI Assist</span>`;
-                    aiBtn.onclick = () => openSectionAiModal(sectionId, headingText);
-                    headingWrapper.appendChild(aiBtn);
-                }
-
-                articleWrapper.appendChild(headingWrapper);
+                
+                tocList.push({ title: node.textContent.trim(), id: sectionId });
+                articleWrapper.appendChild(node.cloneNode(true));
             } else {
                 // Apply clean prose typography
                 if (node.tagName === 'P') {
@@ -2136,6 +1983,79 @@
         }
     });
 
+    function showLoading(msg = 'Generating Study Materials...') {
+        const overlay = document.getElementById('loading-overlay');
+        const text = document.getElementById('loading-status-text');
+        if (text) text.innerText = msg;
+        if (overlay) overlay.classList.remove('hidden');
+    }
+
+    function hideLoading() {
+        const overlay = document.getElementById('loading-overlay');
+        if (overlay) overlay.classList.add('hidden');
+    }
+
+    async function generateOrRegenerate(isRegenerate = false) {
+        showLoading(isRegenerate ? 'Regenerating Study Materials...' : 'Generating Study Materials...');
+        try {
+            const url = isRegenerate 
+                ? '{{ url_for("study.regenerate_resources", topic_id=topic.id) }}'
+                : '{{ url_for("study.generate_resources", topic_id=topic.id) }}';
+            
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ archive_chats: true })
+            });
+            const data = await response.json();
+            
+            if (data.error) {
+                alert(data.error);
+                hideLoading();
+                return;
+            }
+            
+            // Poll status
+            let complete = false;
+            let failed = false;
+            let errorMsg = 'Generation failed. Please try again.';
+            
+            while (!complete && !failed) {
+                await new Promise(r => setTimeout(r, 1200));
+                const statusResponse = await fetch(`/api/topic/{{ topic.id }}/generation-status/${data.task_id}`);
+                const statusData = await statusResponse.json();
+                
+                if (statusData.message) {
+                    const statusTextEl = document.getElementById('loading-status-text');
+                    if (statusTextEl) statusTextEl.textContent = statusData.message;
+                }
+                
+                if (statusData.status === 'completed') {
+                    complete = true;
+                } else if (statusData.status === 'failed') {
+                    failed = true;
+                    if (statusData.message) errorMsg = statusData.message;
+                }
+            }
+            
+            if (failed) {
+                alert(errorMsg);
+                hideLoading();
+            } else {
+                window.location.reload();
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Failed to trigger generation. Please try again.');
+            hideLoading();
+        }
+    }
+
+    function regenerateMaterials() {
+        if (confirm('Regenerate all notes, flashcards, and quizzes for this topic? Current chat history will be archived.')) {
+            generateOrRegenerate(true);
+        }
+    }
 
     // Toggle Complete
     async function toggleComplete(topicId) {
@@ -2161,429 +2081,37 @@
         }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // NoteEd Studio & In-Place Editor Logic
-    // ═══════════════════════════════════════════════════════════════════════
-    let currentNoteMode = 'reading';
-
-    function setNoteMode(mode) {
-        currentNoteMode = mode;
-        const readingBtn = document.getElementById('view-mode-reading-btn');
-        const editorBtn = document.getElementById('view-mode-editor-btn');
-        const editorContainer = document.getElementById('note-editor-container');
-        const structuredContent = document.getElementById('structured-content');
-        const saveBtn = document.getElementById('save-notes-btn');
-
-        if (mode === 'editor') {
-            if (editorBtn) {
-                editorBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-600 text-white shadow-sm';
-            }
-            if (readingBtn) {
-                readingBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-gray-500 hover:text-[#1d1d1f] dark:hover:text-zinc-200';
-            }
-            if (editorContainer) editorContainer.classList.remove('hidden');
-            if (structuredContent) structuredContent.classList.add('hidden');
-            if (saveBtn) saveBtn.classList.remove('hidden');
-
-            const textarea = document.getElementById('live-notes-textarea');
-            if (textarea) textarea.focus();
-        } else {
-            if (readingBtn) {
-                readingBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 bg-blue-600 text-white shadow-sm';
-            }
-            if (editorBtn) {
-                editorBtn.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 text-gray-500 hover:text-[#1d1d1f] dark:hover:text-zinc-200';
-            }
-            if (editorContainer) editorContainer.classList.add('hidden');
-            if (structuredContent) structuredContent.classList.remove('hidden');
-            if (saveBtn) saveBtn.classList.add('hidden');
-        }
-    }
-
-    function insertEditorFormat(type) {
-        const textarea = document.getElementById('live-notes-textarea');
-        if (!textarea) return;
-
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const selected = textarea.value.substring(start, end);
-        let replacement = '';
-
-        switch(type) {
-            case 'bold':
-                replacement = `**${selected || 'bold text'}**`;
-                break;
-            case 'italic':
-                replacement = `*${selected || 'italic text'}*`;
-                break;
-            case 'h2':
-                replacement = `\n\n## ${selected || 'Section Heading'}\n`;
-                break;
-            case 'h3':
-                replacement = `\n\n### ${selected || 'Sub-topic Title'}\n`;
-                break;
-            case 'code':
-                replacement = `\n\n\`\`\`text\n${selected || '// code implementation here'}\n\`\`\`\n`;
-                break;
-            case 'math':
-                replacement = `\n\n$$\n${selected || 'E = mc^2'}\n$$\n`;
-                break;
-            case 'ul':
-                replacement = `\n- ${selected || 'Key concept point'}\n`;
-                break;
-            case 'ol':
-                replacement = `\n1. ${selected || 'Step-by-step point'}\n`;
-                break;
-            case 'table':
-                replacement = `\n\n| Concept / Parameter | Explanation | Example |\n| :--- | :--- | :--- |\n| Parameter 1 | Detailed description | Valid case |\n| Parameter 2 | Detailed description | Boundary case |\n\n`;
-                break;
-            case 'quote':
-                replacement = `\n> ${selected || 'Important theorem or exam note'}\n`;
-                break;
-        }
-
-        textarea.setRangeText(replacement, start, end, 'end');
-        textarea.focus();
-
-        const countEl = document.getElementById('editor-char-count');
-        if (countEl) countEl.textContent = `${textarea.value.length} chars`;
-    }
-
-    async function saveEditorNotes() {
-        const textarea = document.getElementById('live-notes-textarea');
-        if (!textarea) return;
-
-        const content = textarea.value.trim();
-        if (!content) {
-            alert('Notes content cannot be empty.');
-            return;
-        }
-
-        const saveBtn = document.getElementById('save-notes-btn');
-        if (saveBtn) {
-            saveBtn.disabled = true;
-            saveBtn.innerHTML = `<span>Saving...</span>`;
-        }
-
+    // Toggle Bookmark
+    async function toggleBookmark(topicId) {
         try {
-            const resp = await fetch(`/api/topic/${topicId}/save-notes`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: content })
-            });
-            const data = await resp.json();
-
-            if (data.status === 'success') {
-                // Update raw notes DOM
-                const rawContentEl = document.querySelector('#raw-notes-container script[data-note-content]');
-                if (rawContentEl) {
-                    rawContentEl.textContent = content;
-                }
-                // Re-process notes in reading view
-                processNotes();
-                setNoteMode('reading');
-
-                // Toast notification
-                showNoteEdToast('Notes saved successfully! 🚀');
-            } else {
-                alert(data.error || 'Failed to save notes.');
-            }
-        } catch(e) {
-            console.error(e);
-            alert('Failed to save notes. Please try again.');
-        } finally {
-            if (saveBtn) {
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5"></i><span>Save Changes</span>`;
-                if (window.lucide) window.lucide.createIcons();
-            }
-        }
-    }
-
-    function copyTopicNotes() {
-        {% if not allow_copy %}
-        alert('Copying notes has been disabled by the administrator.');
-        return;
-        {% endif %}
-
-        const textarea = document.getElementById('live-notes-textarea');
-        const textToCopy = (textarea && textarea.value) ? textarea.value : (currentRawMarkdown || '');
-
-        if (!textToCopy) {
-            alert('No study notes available to copy.');
-            return;
-        }
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(textToCopy).then(() => {
-                showNoteEdToast('Study notes copied to clipboard! 📋');
-            }).catch(() => {
-                fallbackCopy(textToCopy);
-            });
-        } else {
-            fallbackCopy(textToCopy);
-        }
-    }
-
-    function fallbackCopy(text) {
-        const temp = document.createElement('textarea');
-        temp.value = text;
-        document.body.appendChild(temp);
-        temp.select();
-        try {
-            document.execCommand('copy');
-            showNoteEdToast('Study notes copied to clipboard! 📋');
-        } catch(e) {
-            alert('Could not copy notes.');
-        }
-        document.body.removeChild(temp);
-    }
-
-    function showNoteEdToast(msg) {
-        const existing = document.getElementById('noteed-toast');
-        if (existing) existing.remove();
-
-        const toast = document.createElement('div');
-        toast.id = 'noteed-toast';
-        toast.className = 'fixed bottom-6 right-6 z-[150] px-4 py-3 rounded-2xl bg-zinc-900 text-white border border-zinc-700 shadow-2xl flex items-center gap-2.5 text-xs font-bold animate-bounce';
-        toast.innerHTML = `<span>✨</span><span>${msg}</span>`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 3500);
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // Section-Level AI Regeneration
-    // ═══════════════════════════════════════════════════════════════════════
-    let activeSectionData = { id: '', title: '', content: '' };
-
-    function openSectionAiModal(sectionId, headingText) {
-        activeSectionData.id = sectionId;
-        activeSectionData.title = headingText;
-
-        // Find section markdown from raw notes
-        if (currentRawMarkdown) {
-            const lines = currentRawMarkdown.split('\n');
-            let capturing = false;
-            let capturedLines = [];
-            for (let line of lines) {
-                if (line.trim().startsWith('#') && line.includes(headingText)) {
-                    capturing = true;
-                    capturedLines.push(line);
-                } else if (capturing && line.trim().startsWith('## ') && !line.includes(headingText)) {
-                    break;
-                } else if (capturing) {
-                    capturedLines.push(line);
-                }
-            }
-            activeSectionData.content = capturedLines.join('\n');
-        }
-
-        const modalTitle = document.getElementById('section-ai-modal-heading');
-        if (modalTitle) modalTitle.textContent = headingText || 'Active Section';
-
-        const modal = document.getElementById('section-ai-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeSectionAiModal() {
-        const modal = document.getElementById('section-ai-modal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    async function executeSectionAiAction(action) {
-        const modal = document.getElementById('section-ai-modal');
-        const statusEl = document.getElementById('section-ai-status');
-        if (statusEl) {
-            statusEl.classList.remove('hidden');
-            statusEl.textContent = 'AI is regenerating section...';
-        }
-
-        try {
-            const resp = await fetch(`/api/topic/${topicId}/regenerate-section`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    section_title: activeSectionData.title,
-                    section_content: activeSectionData.content || `## ${activeSectionData.title}`,
-                    action: action
-                })
-            });
-            const data = await resp.json();
-
-            if (data.status === 'success' && data.section_markdown) {
-                const newSectionMarkdown = data.section_markdown.trim();
-
-                // Replace in full markdown
-                if (activeSectionData.content && currentRawMarkdown.includes(activeSectionData.content.trim())) {
-                    currentRawMarkdown = currentRawMarkdown.replace(activeSectionData.content.trim(), newSectionMarkdown);
-                } else {
-                    currentRawMarkdown += '\n\n' + newSectionMarkdown;
-                }
-
-                // Auto save & re-render
-                await fetch(`/api/topic/${topicId}/save-notes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: currentRawMarkdown })
-                });
-
-                const rawContentEl = document.querySelector('#raw-notes-container script[data-note-content]');
-                if (rawContentEl) rawContentEl.textContent = currentRawMarkdown;
-
-                processNotes();
-                closeSectionAiModal();
-                showNoteEdToast(`Section '${activeSectionData.title}' updated with AI! 🤖`);
-            } else {
-                alert(data.error || 'Failed to regenerate section.');
-            }
-        } catch(e) {
-            console.error(e);
-            alert('Failed to regenerate section. Please try again.');
-        } finally {
-            if (statusEl) statusEl.classList.add('hidden');
-        }
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // New 8-Style Generation Modal Logic
-    // ═══════════════════════════════════════════════════════════════════════
-    let selectedGenStyle = 'detailed_study';
-    let isRegenerateMode = false;
-
-    function openGenerationConfigModal(isRegen = false) {
-        isRegenerateMode = isRegen;
-        const titleEl = document.getElementById('gen-modal-title');
-        if (titleEl) {
-            titleEl.textContent = isRegen ? 'Regenerate Study Notes with AI' : 'Generate Study Notes with AI';
-        }
-        const modal = document.getElementById('noteed-generation-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closeGenerationConfigModal() {
-        const modal = document.getElementById('noteed-generation-modal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    function selectGenStyle(styleKey) {
-        selectedGenStyle = styleKey;
-        document.querySelectorAll('.gen-style-card').forEach(card => {
-            if (card.dataset.style === styleKey) {
-                card.classList.add('border-blue-500', 'bg-blue-500/10', 'ring-2', 'ring-blue-500/20');
-                card.classList.remove('border-zinc-800', 'bg-zinc-900/50');
-            } else {
-                card.classList.remove('border-blue-500', 'bg-blue-500/10', 'ring-2', 'ring-blue-500/20');
-                card.classList.add('border-zinc-800', 'bg-zinc-900/50');
-            }
-        });
-    }
-
-    async function submitGenerationConfig() {
-        closeGenerationConfigModal();
-
-        const difficulty = document.querySelector('input[name="gen-difficulty"]:checked')?.value || 'beginner';
-        const length = document.querySelector('input[name="gen-length"]:checked')?.value || 'medium';
-        const sourceText = document.getElementById('gen-source-text')?.value || '';
-        const explicitLang = document.getElementById('gen-lang-override')?.value || '';
-
-        const toggles = {
-            examples: document.getElementById('toggle-examples')?.checked ?? true,
-            code: document.getElementById('toggle-code')?.checked ?? true,
-            diagrams: document.getElementById('toggle-diagrams')?.checked ?? true,
-            exam_questions: document.getElementById('toggle-exam-questions')?.checked ?? true,
-            viva: document.getElementById('toggle-viva')?.checked ?? true,
-            key_points: document.getElementById('toggle-key-points')?.checked ?? true,
-            formula_summary: document.getElementById('toggle-formula-summary')?.checked ?? true
-        };
-
-        const genPayload = {
-            style: selectedGenStyle,
-            difficulty: difficulty,
-            length: length,
-            toggles: toggles,
-            source_text: sourceText,
-            language: explicitLang || undefined,
-            archive_chats: true
-        };
-
-        showLoading();
-
-        try {
-            const url = isRegenerateMode
-                ? `/topic/${topicId}/regenerate-resources`
-                : `/topic/${topicId}/generate-resources`;
-
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(genPayload)
-            });
+            const response = await fetch(`/topic/${topicId}/bookmark`, { method: 'POST' });
             const data = await response.json();
+            const btn = document.getElementById('bookmark-btn');
+            const icon = document.getElementById('bookmark-icon');
+            const text = document.getElementById('bookmark-text');
 
-            if (data.error) {
-                alert(data.error);
-                hideLoading();
-                return;
-            }
-
-            // Poll for completion
-            let complete = false;
-            let failed = false;
-            let errorMsg = 'AI Generation failed. Please try again.';
-
-            while (!complete && !failed) {
-                await new Promise(r => setTimeout(r, 1200));
-                const statusResponse = await fetch(`/api/topic/${topicId}/generation-status/${data.task_id}`);
-                const statusData = await statusResponse.json();
-
-                if (statusData.message) {
-                    const statusTextEl = document.getElementById('loading-status-text');
-                    if (statusTextEl) statusTextEl.textContent = statusData.message;
-                }
-
-                if (statusData.status === 'completed') {
-                    complete = true;
-                } else if (statusData.status === 'failed') {
-                    failed = true;
-                    if (statusData.message) errorMsg = statusData.message;
-                }
-            }
-
-            if (failed) {
-                alert(errorMsg);
-                hideLoading();
+            const isBookmarked = (data.bookmarked === true) || (data.status === 'added');
+            if (isBookmarked) {
+                btn.className = 'px-3.5 py-2 rounded-xl text-sm font-bold transition-all border focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm flex items-center gap-1.5 bg-amber-500/20 text-amber-500 border-amber-500/50';
+                btn.style.background = '';
+                btn.style.borderColor = '';
+                btn.style.color = '';
+                if (icon) icon.innerText = '🔖';
+                if (text) text.innerText = 'Bookmarked';
+                btn.setAttribute('title', 'Remove from bookmarks');
             } else {
-                window.location.reload();
+                btn.className = 'px-3.5 py-2 rounded-xl text-sm font-bold transition-all border focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-sm flex items-center gap-1.5';
+                btn.style.background = 'var(--bg-elevated)';
+                btn.style.borderColor = 'var(--border)';
+                btn.style.color = 'var(--text-primary)';
+                if (icon) icon.innerText = '📑';
+                if (text) text.innerText = 'Bookmark';
+                btn.setAttribute('title', 'Add to bookmarks');
             }
-        } catch(e) {
+        } catch (e) {
             console.error(e);
-            alert('Failed to trigger generation. Please try again.');
-            hideLoading();
+            alert('Failed to toggle bookmark.');
         }
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // PDF Customization Modal & Direct Export Engine
-    // ═══════════════════════════════════════════════════════════════════════
-    function openPdfExportModal() {
-        const modal = document.getElementById('noteed-pdf-modal');
-        if (modal) modal.classList.remove('hidden');
-    }
-
-    function closePdfExportModal() {
-        const modal = document.getElementById('noteed-pdf-modal');
-        if (modal) modal.classList.add('hidden');
-    }
-
-    function startPdfExport() {
-        {% if not allow_print %}
-        alert('Printing and PDF export have been disabled by the administrator.');
-        closePdfExportModal();
-        return;
-        {% endif %}
-
-        closePdfExportModal();
-        printTopicNotes();
     }
 
     // Archived Notes Data & Handling
@@ -2614,335 +2142,8 @@
     function closeArchivedModal() {
         document.getElementById('archived-modal').classList.add('hidden');
     }
+
 </script>
-
-<!-- Modal: New 8-Style Generation Configuration -->
-<div id="noteed-generation-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/60 backdrop-blur-md p-4" onclick="closeGenerationConfigModal()">
-    <div class="w-full max-w-3xl max-h-[90vh] rounded-3xl border flex flex-col overflow-hidden shadow-2xl"
-         style="background: var(--bg-elevated); border-color: var(--border);" onclick="event.stopPropagation()">
-        
-        <!-- Header -->
-        <div class="p-5 sm:p-6 border-b flex items-center justify-between" style="border-color: var(--border);">
-            <div>
-                <h3 id="gen-modal-title" class="text-lg sm:text-xl font-bold font-outfit" style="color: var(--text-primary);">
-                    Create Study Notes with AI
-                </h3>
-                <p class="text-xs text-gray-500 mt-0.5">
-                    {{ topic.subject_name }} &bull; {{ topic.name }}
-                </p>
-            </div>
-            <button onclick="closeGenerationConfigModal()" class="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors">
-                <i data-lucide="x" class="w-5 h-5"></i>
-            </button>
-        </div>
-
-        <!-- Body (Scrollable) -->
-        <div class="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 custom-scroll">
-            
-            <!-- Generation Style (8 Cards Grid) -->
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-3">
-                    Choose Generation Style
-                </label>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-                    <!-- 1. Detailed Study -->
-                    <div onclick="selectGenStyle('detailed_study')" data-style="detailed_study"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/20">
-                        <div class="text-xl mb-1.5">📚</div>
-                        <h4 class="text-xs font-bold text-white">Detailed Study</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">Complete textbook depth, mechanisms & 5+ worked problems.</p>
-                    </div>
-
-                    <!-- 2. Exam Ready -->
-                    <div onclick="selectGenStyle('exam_ready')" data-style="exam_ready"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-zinc-800 bg-zinc-900/50 hover:border-zinc-700">
-                        <div class="text-xl mb-1.5">🎯</div>
-                        <h4 class="text-xs font-bold text-white">Exam Ready</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">2M definitions, 5M analytical, and 10M long-essay Q&As.</p>
-                    </div>
-
-                    <!-- 3. Quick Revision -->
-                    <div onclick="selectGenStyle('quick_revision')" data-style="quick_revision"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-zinc-800 bg-zinc-900/50 hover:border-zinc-700">
-                        <div class="text-xl mb-1.5">⚡</div>
-                        <h4 class="text-xs font-bold text-white">Quick Revision</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">60-sec summary, formulas, tables & last-minute checklist.</p>
-                    </div>
-
-                    <!-- 4. Coding Notes -->
-                    <div onclick="selectGenStyle('coding_notes')" data-style="coding_notes"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-zinc-800 bg-zinc-900/50 hover:border-zinc-700">
-                        <div class="text-xl mb-1.5">💻</div>
-                        <h4 class="text-xs font-bold text-white">Coding Notes</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">13-point breakdown with full syntax, dry runs & O(n) analysis.</p>
-                    </div>
-
-                    <!-- 5. Learn From Zero -->
-                    <div onclick="selectGenStyle('learn_zero')" data-style="learn_zero"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-zinc-800 bg-zinc-900/50 hover:border-zinc-700">
-                        <div class="text-xl mb-1.5">🧠</div>
-                        <h4 class="text-xs font-bold text-white">Learn From Zero</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">Visual analogies, zero prerequisites, beginner-intuitive.</p>
-                    </div>
-
-                    <!-- 6. Viva Prep -->
-                    <div onclick="selectGenStyle('viva_prep')" data-style="viva_prep"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-zinc-800 bg-zinc-900/50 hover:border-zinc-700">
-                        <div class="text-xl mb-1.5">🎤</div>
-                        <h4 class="text-xs font-bold text-white">Viva Voce Prep</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">Top 10 oral exam questions with crisp speakable answers.</p>
-                    </div>
-
-                    <!-- 7. Clean My Notes -->
-                    <div onclick="selectGenStyle('clean_notes')" data-style="clean_notes"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-zinc-800 bg-zinc-900/50 hover:border-zinc-700">
-                        <div class="text-xl mb-1.5">📝</div>
-                        <h4 class="text-xs font-bold text-white">Clean My Notes</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">Structure OCR/lecture notes with zero hallucination.</p>
-                    </div>
-
-                    <!-- 8. Improve Notes -->
-                    <div onclick="selectGenStyle('improve_notes')" data-style="improve_notes"
-                        class="gen-style-card p-3.5 rounded-2xl border cursor-pointer transition-all border-zinc-800 bg-zinc-900/50 hover:border-zinc-700">
-                        <div class="text-xl mb-1.5">🔄</div>
-                        <h4 class="text-xs font-bold text-white">Improve Notes</h4>
-                        <p class="text-[10px] text-gray-400 mt-1 leading-tight">Deepen current notes with extra practice and edge cases.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Difficulty & Length Selectors -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Difficulty Level</label>
-                    <div class="flex items-center gap-2 p-1 rounded-xl border bg-zinc-900/70 border-zinc-800">
-                        <label class="flex-1 text-center cursor-pointer py-1.5 rounded-lg text-xs font-semibold has-[:checked]:bg-blue-600 has-[:checked]:text-white text-gray-400">
-                            <input type="radio" name="gen-difficulty" value="beginner" checked class="hidden"> Beginner
-                        </label>
-                        <label class="flex-1 text-center cursor-pointer py-1.5 rounded-lg text-xs font-semibold has-[:checked]:bg-blue-600 has-[:checked]:text-white text-gray-400">
-                            <input type="radio" name="gen-difficulty" value="intermediate" class="hidden"> Intermediate
-                        </label>
-                        <label class="flex-1 text-center cursor-pointer py-1.5 rounded-lg text-xs font-semibold has-[:checked]:bg-blue-600 has-[:checked]:text-white text-gray-400">
-                            <input type="radio" name="gen-difficulty" value="advanced" class="hidden"> Advanced
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Note Length</label>
-                    <div class="flex items-center gap-2 p-1 rounded-xl border bg-zinc-900/70 border-zinc-800">
-                        <label class="flex-1 text-center cursor-pointer py-1.5 rounded-lg text-xs font-semibold has-[:checked]:bg-blue-600 has-[:checked]:text-white text-gray-400">
-                            <input type="radio" name="gen-length" value="short" class="hidden"> Short
-                        </label>
-                        <label class="flex-1 text-center cursor-pointer py-1.5 rounded-lg text-xs font-semibold has-[:checked]:bg-blue-600 has-[:checked]:text-white text-gray-400">
-                            <input type="radio" name="gen-length" value="medium" checked class="hidden"> Medium
-                        </label>
-                        <label class="flex-1 text-center cursor-pointer py-1.5 rounded-lg text-xs font-semibold has-[:checked]:bg-blue-600 has-[:checked]:text-white text-gray-400">
-                            <input type="radio" name="gen-length" value="detailed" class="hidden"> Detailed
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Content Elements Toggles -->
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2.5">Include Content Elements</label>
-                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer">
-                        <input type="checkbox" id="toggle-examples" checked class="rounded text-blue-600">
-                        <span>Worked Examples</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer">
-                        <input type="checkbox" id="toggle-code" checked class="rounded text-blue-600">
-                        <span>Code Snippets</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer">
-                        <input type="checkbox" id="toggle-diagrams" checked class="rounded text-blue-600">
-                        <span>ASCII/Flowcharts</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer">
-                        <input type="checkbox" id="toggle-exam-questions" checked class="rounded text-blue-600">
-                        <span>Exam Q&As (2M/5M/10M)</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer">
-                        <input type="checkbox" id="toggle-viva" checked class="rounded text-blue-600">
-                        <span>Viva Voce Q&As</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer">
-                        <input type="checkbox" id="toggle-formula-summary" checked class="rounded text-blue-600">
-                        <span>Cheat Sheet / Tables</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Source Notes / OCR Input Accordion -->
-            <details class="rounded-2xl border border-zinc-800 bg-zinc-900/30 p-3.5 group">
-                <summary class="text-xs font-bold text-gray-400 cursor-pointer flex items-center justify-between">
-                    <span>Optional: Provide Lecture Notes or OCR Text</span>
-                    <i data-lucide="chevron-down" class="w-4 h-4 text-gray-500 group-open:rotate-180 transition-transform"></i>
-                </summary>
-                <div class="mt-3">
-                    <textarea id="gen-source-text" rows="4" 
-                        placeholder="Paste raw handwritten OCR notes, lecture transcript, or textbook paragraphs here for AI cleaning..."
-                        class="w-full p-3 rounded-xl border border-zinc-700 bg-zinc-950 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none font-mono"></textarea>
-                </div>
-            </details>
-        </div>
-
-        <!-- Footer -->
-        <div class="p-4 sm:p-5 border-t flex items-center justify-end gap-3" style="border-color: var(--border);">
-            <button onclick="closeGenerationConfigModal()" 
-                class="px-4 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition-colors cursor-pointer">
-                Cancel
-            </button>
-            <button onclick="submitGenerationConfig()" 
-                class="px-6 py-2.5 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-md transition-all cursor-pointer">
-                Generate Notes Now 🚀
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal: Section-Level AI Assistant -->
-<div id="section-ai-modal" class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="closeSectionAiModal()">
-    <div class="w-full max-w-md rounded-3xl border flex flex-col overflow-hidden shadow-2xl"
-         style="background: var(--bg-elevated); border-color: var(--border);" onclick="event.stopPropagation()">
-        
-        <div class="p-5 border-b flex items-center justify-between" style="border-color: var(--border);">
-            <div class="flex items-center gap-2">
-                <span class="text-lg">🤖</span>
-                <div>
-                    <h3 class="text-sm font-bold text-white">Section AI Assist</h3>
-                    <p id="section-ai-modal-heading" class="text-xs text-purple-400 font-semibold truncate max-w-[240px]">Section Title</p>
-                </div>
-            </div>
-            <button onclick="closeSectionAiModal()" class="p-1.5 rounded-lg text-gray-400 hover:text-white">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <div class="p-5 space-y-2">
-            <p class="text-xs text-gray-400 mb-2">Choose an AI action to regenerate this section:</p>
-
-            <button onclick="executeSectionAiAction('simpler')" class="w-full p-2.5 rounded-xl border border-zinc-800 hover:border-purple-500/40 bg-zinc-900/50 hover:bg-purple-500/10 text-left flex items-center gap-3 transition-all cursor-pointer">
-                <span class="text-base">⚡</span>
-                <div>
-                    <div class="text-xs font-bold text-white">Make Simpler</div>
-                    <div class="text-[10px] text-gray-400">Clear beginner analogies and plain English explanations.</div>
-                </div>
-            </button>
-
-            <button onclick="executeSectionAiAction('more_detail')" class="w-full p-2.5 rounded-xl border border-zinc-800 hover:border-purple-500/40 bg-zinc-900/50 hover:bg-purple-500/10 text-left flex items-center gap-3 transition-all cursor-pointer">
-                <span class="text-base">🔍</span>
-                <div>
-                    <div class="text-xs font-bold text-white">Explain in More Detail</div>
-                    <div class="text-[10px] text-gray-400">Add deeper theoretical foundations and mechanics.</div>
-                </div>
-            </button>
-
-            <button onclick="executeSectionAiAction('add_example')" class="w-full p-2.5 rounded-xl border border-zinc-800 hover:border-purple-500/40 bg-zinc-900/50 hover:bg-purple-500/10 text-left flex items-center gap-3 transition-all cursor-pointer">
-                <span class="text-base">➕</span>
-                <div>
-                    <div class="text-xs font-bold text-white">Add Step-by-Step Solved Example</div>
-                    <div class="text-[10px] text-gray-400">Include realistic numerical or practical worked calculations.</div>
-                </div>
-            </button>
-
-            <button onclick="executeSectionAiAction('add_code')" class="w-full p-2.5 rounded-xl border border-zinc-800 hover:border-purple-500/40 bg-zinc-900/50 hover:bg-purple-500/10 text-left flex items-center gap-3 transition-all cursor-pointer">
-                <span class="text-base">💻</span>
-                <div>
-                    <div class="text-xs font-bold text-white">Add Complete Code Snippet</div>
-                    <div class="text-[10px] text-gray-400">Production-ready code with line-by-line breakdown.</div>
-                </div>
-            </button>
-
-            <button onclick="executeSectionAiAction('shorten')" class="w-full p-2.5 rounded-xl border border-zinc-800 hover:border-purple-500/40 bg-zinc-900/50 hover:bg-purple-500/10 text-left flex items-center gap-3 transition-all cursor-pointer">
-                <span class="text-base">✂️</span>
-                <div>
-                    <div class="text-xs font-bold text-white">Shorten / Condense</div>
-                    <div class="text-[10px] text-gray-400">Distill into high-impact key rules and definitions.</div>
-                </div>
-            </button>
-
-            <button onclick="executeSectionAiAction('bullet_points')" class="w-full p-2.5 rounded-xl border border-zinc-800 hover:border-purple-500/40 bg-zinc-900/50 hover:bg-purple-500/10 text-left flex items-center gap-3 transition-all cursor-pointer">
-                <span class="text-base">📋</span>
-                <div>
-                    <div class="text-xs font-bold text-white">Convert to Bullet Points & Tables</div>
-                    <div class="text-[10px] text-gray-400">Structured comparison tables and concise lists.</div>
-                </div>
-            </button>
-
-            <button onclick="executeSectionAiAction('exam_questions')" class="w-full p-2.5 rounded-xl border border-zinc-800 hover:border-purple-500/40 bg-zinc-900/50 hover:bg-purple-500/10 text-left flex items-center gap-3 transition-all cursor-pointer">
-                <span class="text-base">🎯</span>
-                <div>
-                    <div class="text-xs font-bold text-white">Add University Exam Q&As</div>
-                    <div class="text-[10px] text-gray-400">2-Mark definitions and 5/10-Mark model answers.</div>
-                </div>
-            </button>
-        </div>
-
-        <div id="section-ai-status" class="hidden p-3 bg-purple-950/30 border-t border-purple-800/30 text-center text-xs font-bold text-purple-400 animate-pulse">
-            AI is regenerating section...
-        </div>
-    </div>
-</div>
-
-<!-- Modal: PDF Export Customization -->
-<div id="noteed-pdf-modal" class="hidden fixed inset-0 z-[125] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4" onclick="closePdfExportModal()">
-    <div class="w-full max-w-md rounded-3xl border flex flex-col overflow-hidden shadow-2xl"
-         style="background: var(--bg-elevated); border-color: var(--border);" onclick="event.stopPropagation()">
-        
-        <div class="p-5 border-b flex items-center justify-between" style="border-color: var(--border);">
-            <div class="flex items-center gap-2">
-                <span class="text-lg">📥</span>
-                <h3 class="text-base font-bold text-white">Export Study Notes</h3>
-            </div>
-            <button onclick="closePdfExportModal()" class="p-1.5 rounded-lg text-gray-400 hover:text-white">
-                <i data-lucide="x" class="w-4 h-4"></i>
-            </button>
-        </div>
-
-        <div class="p-5 space-y-4">
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Print & PDF Theme</label>
-                <div class="grid grid-cols-2 gap-2 text-xs">
-                    <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10">
-                        <input type="radio" name="pdf-theme" value="standard" checked class="hidden">
-                        <span>Standard Crisp</span>
-                    </label>
-                    <label class="flex items-center gap-2 p-3 rounded-xl border border-zinc-800 bg-zinc-900/50 text-white cursor-pointer has-[:checked]:border-blue-500 has-[:checked]:bg-blue-500/10">
-                        <input type="radio" name="pdf-theme" value="ink_saving" class="hidden">
-                        <span>🌱 Ink Saving</span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="text-xs text-gray-400 space-y-1">
-                <div class="flex items-center gap-2 text-emerald-400">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    <span>Pre-export quality check passed</span>
-                </div>
-                <div class="flex items-center gap-2 text-emerald-400">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    <span>LaTeX Math equations optimized for printing</span>
-                </div>
-                <div class="flex items-center gap-2 text-emerald-400">
-                    <i data-lucide="check" class="w-3.5 h-3.5"></i>
-                    <span>Subtle NoteEd AI watermark included</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="p-4 border-t flex items-center justify-end gap-2.5" style="border-color: var(--border);">
-            <button onclick="closePdfExportModal()" class="px-4 py-2 rounded-xl text-xs font-bold text-gray-400 hover:text-white">
-                Cancel
-            </button>
-            <button onclick="startPdfExport()" class="px-5 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 shadow-md cursor-pointer">
-                Open Print & PDF Dialog
-            </button>
-        </div>
-    </div>
-</div>
 
 <!-- Modal for Viewing Archived Content -->
 <div id="archived-modal" class="hidden fixed inset-0 z-[110] flex items-center justify-center bg-black/40 backdrop-blur-sm" onclick="closeArchivedModal()">
