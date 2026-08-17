@@ -99,7 +99,7 @@ class AIService:
         return {
             "total_keys": total_keys,
             "gemini": {"count": len(gemini_keys), "keys": gemini_keys, "name": "Google Gemini", "default_model": get_val("GEMINI_MODEL", "gemini-2.5-flash")},
-            "openrouter": {"count": len(openrouter_keys), "keys": openrouter_keys, "name": "OpenRouter", "default_model": get_val("OPENROUTER_MODEL", "google/gemma-4-26b-a4b-it:free")},
+            "openrouter": {"count": len(openrouter_keys), "keys": openrouter_keys, "name": "OpenRouter", "default_model": get_val("OPENROUTER_MODEL", "openrouter/free")},
             "groq": {"count": len(groq_keys), "keys": groq_keys, "name": "Groq", "default_model": get_val("GROQ_MODEL", "openai/gpt-oss-20b")},
             "openai": {"count": len(openai_keys), "keys": openai_keys, "name": "OpenAI", "default_model": get_val("OPENAI_MODEL", "gpt-4o-mini")},
             "nvidia": {"count": len(nvidia_keys), "keys": nvidia_keys, "name": "NVIDIA NIM", "default_model": get_val("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")},
@@ -802,6 +802,10 @@ Document Context:
                     out.append(c)
                     i += 1
             return ''.join(out)
+
+        # Strip special model padding and thinking tokens
+        text = re.sub(r'<pad>\s*', '', text)
+        text = re.sub(r'<think>[\s\S]*?</think>', '', text)
 
         # 1. Try direct parse on raw and repaired text
         result = _try_parse(text)
