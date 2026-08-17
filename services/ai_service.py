@@ -1093,13 +1093,158 @@ CRITICAL JSON OUTPUT RULES:
         print("[AI Service] Provider chain exhausted. Returning empty result for fallback.")
         return {}
 
+      # ── Language & Domain Profiles ───────────────────────────────────────────
+
+    LANGUAGE_PROFILES = {
+        "java": {
+            "name": "Java",
+            "lang_tag": "java",
+            "keywords": ["class", "public static void main", "@Override", "extends", "implements", "super", "interface", "try-catch-finally", "throw", "throws"],
+            "print_syntax": "System.out.println(...);",
+            "runtime": "Java Virtual Machine (JVM), Bytecode (.class), Garbage Collection",
+            "rules": "Use idiomatic Java syntax, PascalCase for classes, camelCase for methods, explicit access modifiers, @Override annotations for overriding, and System.out.println for console output. NEVER use Console.WriteLine, virtual void, or snake_case function names unless explicitly requested."
+        },
+        "csharp": {
+            "name": "C# (.NET)",
+            "lang_tag": "csharp",
+            "keywords": ["class", "namespace", "using System;", "override", "virtual", "base", "interface", "get; set;", "async", "await"],
+            "print_syntax": "Console.WriteLine(...);",
+            "runtime": ".NET Common Language Runtime (CLR), Common Intermediate Language (CIL), JIT Compiler",
+            "rules": "Use idiomatic C# syntax, PascalCase for classes and methods, namespaces, 'override' keyword for overriding, 'virtual' for base methods, properties with { get; set; }, and Console.WriteLine for console output. NEVER use System.out.println, @Override, or extends."
+        },
+        "python": {
+            "name": "Python",
+            "lang_tag": "python",
+            "keywords": ["def", "class", "self", "__init__", "import", "with", "lambda", "try-except", "yield"],
+            "print_syntax": "print(...)",
+            "runtime": "Python Interpreter, CPython / PyPy",
+            "rules": "Follow PEP 8 standards, snake_case for functions and variables, PascalCase for classes, clean indentation (no curly braces for code blocks), type hints where appropriate, and print() for output."
+        },
+        "cpp": {
+            "name": "C++",
+            "lang_tag": "cpp",
+            "keywords": ["#include <iostream>", "using namespace std;", "class", "public:", "private:", "virtual", "std::cout", "new", "delete", "template"],
+            "print_syntax": "std::cout << ... << std::endl;",
+            "runtime": "Native Compiled Machine Code",
+            "rules": "Use modern C++ standards, include proper header directives (#include <iostream>, <vector>, etc.), explicit pointer/reference notation (*, &), destructor semantics, and std::cout for console output."
+        },
+        "c": {
+            "name": "C",
+            "lang_tag": "c",
+            "keywords": ["#include <stdio.h>", "printf", "scanf", "struct", "malloc", "free", "sizeof", "typedef", "pointers"],
+            "print_syntax": "printf(\"...\\n\");",
+            "runtime": "Native Compiled Machine Code",
+            "rules": "Use standard C99/C11 syntax, include #include <stdio.h> / <stdlib.h>, manual memory management (malloc/free), struct pointers (->), and printf() for output."
+        },
+        "javascript": {
+            "name": "JavaScript",
+            "lang_tag": "javascript",
+            "keywords": ["const", "let", "function", "=>", "class", "async", "await", "Promise", "import", "export"],
+            "print_syntax": "console.log(...);",
+            "runtime": "V8 Engine / Node.js / Browser Engine",
+            "rules": "Use modern ES6+ syntax, const/let, arrow functions, async/await, template literals (`${}`), and console.log for output."
+        },
+        "sql": {
+            "name": "SQL & Relational Databases",
+            "lang_tag": "sql",
+            "keywords": ["SELECT", "FROM", "WHERE", "GROUP BY", "HAVING", "ORDER BY", "JOIN", "CREATE TABLE", "ALTER TABLE", "INSERT INTO", "TRANSACTION", "COMMIT"],
+            "print_syntax": "SELECT * FROM ...;",
+            "runtime": "Relational Database Management System (RDBMS)",
+            "rules": "Use standard ANSI SQL, uppercase for SQL keywords, clear table schemas, proper foreign key relationships, indexed queries, and execution explanations."
+        }
+    }
+
+    def detect_subject_context(self, subject_name="", topic_name="", explicit_lang=None):
+        """
+        Determines the programming language and domain for subject-aware note generation.
+        """
+        combined = f"{subject_name.lower()} {topic_name.lower()}"
+        
+        # 1. Check explicit language first
+        if explicit_lang and explicit_lang.lower() in self.LANGUAGE_PROFILES:
+            lang_key = explicit_lang.lower()
+            return {"language": lang_key, "domain": "programming", "profile": self.LANGUAGE_PROFILES[lang_key]}
+        
+        # 2. Check for C# / .NET
+        if any(k in combined for k in ["c#", "csharp", ".net", "dotnet", "clr", "visual studio", "linq", "asp.net"]):
+            return {"language": "csharp", "domain": "programming", "profile": self.LANGUAGE_PROFILES["csharp"]}
+            
+        # 3. Check for Java
+        if any(k in combined for k in ["java", "jvm", "jdk", "spring", "servlet", "hibernate", "android"]) and not any(k in combined for k in ["javascript"]):
+            return {"language": "java", "domain": "programming", "profile": self.LANGUAGE_PROFILES["java"]}
+            
+        # 4. Check for Python
+        if any(k in combined for k in ["python", "django", "flask", "numpy", "pandas", "pytorch", "tensorflow", "fastapi"]):
+            return {"language": "python", "domain": "programming", "profile": self.LANGUAGE_PROFILES["python"]}
+            
+        # 5. Check for C++
+        if any(k in combined for k in ["c++", "cpp", "stl"]):
+            return {"language": "cpp", "domain": "programming", "profile": self.LANGUAGE_PROFILES["cpp"]}
+            
+        # 6. Check for C Language
+        if any(k in combined for k in ["c programming", "c language", "ansi c", "pointers in c", "embedded c"]):
+            return {"language": "c", "domain": "programming", "profile": self.LANGUAGE_PROFILES["c"]}
+            
+        # 7. Check for JavaScript / Web
+        if any(k in combined for k in ["javascript", "js", "typescript", "react", "node", "express", "vue", "angular", "html5", "css3"]):
+            return {"language": "javascript", "domain": "programming", "profile": self.LANGUAGE_PROFILES["javascript"]}
+            
+        # 8. Check for SQL / DBMS
+        if any(k in combined for k in ["dbms", "database", "sql", "rdbms", "mysql", "postgresql", "oracle", "normalization", "relational algebra"]):
+            return {"language": "sql", "domain": "database", "profile": self.LANGUAGE_PROFILES["sql"]}
+            
+        # 9. Non-programming domains
+        if any(k in combined for k in ["math", "calculus", "algebra", "differential", "integral", "derivative", "probability", "statistics", "statistical", "matrix", "matrices", "fourier", "laplace", "numerical", "discrete"]):
+            return {"language": "none", "domain": "quantitative_math", "profile": None}
+            
+        if any(k in combined for k in ["network", "osi", "tcp/ip", "protocol", "routing", "subnet", "ethernet", "socket", "dns", "http"]):
+            return {"language": "none", "domain": "networking", "profile": None}
+            
+        if any(k in combined for k in ["operating system", "os", "process scheduling", "deadlock", "paging", "virtual memory", "semaphore", "mutex"]):
+            return {"language": "none", "domain": "os", "profile": None}
+            
+        if any(k in combined for k in ["software engineering", "sdlc", "agile", "scrum", "waterfall", "uml", "design pattern", "testing"]):
+            return {"language": "none", "domain": "software_eng", "profile": None}
+
+        # Check if generic programming/OOP topic
+        if any(k in combined for k in ["data structure", "dsa", "algorithm", "oop", "object oriented", "polymorphism", "inheritance", "encapsulation", "abstraction", "recursion", "array", "stack", "queue", "tree", "graph"]):
+            # Default to Java or C# depending on subject name context
+            return {"language": "java", "domain": "programming", "profile": self.LANGUAGE_PROFILES["java"]}
+            
+        return {"language": "none", "domain": "general_theory", "profile": None}
+
+    def sanitize_code_consistency(self, content, language):
+        """
+        Validates and cleans code snippets against obvious cross-language contamination.
+        """
+        if not content:
+            return content
+            
+        if language == "java":
+            # Fix C# print statements and casing in Java
+            content = content.replace("Console.WriteLine", "System.out.println")
+            content = content.replace("Console.Write", "System.out.print")
+            content = content.replace("@override", "@Override")
+            content = re.sub(r'\bnullptr\b', 'null', content)
+        elif language == "csharp":
+            # Fix Java print statements, casing and keywords in C#
+            content = content.replace("System.out.println", "Console.WriteLine")
+            content = content.replace("System.out.print", "Console.Write")
+            content = content.replace("@Override", "override")
+            content = content.replace("@override", "override")
+            content = re.sub(r'\bboolean\b', 'bool', content)
+            content = re.sub(r'\bString\b', 'string', content)
+            content = re.sub(r'\bfinal\s+class\b', 'sealed class', content)
+            
+        return content
+
     # ── Study material generation ─────────────────────────────────────────────
 
     def generate_study_materials(self, topic_name, subject_name="", key=None, base_url=None,
                                  chat_model=None, custom_instr="", task_id=None, study_purpose="learning",
-                                 base_completed=0):
+                                 base_completed=0, gen_options=None):
         """
-        Generates rich, comprehensive notes, flashcards, MCQs, and Viva questions IN PARALLEL through OmniRoute.
+        Generates rich, subject-aware notes, flashcards, MCQs, and Viva questions with modular prompt architecture.
         """
         if not key:
             key, base_url, chat_model, _ = self._get_omni_config()
@@ -1108,206 +1253,233 @@ CRITICAL JSON OUTPUT RULES:
         if not self._is_configured():
             return self._get_mock_materials_response(topic_name, subject_name)
 
-        import concurrent.futures
+        gen_options = gen_options or {}
+        mode = gen_options.get("style", "detailed_study") if gen_options.get("style") else ("exam_ready" if study_purpose == "exam_prep" else "detailed_study")
+        difficulty = gen_options.get("difficulty", "beginner")
+        length = gen_options.get("length", "medium")
+        toggles = gen_options.get("toggles", {})
+        source_text = gen_options.get("source_text", "")
+        explicit_lang = gen_options.get("language")
 
-        context_str = f" in the context of the subject '{subject_name}'" if subject_name else ""
+        # Detect Subject Context & Language
+        ctx = self.detect_subject_context(subject_name, topic_name, explicit_lang=explicit_lang)
+        language = ctx["language"]
+        domain = ctx["domain"]
+        lang_profile = ctx["profile"]
 
-        # Expanded Subject categorization
-        combined = f"{topic_name.lower()} {subject_name.lower()}"
-        is_coding = any(k in combined for k in [
-            "programming", "code", "python", "java", "c++", "c language", "c#", "javascript",
-            "sql", "dbms", "database", "data structure", "algorithm", "tree", "graph", "stack",
-            "queue", "linked list", "array", "recursion", "sorting", "searching", "web", "html",
-            "css", "react", "node", "flask", "django", "api", "oop", "class", "object", "pointer",
-            "function", "os", "operating system", "linux", "compiler", "network", "socket"
-        ])
-        is_math = any(k in combined for k in [
-            "math", "calculus", "algebra", "differenti", "integrat", "derivative", "equation",
-            "formula", "theorem", "proof", "trigonometr", "logarithm", "limit", "matrix", "matrices",
-            "probability", "statistics", "statistical", "variable", "distribution", "sampling",
-            "hypothesis", "stochastic", "markov", "estimation", "poisson", "binomial", "normal distribution",
-            "chi-square", "t-test", "f-test", "regression", "correlation", "variance", "mean",
-            "standard deviation", "vector", "geometry", "fourier", "laplace", "numerical",
-            "discrete", "set theory", "boolean", "physics", "thermodynamics", "circuit"
-        ])
+        # Determine word count target
+        if length == "short":
+            word_target = "800 to 1200 words"
+            max_notes_tokens = 4096
+        elif length == "detailed":
+            word_target = "2000 to 2800 words"
+            max_notes_tokens = 8192
+        else: # medium
+            word_target = "1400 to 1800 words"
+            max_notes_tokens = 8192
 
-        if is_coding:
-            special_instructions = """
-            CODING SUBJECT REQUIREMENTS:
-            - Provide FULL, COMPLETE, RUNNABLE code implementations (not just 2-line snippets).
-            - Use proper Markdown code blocks with language identifiers (e.g. ```python, ```java, ```cpp, ```sql).
-            - Include step-by-step syntax explanation, parameter details, and a clear Dry Run with input and expected output.
-            - Explicitly state Time Complexity and Space Complexity with Big-O notation.
-            - Cover edge cases, common bugs, and practical real-world usage.
+        # ── Domain & Language Specific Directives ──
+        subject_directive = f"SUBJECT CONTEXT: '{subject_name}'\nTOPIC: '{topic_name}'\nDIFFICULTY: {difficulty.upper()}\nLENGTH: {length.upper()} ({word_target})\n"
+        
+        if domain == "programming" and lang_profile:
+            lang_name = lang_profile["name"]
+            lang_tag = lang_profile["lang_tag"]
+            lang_rules = lang_profile["rules"]
+            
+            lang_prompt_block = f"""
+            STRICT PROGRAMMING LANGUAGE REQUIREMENT:
+            - This topic is part of the subject '{subject_name}'. You MUST generate ALL code, syntax examples, and technical terminology exclusively in **{lang_name}**.
+            - Code blocks MUST use the language identifier ```{lang_tag}.
+            - Language Rules: {lang_rules}
+            - Provide 100% COMPLETE, COMPILABLE, AND RUNNABLE code. Never use placeholder comments like '// add logic here'.
+            - Show realistic Input, Execution Trace / Dry Run, and exact Terminal Output.
+            - State Time & Space Complexities with Big-O notation.
+            - Common mistakes section MUST focus on {lang_name}-specific bugs and pitfalls.
             """
-            notes_prompt_structure = f"""
-        MANDATORY STRUCTURE:
-        # {topic_name}
-        
-        ## 1. Introduction & Core Concept
-        - Precise formal definition and plain-English intuitive explanation.
-        - Why this topic exists and what problem it solves.
-        
-        ## 2. Key Principles & Theoretical Foundations
-        - Detailed breakdown of all underlying rules, laws, architecture, or mechanisms.
-        
-        ## 3. Deep Dive & Complete Working Implementation
-        - Step-by-step workflow, algorithm, or process.
-        - FULL working code implementations in Markdown code blocks (```python, ```java, ```cpp, ```sql).
-        
-        ## 4. Step-by-Step Execution Trace & Dry Runs
-        - Line-by-line breakdown of code logic.
-        - Full dry runs with sample inputs, variable state changes, and exact output.
-        - Explicit Time Complexity and Space Complexity analysis with Big-O notation.
-        
-        ## 5. Practical Use Cases & Edge Cases
-        - Real-world software engineering applications, boundary conditions, and common bugs.
-        
-        ## 6. Exam & Interview Cheat Sheet
-        """
-        elif is_math:
-            special_instructions = """
+        elif domain == "database":
+            lang_prompt_block = """
+            DATABASE & SQL REQUIREMENTS:
+            - Provide standard ANSI SQL queries, schemas (CREATE TABLE), sample records (INSERT), and expected output tables.
+            - Explain normalization, relational integrity, primary/foreign keys, indexing, and transaction ACID properties where relevant.
+            """
+        elif domain == "quantitative_math":
+            lang_prompt_block = """
             MATHEMATICS & QUANTITATIVE MANDATORY RULES:
-            - 75%+ of this entire study note MUST consist of STEP-BY-STEP FULLY SOLVED NUMERICAL PROBLEMS.
-            - Do NOT write endless generic philosophy or history. Students need actual mathematical problems, formulas, and worked calculations.
-            - Include at least 5 to 7 diverse, fully worked numerical practice problems (from basic to exam-level).
-            - Show EVERY calculation step without skipping: State Given Data -> State Governing Formula in LaTeX -> Show Exact Value Substitution -> Show Intermediate Arithmetic Steps -> State Final Answer.
-            - Format ALL formulas, equations, fractions (\\\\frac), integrals (\\\\int), summations (\\\\sum), and square roots in MathJax LaTeX using '$$...$$' for display blocks and '$...$' for inline math.
+            - Provide STEP-BY-STEP FULLY SOLVED NUMERICAL PROBLEMS with zero skipped arithmetic steps.
+            - Show Given Data -> State Governing Formula in LaTeX -> Show Exact Value Substitution -> Show Intermediate Arithmetic Steps -> State Final Answer.
+            - Format ALL formulas and equations in MathJax LaTeX using '$$...$$' for display blocks and '$...$' for inline math.
             """
-            notes_prompt_structure = f"""
-        MANDATORY MATHEMATICAL STRUCTURE (HEAVILY WEIGHTED TO SOLVED PROBLEMS):
-        # {topic_name}
-        
-        ## 1. Essential Formulas & Governing Theorems
-        - Clear, concise mathematical definitions.
-        - Comprehensive list of ALL governing formulas formatted in block LaTeX ('$$...$$').
-        - Variable Breakdown: Explicitly define every single symbol (e.g. $\\mu, \\sigma, p, n, \\lambda, x, z, t$).
-        
-        ## 2. Step-by-Step Problem-Solving Method
-        - Standard procedure and decision tree to solve problems on this topic in exams.
-        
-        ## 3. Level 1: Basic Solved Practice Problems (2 Problems)
-        ### Problem 1: Direct Formula Application
-        - **Problem Statement**: (Realistic numerical question with specific numbers).
-        - **Given Data**: Explicit list of given values.
-        - **Formula Used**: Stated in LaTeX ('$$...$$').
-        - **Step-by-Step Solution**: Show every single substitution and arithmetic calculation.
-        - **Final Answer**: Clearly boxed / bolded with proper units.
-        
-        ### Problem 2: Parameter Calculation / Inverse Problem
-        - **Problem Statement**: ...
-        - **Given Data**: ...
-        - **Step-by-Step Solution**: ...
-        - **Final Answer**: ...
-        
-        ## 4. Level 2: Standard University Exam Solved Problems (3 Problems)
-        ### Problem 3: Multi-Step Exam Problem
-        - **Problem Statement**: (Standard university exam-level numerical problem).
-        - **Given Data & Method**: ...
-        - **Step-by-Step Mathematical Derivation & Calculation**: Complete arithmetic steps.
-        - **Final Answer**: ...
-        
-        ### Problem 4: Distribution / Hypothesis / Probability Calculation
-        - **Problem Statement**: ...
-        - **Step-by-Step Solution**: ...
-        - **Final Answer**: ...
-        
-        ### Problem 5: High-Weightage Solved Exam Question
-        - **Problem Statement**: ...
-        - **Step-by-Step Solution**: ...
-        - **Final Answer**: ...
-        
-        ## 5. Level 3: Advanced & Tricky Solved Problems (1 Problem)
-        ### Problem 6: Non-Trivial Problem with Edge Conditions
-        - **Problem Statement**: ...
-        - **Step-by-Step Solution**: ...
-        - **Final Answer**: ...
-        
-        ## 6. Common Calculation Errors & Pitfalls
-        - Warning list of frequent student mistakes (sign errors, degree/radian issues, degrees of freedom $n-1$, wrong critical values).
-        
-        ## 7. Master Formula & Property Cheat Sheet (Mandatory Markdown Table)
-        - You MUST format this section as a comprehensive Markdown Table with headers:
-        | Concept / Law | Formula (LaTeX) | Variables / Conditions | Exam Application |
-        |---|---|---|---|
-        | ... | $$...$$ | ... | ... |
-        
-        - If the topic involves probability distributions, statistics, or multiple cases, also include a structured Summary Table comparing parameters (Mean $\\mu$, Variance $\\sigma^2$, MGF $M_X(t)$, and Critical Boundaries).
-        """
+        elif domain == "networking":
+            lang_prompt_block = """
+            COMPUTER NETWORKS REQUIREMENTS:
+            - Structure around protocol headers, packet flows, OSI / TCP-IP layer interactions, handshakes, and comparative tables.
+            - Use clear ASCII or structured text flow diagrams.
+            """
+        elif domain == "os":
+            lang_prompt_block = """
+            OPERATING SYSTEMS REQUIREMENTS:
+            - Focus on kernel mechanisms, algorithms (scheduling, page replacement, Banker's algorithm), memory layout, synchronization (semaphores, mutex), and system calls.
+            """
         else:
-            special_instructions = """
-            GENERAL ACADEMIC REQUIREMENTS:
-            - Provide in-depth conceptual breakdowns with clear definitions, core principles, and working mechanisms.
-            - Include structured comparison tables, pros/cons, and real-world industrial applications.
+            lang_prompt_block = """
+            ACADEMIC THEORY REQUIREMENTS:
+            - Provide exhaustive conceptual breakdowns with clear definitions, core principles, mechanism workflows, structured comparison tables, pros/cons, and real-world industrial applications.
             """
-            notes_prompt_structure = f"""
-        MANDATORY STRUCTURE:
-        # {topic_name}
-        
-        ## 1. Introduction & Core Concept
-        ## 2. Key Principles & Theoretical Foundations
-        ## 3. Deep Dive & Working Mechanism
-        ## 4. Step-by-Step Solved Examples & Case Studies
-        ## 5. Comparative Analysis & Edge Cases
-        ## 6. Real-World Applications & Industry Context
-        ## 7. Exam Revision Cheat Sheet
-        """
 
-        if study_purpose == "exam_prep":
-            purpose_instruction = """
-            STUDY PURPOSE: EXAM PREPARATION
-            - Focus on high-yield exam topics, recurring question patterns, step-by-step solved problems, and rapid revision summaries.
+        # ── Mode-Specific Notes Structure ──
+        if mode == "exam_ready":
+            notes_structure = f"""
+            MANDATORY EXAM-READY STRUCTURE:
+            # {topic_name} — High-Yield Exam Master Notes
+            
+            ## 1. Quick Concept & Definition (For 2-Mark Direct Questions)
+            - Precise textbook definition, core keywords, governing formula or primary syntax.
+            
+            ## 2. University Exam 2-Mark Questions & Model Answers (5 High-Frequency Q&As)
+            - 5 short, high-yield exam questions with crisp, point-wise 2 to 3-line model answers.
+            
+            ## 3. University Exam 5-Mark Questions & Model Answers (3 Standard Analytical Q&As)
+            - 3 medium-weightage questions: working mechanism, step-by-step procedure, comparison table, or worked problem.
+            
+            ## 4. University Exam 10-Mark Long Essay Questions & Model Answers (2 Comprehensive Q&As)
+            - 2 major long-essay questions with complete architectures, deep explanations, full runnable programs/derivations, pros & cons, and applications.
+            
+            ## 5. Master Exam Revision Cheat Sheet & Formula Summary
+            - Markdown comparison table and high-priority revision bullet points.
             """
-            word_target = "1200 to 1600 words"
-        else:  # "learning"
-            purpose_instruction = """
-            STUDY PURPOSE: COMPREHENSIVE LEARNING & MASTERY
-            - Provide exhaustive textbook-depth notes with rigorous step-by-step worked problems and clear conceptual intuition.
+        elif mode == "coding_notes" and domain == "programming":
+            notes_structure = f"""
+            MANDATORY 13-POINT PROGRAMMING NOTE STRUCTURE:
+            # {topic_name}
+            
+            ## 1. What is it? (Definition & Overview)
+            ## 2. Why is it used? (Problem Solved & Benefits)
+            ## 3. Core Concept & Mental Model
+            ## 4. Syntax & Keywords Breakdown
+            ## 5. Simple Introductory Example
+            ## 6. Complete Runnable {lang_profile['name'] if lang_profile else ''} Implementation
+            ## 7. Line-by-Line Code Walkthrough
+            ## 8. Dry Run, Input, & Expected Terminal Output
+            ## 9. Time & Space Complexity Analysis ($O(n)$)
+            ## 10. Real-World Industry Use Cases
+            ## 11. Common Mistakes & Examiner Trap Scenarios
+            ## 12. Top Exam & Interview Questions
+            ## 13. Quick Revision Cheat Sheet
             """
-            word_target = "1500 to 2000 words"
+        elif mode == "quick_revision":
+            notes_structure = f"""
+            MANDATORY QUICK REVISION STRUCTURE:
+            # {topic_name} — Rapid Revision Sheet
+            
+            ## 1. 60-Second Core Concept Summary
+            ## 2. Key Terminology & Definitions
+            ## 3. Essential Formulas & Syntax Rules
+            ## 4. Comparison Table / Differences
+            ## 5. 5 Critical Solved Problems / Snippets
+            ## 6. Common Pitfalls & What to Avoid in Exams
+            ## 7. Last-Minute Recall Checklist
+            """
+        elif mode == "learn_zero":
+            notes_structure = f"""
+            MANDATORY BEGINNER-INTUITIVE STRUCTURE:
+            # {topic_name} — Learning From Scratch
+            
+            ## 1. The Big Picture & Real-World Analogy (Zero Prerequisites)
+            ## 2. What Exactly Is It & Why Do We Need It?
+            ## 3. Step-by-Step Breakdown with Visual Explanations
+            ## 4. Simple Hands-on Example
+            ## 5. What Happens Behind the Scenes
+            ## 6. Practical Beginner Tips & Common Confusion Cleared
+            ## 7. Key Takeaways
+            """
+        elif mode == "viva_prep":
+            notes_structure = f"""
+            MANDATORY VIVA VOCE MASTER STRUCTURE:
+            # {topic_name} — Viva Voce & Technical Oral Exam Prep
+            
+            ## 1. Core Concept in 30 Seconds (Elevator Pitch)
+            ## 2. Top 10 High-Yield Viva Questions with Speakable Model Answers
+            - Include: Basic definition Qs, "Why do we use...?" Qs, "What is the difference between...?" Qs, "What happens if...?" edge cases, and examiner traps.
+            ## 3. Rapid Fire One-Liners & Formulas
+            ## 4. Practical Demonstration / Code Snippet Questions
+            """
+        elif mode == "clean_notes":
+            notes_structure = f"""
+            MANDATORY CLEANED NOTES STRUCTURE:
+            # {topic_name} — Structured Study Notes
+            
+            ## 1. Overview & Terminology (Preserving Original Context)
+            ## 2. Detailed Lecture Concepts & Explanations
+            ## 3. Formulas, Derivations, or Code Examples
+            ## 4. Solved Problems / Case Studies
+            ## 5. Summary & Exam Takeaways
+            """
+        else: # detailed_study & improve_notes
+            notes_structure = f"""
+            MANDATORY COMPREHENSIVE TEXTBOOK STRUCTURE:
+            # {topic_name}
+            
+            ## 1. Introduction & Theoretical Foundations
+            ## 2. Key Principles & Architectural Mechanisms
+            ## 3. Deep Dive & Working Workflows
+            ## 4. Step-by-Step Solved Problems & Practical Examples (5+ worked cases)
+            ## 5. Comparative Analysis & Edge Cases
+            ## 6. Real-World Applications & Industry Context
+            ## 7. Exam Revision Master Cheat Sheet
+            """
+
+        source_prompt_block = ""
+        if source_text and len(source_text.strip()) > 10:
+            source_prompt_block = f"\nSOURCE MATERIAL (Preserve all key concepts, formulas, terminology, and code accurately; if uninterpretable mark as [UNCLEAR]):\n```\n{source_text[:3000]}\n```\n"
 
         prompts = {
             "notes_summary": f"""
-        Generate an exhaustive, problem-rich academic textbook chapter and study notes for: '{topic_name}'{context_str}.
+        {subject_directive}
+        {lang_prompt_block}
+        {source_prompt_block}
         
-        {purpose_instruction}
-        {special_instructions}
-        {notes_prompt_structure}
+        {notes_structure}
         
-        MATH CONSTRAINTS: You MUST format all mathematical expressions using MathJax/LaTeX ('$$...$$' for block, '$...$' for inline). Double-escape all backslashes (e.g. \\\\\\\\frac).
-        LENGTH TARGET: Provide deep, problem-packed coverage ({word_target}). Ensure every section from 1 to 7 is completely written out with no cut-offs or missing sections.
+        MATH & CODE CONSTRAINTS:
+        - Format ALL math expressions in MathJax/LaTeX ('$$...$$' for block, '$...$' for inline). Double-escape all backslashes (e.g. \\\\\\\\frac).
+        - Code blocks MUST use appropriate language tags (```{ctx['language'] if ctx['language'] != 'none' else ''}).
+        - LENGTH TARGET: Provide deep, complete coverage ({word_target}). Ensure every section is completely written out with zero placeholder text (never write 'Q1...' or '// add code here').
         
-        Return a strict JSON object:
-        {{"notes": "<complete long-form textbook markdown notes with headers, LaTeX equations, and 5+ step-by-step solved problems>", "summary": "<comprehensive 200-word revision summary with key formulas>"}}
+        Return strict raw JSON:
+        {{"notes": "<complete long-form markdown study notes with headers, equations, and worked examples>", "summary": "<comprehensive 200-word revision summary with key formulas>"}}
         """,
             "flashcards": f"""
-        Generate exactly 8 high-yield, conceptually deep flashcards for: '{topic_name}'{context_str}.
-        - For math/statistics topics: include numerical calculation questions, formula recall, and step-by-step calculation steps in LaTeX ('$$...$$' or '$...$').
-        - For coding topics: include code snippet questions and output prediction.
-        - Double-escape all backslashes for valid JSON.
-        Return strict JSON:
+        {subject_directive}
+        {lang_prompt_block}
+        Generate exactly 8 high-yield, conceptually deep flashcards for: '{topic_name}'.
+        - Include definition recall, formula application, {ctx['language'].upper() if ctx['language'] != 'none' else 'technical'} code snippets, and conceptual differences.
+        - Double-escape backslashes for valid JSON.
+        Return strict raw JSON:
         {{"flashcards": [{{"question": "...", "answer": "..."}}]}}
         """,
             "quizzes": f"""
-        Generate exactly 5 challenging, exam-standard MCQ practice questions for: '{topic_name}'{context_str}.
-        - For math/statistics topics: EVERY question MUST be a numerical calculation problem with concrete numbers, 4 calculated options, and step-by-step algebraic/arithmetic working in the explanation.
-        - Double-escape all backslashes for valid JSON.
-        Return strict JSON:
+        {subject_directive}
+        {lang_prompt_block}
+        Generate exactly 5 challenging, exam-standard MCQ practice questions for: '{topic_name}'.
+        - Include concrete calculations, code output predictions in {ctx['language'].upper() if ctx['language'] != 'none' else 'the topic domain'}, 4 distinct options, correct index (0-3), and step-by-step explanations.
+        - Double-escape backslashes for valid JSON.
+        Return strict raw JSON:
         {{"quizzes": [{{"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."}}]}}
         """,
             "viva": f"""
-        Generate exactly 8 tough viva-voce / oral technical interview questions with model answers for: '{topic_name}'{context_str}.
-        - Include numerical derivation questions, formula proofs, and "how to calculate..." questions.
-        - Double-escape all backslashes for valid JSON.
-        Return strict JSON:
+        {subject_directive}
+        {lang_prompt_block}
+        Generate exactly 8 tough viva-voce / oral technical interview questions with speakable model answers for: '{topic_name}'.
+        - Include "why" questions, "how" questions, difference questions, and common examiner traps. Zero placeholders.
+        - Double-escape backslashes for valid JSON.
+        Return strict raw JSON:
         {{"viva_questions": [{{"question": "...", "answer": "..."}}]}}
         """
         }
 
-        provider_chain = self._get_provider_chain()
         results = {}
         subtasks = [
-            ("notes_summary", prompts["notes_summary"], 8192, "Notes & Summary"),
+            ("notes_summary", prompts["notes_summary"], max_notes_tokens, "Notes & Summary"),
             ("flashcards", prompts["flashcards"], 4096, "Flashcards"),
             ("quizzes", prompts["quizzes"], 4096, "MCQ Quizzes"),
             ("viva", prompts["viva"], 4096, "Viva Voce & Oral Q&A")
@@ -1385,13 +1557,80 @@ CRITICAL JSON OUTPUT RULES:
                 "_generation_failed": True
             }
 
+        # Sanitize code consistency against target language
+        final_notes = results.get("notes", "")
+        if language != "none" and final_notes:
+            final_notes = self.sanitize_code_consistency(final_notes, language)
+
         return {
-            "notes": results.get("notes", ""),
+            "notes": final_notes,
             "summary": results.get("summary", ""),
             "flashcards": results.get("flashcards", []),
             "quizzes": results.get("quizzes", []),
             "viva_questions": results.get("viva_questions", [])
         }
+
+    def regenerate_section_ai(self, section_title, section_content, topic_name, action="more_detail", subject_name="", language=None):
+        """
+        Regenerates a specific section of study notes based on user instruction.
+        Actions: 'simpler', 'more_detail', 'add_example', 'add_code', 'shorten', 'bullet_points', 'exam_questions'.
+        """
+        ctx = self.detect_subject_context(subject_name, topic_name, explicit_lang=language)
+        lang = ctx["language"]
+        profile = ctx["profile"]
+
+        action_instructions = {
+            "simpler": "Rewrite this section using simple, plain-English explanations, visual analogies, and clear beginner-friendly steps. Eliminate heavy jargon where possible.",
+            "more_detail": "Deepen this section with exhaustive academic depth, theoretical rigor, underlying mechanisms, formulas, and technical explanations.",
+            "add_example": "Add realistic, step-by-step worked practical examples / solved numerical calculations with zero skipped steps.",
+            "add_code": f"Add complete, runnable, production-quality code examples in {profile['name'] if profile else 'the target programming language'} with line-by-line breakdown and expected terminal output.",
+            "shorten": "Condense this section into a high-impact, concise summary retaining only the most critical definitions, rules, and facts.",
+            "bullet_points": "Format this section cleanly into crisp bullet points, organized key points, and structured comparison tables.",
+            "exam_questions": "Add high-yield university exam questions (2-Mark definitions, 5-Mark analytical, 10-Mark essay) with concise model answers directly under this section."
+        }
+
+        chosen_action_instr = action_instructions.get(action, action_instructions["more_detail"])
+        lang_directive = f"All code examples and syntax MUST strictly follow {profile['name']} ({profile['lang_tag']})." if profile else ""
+
+        prompt = f"""
+        You are an expert academic tutor in '{subject_name}'.
+        
+        TASK: Regenerate the following section for the topic '{topic_name}'.
+        SECTION TITLE: {section_title}
+        
+        EXISTING SECTION CONTENT:
+        ```markdown
+        {section_content[:2000]}
+        ```
+        
+        REGENERATION INSTRUCTION:
+        {chosen_action_instr}
+        {lang_directive}
+        
+        CONSTRAINTS:
+        - Output MUST be valid Markdown starting with the section header (e.g. ## {section_title}).
+        - Format mathematical expressions in LaTeX ('$$...$$' or '$...$').
+        - Output ONLY the updated section content with zero conversational preamble.
+        
+        Return strict JSON:
+        {{"section_markdown": "<complete updated markdown for this section>"}}
+        """
+
+        try:
+            data = self._generate_partial(prompt, max_tokens=4096, retries=3)
+            if data and data.get("section_markdown"):
+                content = data["section_markdown"]
+                if lang != "none":
+                    content = self.sanitize_code_consistency(content, lang)
+                return content
+            elif data and isinstance(data, dict):
+                for k, v in data.items():
+                    if isinstance(v, str) and len(v) > 20:
+                        return v
+        except Exception as e:
+            print(f"Error regenerating section AI: {e}")
+
+        return None
 
     # ── Mock responses (used when OmniRoute is not configured) ────────────────
 
@@ -1614,7 +1853,7 @@ $$\\frac{{d}}{{dt}} = 2e^{{2t}}\\sin(3t) + 3e^{{2t}}\\cos(3t) = e^{{2t}}\\left( 
     def generate_topic_materials_for_name(self, topic_name, subject_name="", key=None,
                                           base_url=None, chat_model=None, custom_instr="",
                                           task_id=None, study_purpose="learning",
-                                          base_completed=0):
+                                          base_completed=0, gen_options=None):
         """
         Generate enriched, topic-specific study materials through OmniRoute.
         """
@@ -1624,7 +1863,7 @@ $$\\frac{{d}}{{dt}} = 2e^{{2t}}\\sin(3t) + 3e^{{2t}}\\cos(3t) = e^{{2t}}\\left( 
                 topic_name, subject_name,
                 key=actual_key, base_url=base_url, chat_model=chat_model,
                 custom_instr=custom_instr, task_id=task_id, study_purpose=study_purpose,
-                base_completed=base_completed
+                base_completed=base_completed, gen_options=gen_options
             )
         return self._get_mock_materials_response(topic_name, subject_name)
 

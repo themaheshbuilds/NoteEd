@@ -315,13 +315,23 @@ def generate_resources(topic_id):
         WHERE user_id = ? AND task_type = 'generate_study_materials' AND status IN ('pending', 'processing')
     """, (user_id,))
     
+    gen_options = {
+        "style": data.get("style", "detailed_study"),
+        "difficulty": data.get("difficulty", "beginner"),
+        "length": data.get("length", "medium"),
+        "toggles": data.get("toggles", {}),
+        "source_text": data.get("source_text", ""),
+        "language": data.get("language")
+    }
+
     # Start async task with delayed archiving/deletion parameters
     task_id = task_service.start_generate_materials_task(
         user_id, 
         [(topic_id, topic["name"], topic["subject_name"], experience_level)], 
         run_sync=False,
         archive_old=True,
-        delete_chats=True
+        delete_chats=True,
+        gen_options=gen_options
     )
     
     return jsonify({"task_id": task_id, "status": "started"})
@@ -356,7 +366,6 @@ def regenerate_resources(topic_id):
     
     usage_service.increment_deck(user_id)
         
-    # Always delete chats on regeneration
     delete_chats = True
     
     # Cancel existing tasks
@@ -366,16 +375,101 @@ def regenerate_resources(topic_id):
         WHERE user_id = ? AND task_type = 'generate_study_materials' AND status IN ('pending', 'processing')
     """, (user_id,))
     
+    gen_options = {
+        "style": data.get("style", "detailed_study"),
+        "difficulty": data.get("difficulty", "beginner"),
+        "length": data.get("length", "medium"),
+        "toggles": data.get("toggles", {}),
+        "source_text": data.get("source_text", ""),
+        "language": data.get("language")
+    }
+
     # Start async task with archiving/deletion parameters passed to background task
     task_id = task_service.start_generate_materials_task(
         user_id, 
         [(topic_id, topic["name"], topic["subject_name"], experience_level)], 
         run_sync=False,
         archive_old=True,
-        delete_chats=delete_chats
+        delete_chats=delete_chats,
+        gen_options=gen_options
     )
     
     return jsonify({"task_id": task_id, "status": "started"})
+
+
+@study_bp.route("/api/topic/<topic_id>/regenerate-section", methods=["POST"])
+def api_regenerate_section(topic_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    topic = db_service.query("""
+        SELECT t.*, s.name as subject_name, u.name as unit_name 
+        FROM topics t 
+        JOIN units u ON t.unit_id = u.id 
+        JOIN subjects s ON u.subject_id = s.id 
+        WHERE t.id = ?
+    """, (topic_id,), one=True)
+    if not topic:
+        return jsonify({"error": "Topic not found"}), 404
+
+    data = (request.get_json() or {}) if request.is_json else (request.form or {})
+    section_title = data.get("section_title", "Section")
+    section_content = data.get("section_content", "")
+    action = data.get("action", "more_detail")
+    language = data.get("language")
+
+    from services.ai_service import ai_service
+    new_section_md = ai_service.regenerate_section_ai(
+        section_title=section_title,
+        section_content=section_content,
+        topic_name=topic["name"],
+        action=action,
+        subject_name=topic["subject_name"],
+        language=language
+    )
+
+    if not new_section_md:
+        return jsonify({"error": "Failed to regenerate section. Please try again."}), 500
+
+    return jsonify({"status": "success", "section_markdown": new_section_md})
+
+
+@study_bp.route("/api/topic/<topic_id>/save-notes", methods=["POST"])
+def api_save_notes(topic_id):
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    topic = db_service.query("SELECT * FROM topics WHERE id = ?", (topic_id,), one=True)
+    if not topic:
+        return jsonify({"error": "Topic not found"}), 404
+
+    data = (request.get_json() or {}) if request.is_json else (request.form or {})
+    content = data.get("content", "").strip()
+    if not content:
+        return jsonify({"error": "Note content cannot be empty"}), 400
+
+    import uuid
+    # Find existing primary note
+    existing_note = db_service.query(
+        "SELECT id FROM notes WHERE topic_id = ? AND is_archived = 0 AND title LIKE '%AI Notes%' ORDER BY created_at ASC LIMIT 1",
+        (topic_id,), one=True
+    )
+
+    if existing_note:
+        db_service.execute(
+            "UPDATE notes SET content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+            (content, existing_note["id"])
+        )
+    else:
+        note_id = str(uuid.uuid4())
+        db_service.execute(
+            "INSERT INTO notes (id, topic_id, title, content, is_ai_generated, is_archived) VALUES (?, ?, ?, ?, 1, 0)",
+            (note_id, topic_id, f"AI Notes: {topic['name']}", content)
+        )
+
+    return jsonify({"status": "success", "message": "Notes saved successfully!"})
 
 
 @study_bp.route("/api/topic/<topic_id>/generation-status/<task_id>", methods=["GET"])

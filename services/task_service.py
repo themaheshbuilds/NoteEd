@@ -9,7 +9,7 @@ class TaskService:
     def __init__(self):
         pass
         
-    def start_generate_materials_task(self, user_id, topics_to_generate, run_sync=False, archive_old=False, delete_chats=False):
+    def start_generate_materials_task(self, user_id, topics_to_generate, run_sync=False, archive_old=False, delete_chats=False, gen_options=None):
         """
         Spawns a background thread (or runs synchronously) to generate materials for a list of topics.
         Returns the task_id.
@@ -26,23 +26,23 @@ class TaskService:
         )
         
         if run_sync:
-            self._generate_materials_worker(task_id, topics_to_generate, archive_old, delete_chats)
+            self._generate_materials_worker(task_id, topics_to_generate, archive_old, delete_chats, gen_options=gen_options)
         else:
             # Start thread
             thread = threading.Thread(
                 target=self._generate_materials_worker,
-                args=(task_id, topics_to_generate, archive_old, delete_chats)
+                args=(task_id, topics_to_generate, archive_old, delete_chats, gen_options)
             )
             thread.daemon = True
             thread.start()
             
         return task_id
         
-    def _generate_materials_worker(self, task_id, topics_to_generate, archive_old=False, delete_chats=False):
+    def _generate_materials_worker(self, task_id, topics_to_generate, archive_old=False, delete_chats=False, gen_options=None):
         try:
             # Update status to processing
             db_service.execute(
-                "UPDATE background_tasks SET status = 'processing', message = 'Generating materials...', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                "UPDATE background_tasks SET status = 'processing', message = 'Analyzing topic & subject context...', updated_at = CURRENT_TIMESTAMP WHERE id = ?",
                 (task_id,)
             )
 
@@ -51,8 +51,6 @@ class TaskService:
             user_id = task["user_id"] if task else None
 
             # ── All AI traffic goes through OmniRoute ────────────────────────
-            # Provider selection, fallback, and rate-limit handling are all
-            # managed by the OmniRoute gateway — no per-user key mapping needed.
             key, base_url, chat_model, _ = ai_service._get_omni_config()
             custom_instr = ""
             study_purpose = "learning"
@@ -73,7 +71,6 @@ class TaskService:
 
             completed = 0
 
-            import time
             for topic_idx, topic_data in enumerate(topics_to_generate):
                 if isinstance(topic_data, (tuple, list)):
                     tid = topic_data[0]
@@ -95,49 +92,12 @@ class TaskService:
                 
                 db_service.execute(
                     "UPDATE background_tasks SET status = 'processing', completed_items = ?, message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (topic_idx * 4, f"Generating Notes & Worked Problems for '{tname}' (0/4)...", task_id)
+                    (topic_idx * 4, f"Generating Notes & Core Concepts for '{tname}' (0/4)...", task_id)
                 )
                     
                 try:
                     topic_custom_instr = custom_instr
-                    if "math" in sname.lower() and profile and dict(profile).get("math_learning_level"):
-                        level = profile["math_learning_level"]
-                        if level == "beginner":
-                            topic_custom_instr += "\n[MATH STUDENT LEVEL: BEGINNER] Use very simple language. Explain every symbol before using it. Assume no prior knowledge. Show every calculation step. Use many worked examples and diagrams. Introduce mathematical terminology gradually. Frequently check understanding."
-                        elif level == "intermediate":
-                            topic_custom_instr += "\n[MATH STUDENT LEVEL: INTERMEDIATE] Skip only obvious basics. Focus on conceptual understanding. Explain formulas and their derivations. Include standard exam questions. Provide medium-difficulty practice. Point out common mistakes."
-                        elif level == "advanced":
-                            topic_custom_instr += "\n[MATH STUDENT LEVEL: ADVANCED] Keep explanations concise but complete. Include mathematical proofs where appropriate. Show multiple solving methods. Teach shortcuts after the standard method. Include higher-order thinking questions. Add Olympiad/competitive-level problems. Explain links to other mathematical topics."
                     
-                    # Add general experience level instructions
-                    if exp_level == "beginner":
-                        topic_custom_instr += "\n[EXPERIENCE LEVEL: BEGINNER] Use extremely simple language, explain every concept from scratch, assume no prior knowledge, use many examples, avoid jargon, provide step-by-step explanations for everything."
-                    elif exp_level == "intermediate":
-                        topic_custom_instr += "\n[EXPERIENCE LEVEL: INTERMEDIATE] Skip only very basic concepts, focus on conceptual understanding, use standard examples and explanations, include common exam-style questions."
-                    elif exp_level == "topper":
-                        topic_custom_instr += "\n[EXPERIENCE LEVEL: TOPPER/ADVANCED] Keep explanations concise but thorough, include advanced topics and proofs, add competitive/Olympiad-level questions, show multiple solving approaches, focus on higher-order thinking and application."
-                    
-                    # Add subject-specific generation rules
-                    subject_lower = sname.lower()
-                    if any(m in subject_lower for m in ["math", "calculus", "algebra", "geometry", "trigonometr", "discrete", "probability", "statistics", "physics", "circuit", "thermodynamics"]):
-                        topic_custom_instr += (
-                            "\n[MANDATORY MATH & QUANTITATIVE RULES] You MUST include at least 3 to 5 fully worked, "
-                            "step-by-step solved numerical practice problems with zero skipped steps. Show Given, Governing Formula, "
-                            "Substitution, Intermediate Derivations, and Final Answer. Format ALL equations in LaTeX MathJax ($$...$$ and $...$). "
-                            "Include core theorem statements and formal proofs."
-                        )
-                    elif any(s in subject_lower for s in ["programming", "computer science", "cs", "coding", "python", "java", "c++", "c language", "javascript", "sql", "dbms", "database", "data structure", "dsa", "algorithm", "operating system", "os", "network", "web", "software"]):
-                        topic_custom_instr += (
-                            "\n[MANDATORY PROGRAMMING & CS RULES] You MUST provide complete, runnable, production-ready code examples "
-                            "in Markdown code blocks (```python, ```java, ```cpp, ```sql, etc.). Never use pseudocode placeholders. "
-                            "Explain syntax line-by-line, provide a full execution trace / dry run with input & output, and state Time and Space Complexity ($O(n)$)."
-                        )
-                    else:
-                        topic_custom_instr += (
-                            "\n[SUBJECT RULES: COMPREHENSIVE ACADEMIC] Provide exhaustive explanations, structured comparative tables, "
-                            "step-by-step mechanisms, practical real-world applications, and key exam revision points."
-                        )
-
                     materials = ai_service.generate_topic_materials_for_name(
                         tname, 
                         subject_name=sname, 
@@ -147,7 +107,8 @@ class TaskService:
                         custom_instr=topic_custom_instr,
                         task_id=task_id,
                         study_purpose=study_purpose,
-                        base_completed=topic_idx * 4
+                        base_completed=topic_idx * 4,
+                        gen_options=gen_options
                     )
                     
                     # Check if generation failed

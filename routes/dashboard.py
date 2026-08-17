@@ -449,6 +449,16 @@ def view_topic(topic_id):
     else:  # "admin_only"
         allow_print = is_admin
 
+    copy_setting = db_service.query("SELECT key_value FROM system_settings WHERE key_name = 'ADMIN_COPY_MODE'", one=True)
+    copy_mode = copy_setting["key_value"] if copy_setting else "admin_only"
+    
+    if copy_mode == "all_users":
+        allow_copy = True
+    elif copy_mode == "disabled":
+        allow_copy = False
+    else:  # "admin_only"
+        allow_copy = is_admin
+
     return render_template(
         "dashboard/topic.html",
         topic=topic,
@@ -467,7 +477,9 @@ def view_topic(topic_id):
         study_purpose=study_purpose,
         is_admin=is_admin,
         allow_print=allow_print,
-        print_mode=print_mode
+        allow_copy=allow_copy,
+        print_mode=print_mode,
+        copy_mode=copy_mode
     )
 
 # ── Bookmarks ────────────────────────────────────────────────────────────
