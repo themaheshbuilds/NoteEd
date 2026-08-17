@@ -539,13 +539,11 @@ input, textarea, [contenteditable="true"] {
   user-select: text !important;
 }
 
-/* Global Print Protection: Blank screen if print is attempted */
+/* Print Styling Base */
 @media print {
-  html, body {
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-    overflow: hidden !important;
+  * {
+    -webkit-print-color-adjust: economy !important;
+    print-color-adjust: economy !important;
   }
 }
 
