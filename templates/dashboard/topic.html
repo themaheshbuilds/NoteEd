@@ -290,7 +290,7 @@
         color: var(--text-primary);
     }
 
-    /* Direct Pure Notes Only Print Styles (No Buttons, No Extra Matter) */
+    /* Exact Academic Notes Print Styles (Matching CLR Architecture Reference) */
     @media screen {
         #print-topic-header {
             display: none !important;
@@ -303,7 +303,7 @@
             size: A4 portrait;
         }
 
-        /* 1. Universal zero-box reset */
+        /* 1. Global Reset */
         *, *::before, *::after {
             background: transparent !important;
             background-color: transparent !important;
@@ -321,30 +321,14 @@
             visibility: hidden !important;
         }
 
-        /* 3. Explicitly HIDE all buttons, links, icons, headers, sidebars, toolbars, and extra matter */
-        nav,
-        aside,
-        footer,
-        header,
-        button,
-        svg,
-        a,
-        .no-print,
-        .action-bar,
-        .sticky,
+        /* 3. Make ONLY print-header and structured notes visible */
         #print-topic-header,
-        #mobile-topic-sheet,
-        #mobile-topic-sheet-backdrop,
-        #loading-overlay,
-        #mathjax-loading,
-        #archived-modal,
-        #toc-nav,
-        #toc-nav-mobile,
-        #raw-notes-container,
-        [role="button"],
-        .md\:hidden {
-            display: none !important;
-            visibility: hidden !important;
+        #print-topic-header *,
+        #structured-content,
+        #structured-content *,
+        .notes-article,
+        .notes-article * {
+            visibility: visible !important;
         }
 
         /* 4. Pure White Background & Reset Body */
@@ -360,18 +344,61 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
 
-        /* 5. Make ONLY the study notes content visible and positioned at top: 0 */
-        #structured-content,
-        #structured-content *,
-        .notes-article,
-        .notes-article * {
+        /* 5. Subtle Academic Watermark on every printed page */
+        body::before {
+            content: 'Helix AI';
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) rotate(-35deg) !important;
+            font-size: 85px !important;
+            font-weight: 900 !important;
+            color: rgba(0, 0, 0, 0.035) !important;
+            z-index: 9999 !important;
+            pointer-events: none !important;
+            letter-spacing: 8px !important;
+            white-space: nowrap !important;
             visibility: visible !important;
+            display: block !important;
+            font-family: 'Inter', sans-serif !important;
         }
 
-        #structured-content {
+        /* 6. Centered Academic Document Header */
+        #print-topic-header {
             position: absolute !important;
             left: 0 !important;
             top: 0 !important;
+            width: 100% !important;
+            display: block !important;
+            text-align: center !important;
+            margin: 0 0 16pt 0 !important;
+            padding-bottom: 0 !important;
+            border: none !important;
+        }
+        #print-topic-header h1 {
+            font-size: 24pt !important;
+            font-weight: 800 !important;
+            color: #000000 !important;
+            margin: 0 0 4pt 0 !important;
+            text-align: center !important;
+            border: none !important;
+            line-height: 1.2 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        #print-topic-header p {
+            font-size: 11pt !important;
+            font-weight: 500 !important;
+            color: #555555 !important;
+            margin: 0 !important;
+            text-align: center !important;
+            border: none !important;
+        }
+
+        /* 7. Study Notes Content Body */
+        #structured-content {
+            position: absolute !important;
+            left: 0 !important;
+            top: 55pt !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
@@ -392,67 +419,67 @@
             background: transparent !important;
         }
 
-        #structured-content button,
-        #structured-content svg,
-        #structured-content a {
-            display: none !important;
-            visibility: hidden !important;
-        }
-
-        /* 6. Pure Text Headings */
-        #structured-content h1,
-        #structured-content h2,
-        #structured-content h3,
-        #structured-content h4 {
+        /* 8. Headings (H1, H2 with thin subtle divider, H3, H4) */
+        #structured-content h1 {
+            font-size: 16pt !important;
+            font-weight: 800 !important;
             color: #000000 !important;
-            background: transparent !important;
             border: none !important;
+            border-bottom: 0.75pt solid #eaeaea !important;
+            padding-bottom: 4pt !important;
+            margin-top: 18pt !important;
+            margin-bottom: 8pt !important;
             page-break-after: avoid !important;
             break-after: avoid !important;
-        }
-
-        #structured-content h1 {
-            font-size: 18pt !important;
-            font-weight: 800 !important;
-            margin-top: 0 !important;
-            margin-bottom: 8pt !important;
         }
 
         #structured-content h2 {
             font-size: 14pt !important;
             font-weight: 700 !important;
-            margin-top: 14pt !important;
-            margin-bottom: 5pt !important;
+            color: #000000 !important;
+            border: none !important;
+            border-bottom: 0.75pt solid #eaeaea !important;
+            padding-bottom: 3pt !important;
+            margin-top: 18pt !important;
+            margin-bottom: 8pt !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
         }
 
         #structured-content h3 {
-            font-size: 12pt !important;
+            font-size: 11.5pt !important;
             font-weight: 700 !important;
-            margin-top: 10pt !important;
-            margin-bottom: 3pt !important;
+            color: #000000 !important;
+            border: none !important;
+            margin-top: 14pt !important;
+            margin-bottom: 6pt !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
         }
 
         #structured-content h4 {
             font-size: 10.5pt !important;
             font-weight: 600 !important;
-            margin-top: 8pt !important;
-            margin-bottom: 2pt !important;
+            color: #000000 !important;
+            border: none !important;
+            margin-top: 10pt !important;
+            margin-bottom: 4pt !important;
         }
 
-        /* 7. Paras & Lists - Pure Black Text */
+        /* 9. Paras & Lists - Clean Academic Typography */
         #structured-content p {
-            font-size: 10.5pt !important;
+            font-size: 10pt !important;
             line-height: 1.65 !important;
-            color: #000000 !important;
+            color: #111111 !important;
             margin-bottom: 8pt !important;
             background: transparent !important;
             border: none !important;
         }
 
         #structured-content li {
-            font-size: 10.5pt !important;
+            font-size: 10pt !important;
             line-height: 1.6 !important;
-            color: #000000 !important;
+            color: #111111 !important;
             margin-bottom: 4pt !important;
             background: transparent !important;
             border: none !important;
@@ -462,7 +489,7 @@
         #structured-content ol {
             padding-left: 20pt !important;
             margin-bottom: 10pt !important;
-            color: #000000 !important;
+            color: #111111 !important;
             background: transparent !important;
             border: none !important;
         }
@@ -473,12 +500,12 @@
             padding: 0 0 0 12pt !important;
             margin: 8pt 0 !important;
             font-style: italic !important;
-            color: #000000 !important;
+            color: #222222 !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
         }
 
-        /* 8. Codes - Pure Monospace Plain Text (Zero Boxes) */
+        /* 10. Codes - Plain Monospace Text */
         #structured-content pre,
         #structured-content code,
         #structured-content pre code {
@@ -498,7 +525,29 @@
             break-inside: avoid !important;
         }
 
-        /* 9. Tables - Plain Text Rows */
+        /* 11. Centered High-Resolution LaTeX Formulas */
+        #structured-content mjx-container,
+        #structured-content .MathJax {
+            font-size: 11pt !important;
+            color: #000000 !important;
+            background: transparent !important;
+            border: none !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        #structured-content mjx-container[display="true"] {
+            display: block !important;
+            text-align: center !important;
+            margin: 12pt auto !important;
+        }
+
+        #structured-content mjx-container * {
+            color: #000000 !important;
+            fill: #000000 !important;
+        }
+
+        /* 12. Plain Ruled Tables */
         #structured-content table {
             width: 100% !important;
             border-collapse: collapse !important;
@@ -517,7 +566,7 @@
             color: #000000 !important;
             background: transparent !important;
             border: none !important;
-            border-bottom: 0.5pt solid #dddddd !important;
+            border-bottom: 0.5pt solid #eaeaea !important;
         }
 
         #structured-content th {
@@ -525,26 +574,29 @@
             border-bottom: 1pt solid #000000 !important;
         }
 
-        /* 10. LaTeX / MathJax */
-        #structured-content mjx-container,
-        #structured-content .MathJax {
-            font-size: 11pt !important;
-            color: #000000 !important;
-            background: transparent !important;
-            border: none !important;
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-        }
-
-        #structured-content mjx-container[display="true"] {
-            display: block !important;
-            text-align: center !important;
-            margin: 10pt auto !important;
-        }
-
-        #structured-content mjx-container * {
-            color: #000000 !important;
-            fill: #000000 !important;
+        /* 13. Strictly Hide All Interactive UI & Buttons */
+        nav,
+        aside,
+        footer,
+        header,
+        button,
+        svg,
+        a,
+        .no-print,
+        .action-bar,
+        .sticky,
+        #mobile-topic-sheet,
+        #mobile-topic-sheet-backdrop,
+        #loading-overlay,
+        #mathjax-loading,
+        #archived-modal,
+        #toc-nav,
+        #toc-nav-mobile,
+        #raw-notes-container,
+        [role="button"],
+        .md\:hidden {
+            display: none !important;
+            visibility: hidden !important;
         }
     }
 </style>
@@ -645,18 +697,9 @@
                 </div>
 
                 <!-- Native Print Header (Only visible when printing / PDF export) -->
-                <div id="print-topic-header" class="hidden mb-6 pb-4 border-b-2 border-gray-900 text-center">
-                    <div class="flex items-center justify-between mb-2">
-                        <div class="flex items-center gap-2">
-                            <img src="{{ url_for('static', filename='images/noteedhalf.png') }}" alt="NoteEd Logo" class="h-6 w-auto">
-                            <span class="font-bold text-xs uppercase tracking-widest text-gray-800">NoteEd AI</span>
-                        </div>
-                        <div class="text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
-                            {{ topic.subject_name }}{% if topic.unit_name %} &bull; {{ topic.unit_name }}{% endif %}
-                        </div>
-                    </div>
-                    <h1 class="text-2xl font-black text-gray-900 tracking-tight mt-3 mb-1">{{ topic.name }}</h1>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Comprehensive AI Study Notes</p>
+                <div id="print-topic-header" class="hidden mb-6 text-center">
+                    <h1 class="text-3xl font-extrabold text-black font-outfit mb-1">{{ topic.name }}</h1>
+                    <p class="text-sm text-gray-600 font-medium mb-6">{{ topic.subject_name }} - {{ topic.unit_name }}</p>
                 </div>
 
                 <!-- Structured Learning Cards Container -->
