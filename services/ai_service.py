@@ -1570,11 +1570,11 @@ CRITICAL JSON OUTPUT RULES:
         if not results.get("notes"):
             lang_tag = ctx.get('language', 'text')
             if lang_tag == 'java':
-                lang_code = f"```java\n// Implementation of {topic_name}\nclass Example {\n    public void execute() {\n        System.out.println(\"Demonstrating {topic_name}\");\n    }\n}\n```"
+                lang_code = f"```java\n// Implementation of {topic_name}\nclass Example {{\n    public void execute() {{\n        System.out.println('Demonstrating {topic_name}');\n    }}\n}}\n```"
             elif lang_tag == 'python':
-                lang_code = f"```python\n# Implementation of {topic_name}\ndef execute():\n    print(\"Demonstrating {topic_name}\")\n\nif __name__ == '__main__':\n    execute()\n```"
+                lang_code = f"```python\n# Implementation of {topic_name}\ndef execute():\n    print('Demonstrating {topic_name}')\n\nif __name__ == '__main__':\n    execute()\n```"
             elif lang_tag == 'csharp':
-                lang_code = f"```csharp\n// Implementation of {topic_name}\nusing System;\nclass Example {\n    public void Execute() {\n        Console.WriteLine(\"Demonstrating {topic_name}\");\n    }\n}\n```"
+                lang_code = f"```csharp\n// Implementation of {topic_name}\nusing System;\nclass Example {{\n    public void Execute() {{\n        Console.WriteLine('Demonstrating {topic_name}');\n    }}\n}}\n```"
             else:
                 lang_code = f"```{lang_tag}\n// Implementation of {topic_name}\n```"
 
