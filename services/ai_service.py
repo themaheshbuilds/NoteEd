@@ -943,8 +943,8 @@ Domain-Specific Strategies:
         """Returns all configured provider pools in priority order."""
         pools = self.get_all_provider_pools()
         chain = []
-        # Priority order: Groq (ultra-fast) -> Gemini -> OpenRouter -> OpenAI -> NVIDIA -> OmniRoute
-        for p_name in ["groq", "gemini", "openrouter", "openai", "nvidia", "omniroute"]:
+        # Priority order: OpenRouter (fast, high throughput, zero 413s) -> Gemini -> Groq -> OpenAI -> NVIDIA -> OmniRoute
+        for p_name in ["openrouter", "groq", "gemini", "openai", "nvidia", "omniroute"]:
             p = pools.get(p_name)
             if p and p.get("count", 0) > 0 and p.get("keys"):
                 if p_name == "gemini":
@@ -1031,8 +1031,11 @@ CRITICAL JSON OUTPUT RULES:
                 {"role": "user", "content": prompt}
             ]
 
-            # Cap token limit per provider to maximum allowed output (8192 tokens)
-            effective_tokens = min(max_tokens, 8192)
+            # Cap token limit per provider (Groq: 4096 to prevent 413 TPM limits; OpenRouter/Gemini: up to 8192)
+            if p_name == "groq":
+                effective_tokens = min(max_tokens, 4096)
+            else:
+                effective_tokens = min(max_tokens, 8192)
 
             payload = {
                 "model": model,
@@ -1044,12 +1047,12 @@ CRITICAL JSON OUTPUT RULES:
             }
 
             try:
-                # Set generous 35s timeout to allow full long-form JSON completion
+                # 20s timeout for fast failover
                 response = requests.post(
                     f"{endpoint}/chat/completions",
                     headers=self._make_headers(api_key),
                     json=payload,
-                    timeout=35
+                    timeout=20
                 )
                 
                 if response.status_code != 200:
@@ -1061,14 +1064,25 @@ CRITICAL JSON OUTPUT RULES:
                 response.raise_for_status()
 
                 response_json = response.json()
-                choice = response_json["choices"][0]
-                content = choice["message"]["content"]
+                choices = response_json.get("choices", [])
+                if not choices:
+                    provider_idx += 1
+                    continue
+                    
+                choice = choices[0]
+                msg = choice.get("message", {})
+                content = msg.get("content") or ""
                 
-                result = self._extract_json(content)
-                if result:
-                    return result
+                # Strip thinking / reasoning tags (Qwen, DeepSeek, Gemini thoughts)
+                content = re.sub(r'<think>[\s\S]*?</think>', '', content).strip()
+                
+                if content:
+                    result = self._extract_json(content)
+                    if result:
+                        return result
+                        
                 try:
-                    print(f"[{p_name.upper()}] Empty JSON extracted. Switching to next provider...")
+                    print(f"[{p_name.upper()}] Empty or non-JSON extracted. Switching to next provider...")
                 except Exception:
                     pass
                 provider_idx += 1

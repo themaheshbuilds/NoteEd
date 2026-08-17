@@ -1667,7 +1667,7 @@
         header: true
     };
 
-    function openPrintPreviewModal() {
+    function printTopicNotes() {
         {% if not allow_print %}
         alert('Printing study notes has been disabled by the administrator.');
         return;
@@ -1683,6 +1683,10 @@
         if (chatPrint) chatPrint.remove();
 
         window.print();
+    }
+
+    function openPrintPreviewModal() {
+        printTopicNotes();
     }
 
     function copyTopicNotesMarkdown() {
