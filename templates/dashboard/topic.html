@@ -290,9 +290,9 @@
         color: var(--text-primary);
     }
 
-    .print-document-header,
-    .print-watermark { 
-        display: none; 
+    #noteed-print-canvas,
+    #chat-print-container {
+        display: none;
     }
 
     @media print {
@@ -301,7 +301,7 @@
             size: A4 portrait;
         }
 
-        /* 1. Universal clean print: Pure white background, pure dark text, zero boxes/shadows */
+        /* 1. Universal clean print */
         *, *::before, *::after {
             background: transparent !important;
             background-color: transparent !important;
@@ -314,47 +314,12 @@
             print-color-adjust: exact !important;
         }
 
-        /* 2. Hide all chrome, navbars, sidebars, buttons, tools, overlays */
-        nav, aside, footer, header, button, form, a, select,
-        .sticky, .no-print, .mini-quiz, .chat-section, .files-section,
-        .print\:hidden, #chat-print-container, #mobile-chat-fab,
-        #loading-overlay, #mathjax-loading, #raw-notes-container,
-        #history-drawer, #history-drawer-backdrop, #task-toast-container,
-        #mobile-topic-sheet, #mobile-topic-sheet-backdrop,
-        .card-icon, [class*="badge"], [class*="pill"] {
+        /* 2. Hide everything in the main UI tree when isolated canvas exists */
+        body > *:not(#noteed-print-canvas):not(#chat-print-container) {
             display: none !important;
         }
 
-        /* 3. Watermark: Precisely centered diagonally across every printed page */
-        .print-watermark {
-            display: flex !important;
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            align-items: center !important;
-            justify-content: center !important;
-            pointer-events: none !important;
-            z-index: 99999 !important;
-        }
-        .print-watermark span {
-            font-family: 'Inter', -apple-system, sans-serif !important;
-            font-size: 36pt !important;
-            font-weight: 800 !important;
-            color: #000000 !important;
-            opacity: 0.075 !important;
-            transform: rotate(-32deg) !important;
-            letter-spacing: 5px !important;
-            text-transform: uppercase !important;
-            white-space: nowrap !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-
-        /* 4. Pure clean white paper canvas */
+        /* 3. Pure clean white paper canvas */
         html, body {
             display: block !important;
             visibility: visible !important;
@@ -372,22 +337,62 @@
             width: 100% !important;
         }
 
-        /* 5. Document Header */
-        .print-document-header {
+        /* 4. Canvas Container */
+        #noteed-print-canvas {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff !important;
+            color: #111111 !important;
+        }
+
+        /* 5. Watermark: Precisely centered diagonally across every printed page */
+        .print-watermark-canvas {
+            display: flex !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            align-items: center !important;
+            justify-content: center !important;
+            pointer-events: none !important;
+            z-index: 99999 !important;
+        }
+        .print-watermark-canvas span {
+            font-family: 'Inter', -apple-system, sans-serif !important;
+            font-size: 38pt !important;
+            font-weight: 800 !important;
+            color: #000000 !important;
+            opacity: 0.075 !important;
+            transform: rotate(-32deg) !important;
+            letter-spacing: 5px !important;
+            text-transform: uppercase !important;
+            white-space: nowrap !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        /* 6. Document Header */
+        .print-canvas-header {
             display: block !important;
             text-align: left;
             margin-bottom: 24px;
             padding-bottom: 12px;
             border-bottom: 1.5px solid #222222 !important;
         }
-        .print-document-header h1 {
+        .print-canvas-header h1 {
             font-size: 18pt !important;
             font-weight: 800 !important;
             color: #000000 !important;
             margin: 0 0 4px 0 !important;
             letter-spacing: -0.02em;
         }
-        .print-document-header p {
+        .print-canvas-header p {
             font-size: 9.5pt !important;
             font-weight: 600 !important;
             color: #555555 !important;
@@ -396,15 +401,17 @@
             letter-spacing: 0.5px;
         }
 
-        /* 6. Main Notes Flow: Only the text, pure & simple */
-        main, .flex-col, .flex-1, #main-scroll-area, .max-w-4xl, .min-h-\[calc\(100vh-100px\)\], .notes-article, #structured-content {
+        /* 7. Main Notes Flow: Only the text, pure & simple */
+        #noteed-print-canvas .learning-card,
+        #noteed-print-canvas .notes-article,
+        #noteed-print-canvas .markdown-body,
+        #noteed-print-canvas #structured-content {
             display: block !important;
             width: 100% !important;
             max-width: 100% !important;
-            margin: 0 !important;
+            margin: 0 0 14pt 0 !important;
             padding: 0 !important;
             height: auto !important;
-            min-height: auto !important;
             overflow: visible !important;
             border: none !important;
             border-radius: 0 !important;
@@ -412,22 +419,18 @@
             box-shadow: none !important;
         }
 
-        .learning-card {
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 0 14pt 0 !important;
-            page-break-inside: auto;
-        }
-
-        .card-header {
+        #noteed-print-canvas .card-header {
             border: none !important;
             padding: 0 !important;
             margin: 0 0 6pt 0 !important;
         }
 
-        /* 7. Typography */
-        h1, h2, h3, h4, .card-title {
+        /* 8. Typography */
+        #noteed-print-canvas h1, 
+        #noteed-print-canvas h2, 
+        #noteed-print-canvas h3, 
+        #noteed-print-canvas h4, 
+        #noteed-print-canvas .card-title {
             color: #000000 !important;
             page-break-after: avoid;
             font-weight: 700 !important;
@@ -436,24 +439,26 @@
             margin-top: 14pt !important;
             margin-bottom: 6pt !important;
         }
-        h1, .card-title { font-size: 15pt !important; }
-        h2 { font-size: 13pt !important; margin-top: 16pt !important; }
-        h3 { font-size: 11.5pt !important; }
-        h4 { font-size: 10.5pt !important; }
+        #noteed-print-canvas h1, #noteed-print-canvas .card-title { font-size: 15pt !important; }
+        #noteed-print-canvas h2 { font-size: 13pt !important; margin-top: 16pt !important; }
+        #noteed-print-canvas h3 { font-size: 11.5pt !important; }
+        #noteed-print-canvas h4 { font-size: 10.5pt !important; }
 
-        p, li {
+        #noteed-print-canvas p, #noteed-print-canvas li {
             color: #222222 !important;
             font-size: 10pt !important;
             line-height: 1.55 !important;
             margin-bottom: 6pt !important;
         }
-        ul, ol {
+        #noteed-print-canvas ul, #noteed-print-canvas ol {
             padding-left: 22px !important;
             margin-bottom: 8pt !important;
         }
 
-        /* 8. LaTeX MathJax */
-        mjx-container, .MathJax, .MathJax_Display {
+        /* 9. LaTeX MathJax */
+        #noteed-print-canvas mjx-container, 
+        #noteed-print-canvas .MathJax, 
+        #noteed-print-canvas .MathJax_Display {
             color: #000000 !important;
             background: transparent !important;
             font-size: 11pt !important;
@@ -461,39 +466,40 @@
             page-break-inside: avoid;
             margin: 8pt 0 !important;
         }
-        mjx-container *, .MathJax * {
+        #noteed-print-canvas mjx-container *, 
+        #noteed-print-canvas .MathJax * {
             color: #000000 !important;
             fill: #000000 !important;
             stroke: #000000 !important;
         }
 
-        /* 9. Markdown Tables */
-        table, .notes-article table {
+        /* 10. Markdown Tables */
+        #noteed-print-canvas table {
             width: 100% !important;
             border-collapse: collapse !important;
             margin: 10pt 0 !important;
             page-break-inside: avoid;
             border: 1px solid #d0d0d0 !important;
         }
-        th, td {
+        #noteed-print-canvas th, #noteed-print-canvas td {
             border: 1px solid #d0d0d0 !important;
             padding: 6pt 8pt !important;
             color: #111111 !important;
             font-size: 9.5pt !important;
         }
-        th {
+        #noteed-print-canvas th {
             background-color: #f5f5f5 !important;
             font-weight: 700 !important;
             border-bottom: 1.5px solid #999999 !important;
         }
 
-        /* 10. Code Blocks */
-        pre, code {
+        /* 11. Code Blocks */
+        #noteed-print-canvas pre, #noteed-print-canvas code {
             font-family: 'Consolas', 'Courier New', monospace !important;
             font-size: 9pt !important;
             color: #000000 !important;
         }
-        pre {
+        #noteed-print-canvas pre {
             background-color: #f8f9fa !important;
             border: 1px solid #e2e4e8 !important;
             border-radius: 4px !important;
@@ -505,15 +511,6 @@
         }
     }
 </style>
-
-<div class="print-watermark" aria-hidden="true">
-    <span>NoteEd AI &bull; Study Notes</span>
-</div>
-
-<div class="print-document-header">
-    <h1>{{ topic.name }}</h1>
-    <p>{{ topic.subject_name }} &bull; {{ topic.unit_name }} &bull; NoteEd Study Notes</p>
-</div>
 
 <div class="flex flex-col min-h-[calc(100vh-100px)] w-full rounded-3xl overflow-hidden border shadow-sm"
      style="background: var(--card); border-color: var(--border);">
@@ -1330,6 +1327,9 @@
         cloned.querySelectorAll('button, svg, .animate-pulse').forEach(el => el.remove());
 
         printContainer.innerHTML = `
+            <div class="print-watermark-canvas" aria-hidden="true">
+                <span>NoteEd AI &bull; Study Notes</span>
+            </div>
             <div class="print-chat-wrapper" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #111; max-width: 100%; margin: 0; padding: 0;">
                 <div style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1.5px solid #222;">
                     <h1 style="font-size: 18pt; font-weight: 800; color: #000; margin: 0 0 4px 0;">AI Tutor Discussion: {{ topic.name }}</h1>
@@ -1578,12 +1578,46 @@
     const allowPrint = {{ 'true' if allow_print else 'false' }};
 
     function printTopicNotes() {
-        if (window.typesetMath) {
-            window.typesetMath(document.getElementById('structured-content'));
+        const content = document.getElementById('structured-content');
+        if (!content) return;
+
+        let printCanvas = document.getElementById('noteed-print-canvas');
+        if (printCanvas) {
+            printCanvas.remove();
         }
+
+        printCanvas = document.createElement('div');
+        printCanvas.id = 'noteed-print-canvas';
+
+        // Clone the structured notes
+        const cloned = content.cloneNode(true);
+        // Strip out interactive buttons, action bars, copy icons, empty placeholders
+        cloned.querySelectorAll('button, svg, .no-print, [class*="badge"], [class*="pill"]').forEach(el => el.remove());
+
+        printCanvas.innerHTML = `
+            <div class="print-watermark-canvas" aria-hidden="true">
+                <span>NoteEd AI &bull; Study Notes</span>
+            </div>
+            <div class="print-canvas-header">
+                <h1>{{ topic.name }}</h1>
+                <p>{{ topic.subject_name }} &bull; {{ topic.unit_name }} &bull; NoteEd Study Notes</p>
+            </div>
+            <div class="print-canvas-body">
+                ${cloned.innerHTML}
+            </div>
+        `;
+        document.body.appendChild(printCanvas);
+
+        if (window.typesetMath) {
+            window.typesetMath(printCanvas);
+        }
+
         setTimeout(() => {
             window.print();
-        }, 200);
+            setTimeout(() => {
+                if (printCanvas) printCanvas.remove();
+            }, 800);
+        }, 250);
     }
 
     document.addEventListener('keydown', function(e) {
@@ -1593,11 +1627,11 @@
         const key = e.key.toLowerCase();
         // Allow Print (Ctrl+P) if admin or permitted, otherwise disable
         if (key === 'p') {
-            if (!allowPrint) {
-                e.preventDefault();
-                return false;
+            e.preventDefault();
+            if (allowPrint) {
+                printTopicNotes();
             }
-            return;
+            return false;
         }
 
         // Disable Save Page (Ctrl+S), View Source (Ctrl+U)
