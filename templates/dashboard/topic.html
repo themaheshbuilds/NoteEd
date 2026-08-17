@@ -1633,10 +1633,27 @@
     const allowPrint = {{ 'true' if allow_print else 'false' }};
 
     function printTopicNotes() {
-        const content = document.querySelector('.notes-article') || document.getElementById('structured-content');
-        if (!content) {
-            alert('No study notes available to print.');
-            return;
+        // 1. Extract raw markdown notes or fallback to rendered article
+        const rawContainers = document.querySelectorAll('#raw-notes-container script[data-note-content]');
+        let printHtml = '';
+
+        if (rawContainers.length > 0) {
+            let fullMarkdown = '';
+            rawContainers.forEach(container => {
+                fullMarkdown += container.textContent + '\n\n';
+            });
+            printHtml = window.parseMarkdownWithMath 
+                ? window.parseMarkdownWithMath(fullMarkdown) 
+                : (typeof marked !== 'undefined' ? marked.parse(fullMarkdown) : fullMarkdown);
+        } else {
+            const content = document.querySelector('.notes-article') || document.getElementById('structured-content');
+            if (!content) {
+                alert('No study notes available to print.');
+                return;
+            }
+            const cloned = content.cloneNode(true);
+            cloned.querySelectorAll('button, svg, .no-print, [class*="badge"], [class*="pill"]').forEach(el => el.remove());
+            printHtml = cloned.innerHTML;
         }
 
         // Clean up any old print canvas or chat print container
@@ -1648,17 +1665,6 @@
         const printCanvas = document.createElement('div');
         printCanvas.id = 'noteed-print-canvas';
 
-        // Clone the structured notes
-        const cloned = content.cloneNode(true);
-        // Strip out interactive buttons, action bars, copy icons, empty placeholders
-        cloned.querySelectorAll('button, svg, .no-print, [class*="badge"], [class*="pill"]').forEach(el => el.remove());
-
-        // De-duplicate top H1 if it repeats the topic name
-        const firstH1 = cloned.querySelector('h1');
-        if (firstH1 && firstH1.textContent.trim().toLowerCase() === `{{ topic.name }}`.trim().toLowerCase()) {
-            firstH1.remove();
-        }
-
         printCanvas.innerHTML = `
             <div class="print-watermark-overlay" aria-hidden="true">
                 <div class="print-watermark-content">
@@ -1669,10 +1675,10 @@
             <div class="print-document-sheet">
                 <div class="print-doc-header">
                     <h1 class="print-doc-title">{{ topic.name }}</h1>
-                    <p class="print-doc-subtitle">{{ topic.subject_name }}{% if topic.unit_name %} - {{ topic.unit_name }}{% endif %}</p>
+                    <p class="print-doc-subtitle">{{ topic.subject_name }}{% if topic.unit_name %} &bull; {{ topic.unit_name }}{% endif %} &bull; NoteEd AI Study Notes</p>
                 </div>
                 <div class="print-doc-content">
-                    ${cloned.innerHTML}
+                    ${printHtml}
                 </div>
             </div>
             <style id="noteed-notes-print-style">
@@ -1695,7 +1701,7 @@
                     html, body {
                         background: #ffffff !important;
                         background-color: #ffffff !important;
-                        color: #111111 !important;
+                        color: #111827 !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         height: auto !important;
@@ -1707,7 +1713,7 @@
                         width: 100% !important;
                         max-width: 100% !important;
                         background: #ffffff !important;
-                        color: #111111 !important;
+                        color: #111827 !important;
                         margin: 0 !important;
                         padding: 0 !important;
                         font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
@@ -1733,12 +1739,12 @@
                         justify-content: center !important;
                         gap: 14pt !important;
                         transform: rotate(-32deg) !important;
-                        opacity: 0.06 !important;
+                        opacity: 0.055 !important;
                         -webkit-print-color-adjust: exact !important;
                         print-color-adjust: exact !important;
                     }
                     .print-watermark-img {
-                        height: 52pt !important;
+                        height: 50pt !important;
                         width: auto !important;
                         object-fit: contain !important;
                         filter: grayscale(100%) brightness(0) !important;
@@ -1746,7 +1752,7 @@
                     }
                     .print-watermark-text {
                         font-family: 'Inter', -apple-system, sans-serif !important;
-                        font-size: 50pt !important;
+                        font-size: 48pt !important;
                         font-weight: 800 !important;
                         color: #000000 !important;
                         letter-spacing: 6px !important;
@@ -1761,8 +1767,8 @@
                     }
                     .print-doc-header {
                         text-align: center !important;
-                        margin-top: 12pt !important;
-                        margin-bottom: 26pt !important;
+                        margin-top: 10pt !important;
+                        margin-bottom: 24pt !important;
                         padding-bottom: 0 !important;
                         border: none !important;
                     }
@@ -1776,77 +1782,93 @@
                         line-height: 1.2 !important;
                     }
                     .print-doc-subtitle {
-                        font-size: 11pt !important;
-                        font-weight: 500 !important;
-                        color: #555555 !important;
+                        font-size: 10.5pt !important;
+                        font-weight: 600 !important;
+                        color: #4b5563 !important;
                         margin: 0 !important;
                         text-align: center !important;
-                        letter-spacing: 0.15px !important;
+                        letter-spacing: 0.3px !important;
+                        text-transform: uppercase !important;
                     }
                     .print-doc-content {
                         width: 100% !important;
-                        color: #111111 !important;
+                        color: #1f2937 !important;
                     }
-                    .print-doc-content .learning-card,
-                    .print-doc-content .notes-article,
-                    .print-doc-content .markdown-body,
-                    .print-doc-content #structured-content {
-                        border: none !important;
-                        box-shadow: none !important;
-                        background: transparent !important;
-                        padding: 0 !important;
-                        margin: 0 0 12pt 0 !important;
-                        width: 100% !important;
-                    }
-                    .print-doc-content h1,
-                    .print-doc-content h2 {
-                        font-size: 14.5pt !important;
+                    .print-doc-content h1 {
+                        font-size: 16pt !important;
                         font-weight: 800 !important;
-                        color: #000000 !important;
-                        border-bottom: 1px solid #e2e8f0 !important;
-                        padding-bottom: 5pt !important;
-                        margin-top: 22pt !important;
+                        color: #111827 !important;
+                        border-bottom: 1.5px solid #d1d5db !important;
+                        padding-bottom: 4pt !important;
+                        margin-top: 24pt !important;
                         margin-bottom: 10pt !important;
-                        page-break-after: avoid;
+                        page-break-after: avoid !important;
                         text-align: left !important;
-                        width: 100% !important;
                         display: block !important;
                     }
-                    .print-doc-content h3,
-                    .print-doc-content h4,
-                    .print-doc-content .card-title {
-                        font-size: 11.5pt !important;
+                    .print-doc-content h2 {
+                        font-size: 14pt !important;
+                        font-weight: 800 !important;
+                        color: #111827 !important;
+                        border-bottom: 1.5px solid #e5e7eb !important;
+                        padding-bottom: 4pt !important;
+                        margin-top: 22pt !important;
+                        margin-bottom: 8pt !important;
+                        page-break-after: avoid !important;
+                        text-align: left !important;
+                        display: block !important;
+                    }
+                    .print-doc-content h3 {
+                        font-size: 12pt !important;
                         font-weight: 700 !important;
-                        color: #000000 !important;
+                        color: #1f2937 !important;
                         border: none !important;
                         padding-bottom: 0 !important;
                         margin-top: 16pt !important;
-                        margin-bottom: 5pt !important;
-                        page-break-after: avoid;
+                        margin-bottom: 6pt !important;
+                        page-break-after: avoid !important;
                         text-align: left !important;
-                        width: 100% !important;
                         display: block !important;
                     }
-                    .print-doc-content p {
-                        color: #1a1a1a !important;
+                    .print-doc-content h4 {
                         font-size: 10.5pt !important;
-                        line-height: 1.65 !important;
+                        font-weight: 700 !important;
+                        color: #374151 !important;
+                        border: none !important;
+                        margin-top: 12pt !important;
+                        margin-bottom: 4pt !important;
+                        page-break-after: avoid !important;
+                        text-align: left !important;
+                    }
+                    .print-doc-content p {
+                        color: #1f2937 !important;
+                        font-size: 10.5pt !important;
+                        line-height: 1.7 !important;
                         margin: 0 0 10pt 0 !important;
-                        text-align: justify !important;
-                        text-justify: inter-word !important;
+                        text-align: left !important;
                     }
                     .print-doc-content li {
-                        color: #1a1a1a !important;
+                        color: #1f2937 !important;
                         font-size: 10.5pt !important;
-                        line-height: 1.65 !important;
-                        margin-bottom: 4pt !important;
-                        text-align: justify !important;
+                        line-height: 1.7 !important;
+                        margin-bottom: 5pt !important;
+                        text-align: left !important;
                     }
                     .print-doc-content ul,
                     .print-doc-content ol {
-                        padding-left: 20pt !important;
-                        margin: 0 0 10pt 0 !important;
+                        padding-left: 22pt !important;
+                        margin: 0 0 12pt 0 !important;
                         text-align: left !important;
+                    }
+                    .print-doc-content blockquote {
+                        border-left: 3.5px solid #3b82f6 !important;
+                        background-color: #f8fafc !important;
+                        padding: 8pt 14pt !important;
+                        margin: 12pt 0 !important;
+                        color: #1e293b !important;
+                        font-style: normal !important;
+                        page-break-inside: avoid !important;
+                        border-radius: 0 4pt 4pt 0 !important;
                     }
                     .print-doc-content mjx-container,
                     .print-doc-content .MathJax,
@@ -1854,9 +1876,9 @@
                         display: block !important;
                         text-align: center !important;
                         margin: 16pt auto !important;
-                        font-size: 13pt !important;
+                        font-size: 12.5pt !important;
                         color: #000000 !important;
-                        page-break-inside: avoid;
+                        page-break-inside: avoid !important;
                         width: 100% !important;
                     }
                     .print-doc-content mjx-container * {
@@ -1868,41 +1890,62 @@
                         width: 100% !important;
                         border-collapse: collapse !important;
                         margin: 14pt 0 !important;
-                        page-break-inside: avoid;
-                        border: 1px solid #d0d0d0 !important;
+                        page-break-inside: avoid !important;
+                        border: 1px solid #d1d5db !important;
                     }
                     .print-doc-content th,
                     .print-doc-content td {
-                        border: 1px solid #d0d0d0 !important;
+                        border: 1px solid #d1d5db !important;
                         padding: 6pt 10pt !important;
-                        color: #111111 !important;
+                        color: #1f2937 !important;
                         font-size: 9.5pt !important;
                         text-align: left !important;
                         vertical-align: top !important;
                     }
                     .print-doc-content th {
-                        background-color: #f5f5f5 !important;
+                        background-color: #f3f4f6 !important;
                         font-weight: 700 !important;
-                        border-bottom: 1.5px solid #999999 !important;
+                        color: #111827 !important;
+                        border-bottom: 1.5px solid #9ca3af !important;
                     }
                     .print-doc-content pre {
-                        background-color: #f8f9fa !important;
+                        background-color: #f8fafc !important;
                         border: 1px solid #e2e4e8 !important;
-                        border-radius: 4px !important;
+                        border-radius: 6pt !important;
                         padding: 10pt 12pt !important;
                         font-family: 'Consolas', 'Courier New', monospace !important;
                         font-size: 9pt !important;
-                        color: #000000 !important;
+                        line-height: 1.5 !important;
+                        color: #0f172a !important;
                         white-space: pre-wrap !important;
                         word-break: break-word !important;
-                        page-break-inside: avoid;
+                        page-break-inside: avoid !important;
                         margin: 12pt 0 !important;
                         width: 100% !important;
+                    }
+                    .print-doc-content code {
+                        font-family: 'Consolas', 'Courier New', monospace !important;
+                        font-size: 9.5pt !important;
+                        background: #f1f5f9 !important;
+                        padding: 1pt 4pt !important;
+                        border-radius: 3pt !important;
+                        color: #0f172a !important;
+                    }
+                    .print-doc-content pre code {
+                        background: transparent !important;
+                        padding: 0 !important;
+                        border-radius: 0 !important;
                     }
                 }
             </style>
         `;
         document.body.appendChild(printCanvas);
+
+        // Remove top duplicate H1 if it repeats the topic title
+        const firstH1 = printCanvas.querySelector('.print-doc-content h1');
+        if (firstH1 && firstH1.textContent.trim().toLowerCase() === `{{ topic.name }}`.trim().toLowerCase()) {
+            firstH1.remove();
+        }
 
         if (window.typesetMath) {
             window.typesetMath(printCanvas);
