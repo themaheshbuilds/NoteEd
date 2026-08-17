@@ -741,12 +741,22 @@ Document Context:
         def repair_json_strings(json_str):
             """
             Safely escapes unescaped backslashes inside JSON string literals
-            without breaking valid JSON syntax or valid escapes.
+            without breaking valid JSON syntax or mangling LaTeX math expressions.
             """
             out = []
             in_string = False
             i = 0
             n = len(json_str)
+
+            # Common LaTeX macros that start with JSON escape letters: \b, \f, \n, \r, \t
+            latex_escapes = {
+                'b': ['begin', 'beta', 'bar', 'bmod', 'boldsymbol', 'breve', 'bot', 'bullet', 'big', 'Big', 'bigg', 'Bigg', 'binom', 'bmatrix', 'Bmatrix'],
+                'f': ['frac', 'forall', 'flat', 'fbox', 'footnotesize'],
+                'n': ['nabla', 'neq', 'not', 'nu', 'notin', 'ni', 'neg', 'normalsize', 'natural', 'nearrow', 'nwarrow'],
+                'r': ['rho', 'right', 'rangle', 'rightarrow', 'Rightarrow', 'rfloor', 'rceil', 'restriction', 'root'],
+                't': ['text', 'textbf', 'textit', 'textsf', 'texttt', 'times', 'theta', 'tau', 'to', 'top', 'triangle', 'tilde', 'tiny']
+            }
+
             while i < n:
                 c = json_str[i]
                 if c == '"':
@@ -765,8 +775,27 @@ Document Context:
                         i += 1
                     bs_len = i - bs_start
                     next_char = json_str[i] if i < n else ''
-                    if next_char not in ['"', '\\', '/']:
-                        out.append('\\' * (bs_len * 2))
+
+                    # If odd number of backslashes (un-doubled escape)
+                    if bs_len % 2 == 1:
+                        is_latex_macro = False
+                        if next_char in latex_escapes:
+                            # Look ahead to see if the word matches a known LaTeX macro
+                            word = ''
+                            k = i
+                            while k < n and (json_str[k].isalpha() or json_str[k] in ['{', '_', '^']):
+                                word += json_str[k]
+                                k += 1
+                            for macro in latex_escapes[next_char]:
+                                if word.startswith(macro):
+                                    is_latex_macro = True
+                                    break
+
+                        # Escape backslash for LaTeX macros or unescaped characters
+                        if is_latex_macro or next_char not in ['"', '\\', '/', 'b', 'f', 'n', 'r', 't']:
+                            out.append('\\' * (bs_len + 1))
+                        else:
+                            out.append('\\' * bs_len)
                     else:
                         out.append('\\' * bs_len)
                 else:
@@ -1002,10 +1031,8 @@ CRITICAL JSON OUTPUT RULES:
                 {"role": "user", "content": prompt}
             ]
 
-            # Cap token limit per provider to prevent 413 Payload Too Large
-            effective_tokens = max_tokens
-            if p_name == "groq" and effective_tokens > 4096:
-                effective_tokens = 4096
+            # Cap token limit per provider to maximum allowed output (8192 tokens)
+            effective_tokens = min(max_tokens, 8192)
 
             payload = {
                 "model": model,
@@ -1017,12 +1044,12 @@ CRITICAL JSON OUTPUT RULES:
             }
 
             try:
-                # Groq and fast endpoints respond in 1-4s; set timeout to 25s
+                # Set generous 35s timeout to allow full long-form JSON completion
                 response = requests.post(
                     f"{endpoint}/chat/completions",
                     headers=self._make_headers(api_key),
                     json=payload,
-                    timeout=25
+                    timeout=35
                 )
                 
                 if response.status_code != 200:
@@ -1231,13 +1258,13 @@ CRITICAL JSON OUTPUT RULES:
             STUDY PURPOSE: EXAM PREPARATION
             - Focus on high-yield exam topics, recurring question patterns, step-by-step solved problems, and rapid revision summaries.
             """
-            word_target = "1800 to 2500 words"
+            word_target = "1200 to 1600 words"
         else:  # "learning"
             purpose_instruction = """
             STUDY PURPOSE: COMPREHENSIVE LEARNING & MASTERY
             - Provide exhaustive textbook-depth notes with rigorous step-by-step worked problems and clear conceptual intuition.
             """
-            word_target = "2500 to 3500 words"
+            word_target = "1500 to 2000 words"
 
         prompts = {
             "notes_summary": f"""
@@ -1248,13 +1275,13 @@ CRITICAL JSON OUTPUT RULES:
         {notes_prompt_structure}
         
         MATH CONSTRAINTS: You MUST format all mathematical expressions using MathJax/LaTeX ('$$...$$' for block, '$...$' for inline). Double-escape all backslashes (e.g. \\\\\\\\frac).
-        LENGTH TARGET: Provide deep, problem-packed coverage ({word_target}). Do NOT give superficial summaries.
+        LENGTH TARGET: Provide deep, problem-packed coverage ({word_target}). Ensure every section from 1 to 7 is completely written out with no cut-offs or missing sections.
         
         Return a strict JSON object:
-        {{"notes": "<complete long-form textbook markdown notes with headers, LaTeX equations, and 5+ step-by-step solved problems>", "summary": "<comprehensive 250-word revision summary with key formulas>"}}
+        {{"notes": "<complete long-form textbook markdown notes with headers, LaTeX equations, and 5+ step-by-step solved problems>", "summary": "<comprehensive 200-word revision summary with key formulas>"}}
         """,
             "flashcards": f"""
-        Generate exactly 10 high-yield, conceptually deep flashcards for: '{topic_name}'{context_str}.
+        Generate exactly 8 high-yield, conceptually deep flashcards for: '{topic_name}'{context_str}.
         - For math/statistics topics: include numerical calculation questions, formula recall, and step-by-step calculation steps in LaTeX ('$$...$$' or '$...$').
         - For coding topics: include code snippet questions and output prediction.
         - Double-escape all backslashes for valid JSON.
@@ -1269,7 +1296,7 @@ CRITICAL JSON OUTPUT RULES:
         {{"quizzes": [{{"question": "...", "options": ["A", "B", "C", "D"], "correct_index": 0, "explanation": "..."}}]}}
         """,
             "viva": f"""
-        Generate exactly 10 tough viva-voce / oral technical interview questions with model answers for: '{topic_name}'{context_str}.
+        Generate exactly 8 tough viva-voce / oral technical interview questions with model answers for: '{topic_name}'{context_str}.
         - Include numerical derivation questions, formula proofs, and "how to calculate..." questions.
         - Double-escape all backslashes for valid JSON.
         Return strict JSON:
@@ -1281,9 +1308,9 @@ CRITICAL JSON OUTPUT RULES:
         results = {}
         subtasks = [
             ("notes_summary", prompts["notes_summary"], 8192, "Notes & Summary"),
-            ("flashcards", prompts["flashcards"], 2048, "Flashcards"),
-            ("quizzes", prompts["quizzes"], 2048, "MCQ Quizzes"),
-            ("viva", prompts["viva"], 2048, "Viva Voce & Oral Q&A")
+            ("flashcards", prompts["flashcards"], 4096, "Flashcards"),
+            ("quizzes", prompts["quizzes"], 4096, "MCQ Quizzes"),
+            ("viva", prompts["viva"], 4096, "Viva Voce & Oral Q&A")
         ]
 
         from services.db_service import db_service
