@@ -60,12 +60,21 @@ def dashboard():
                     elif v:
                         db_service.execute("INSERT INTO system_settings (key_name, key_value) VALUES (?, ?)", (k, v))
             flash("AI API configuration saved successfully!", "success")
+        elif form_type == "print_settings":
+            print_mode = request.form.get("admin_print_mode", "admin_only").strip()
+            existing = db_service.query("SELECT * FROM system_settings WHERE key_name = 'ADMIN_PRINT_MODE'", one=True)
+            if existing:
+                db_service.execute("UPDATE system_settings SET key_value = ?, updated_at = CURRENT_TIMESTAMP WHERE key_name = 'ADMIN_PRINT_MODE'", (print_mode,))
+            else:
+                db_service.execute("INSERT INTO system_settings (key_name, key_value) VALUES ('ADMIN_PRINT_MODE', ?)", (print_mode,))
+            flash(f"Print Access updated to '{print_mode.replace('_', ' ').title()}'!", "success")
 
         return redirect(url_for("admin.dashboard"))
 
     # Fetch settings
     rows = db_service.query("SELECT key_name, key_value FROM system_settings")
     settings = {row["key_name"]: row["key_value"] for row in rows} if rows else {}
+    admin_print_mode = settings.get("ADMIN_PRINT_MODE", "admin_only")
 
     # AI Provider health check
     ai_status = "unconfigured"
@@ -138,6 +147,7 @@ def dashboard():
         omniroute_status_detail=omniroute_status_detail,
         provider_pools=provider_pools,
         ist_info=ist_info,
+        admin_print_mode=admin_print_mode,
     )
 
 

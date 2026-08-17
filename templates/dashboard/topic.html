@@ -479,6 +479,18 @@
                 <span>Regenerate</span>
             </button>
             {% endif %}
+
+            {% if allow_print and notes %}
+            <button onclick="printTopicNotes()" id="print-notes-top-btn"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all border shrink-0 flex items-center gap-1.5 hover:opacity-95 focus:outline-none bg-indigo-500/10 text-indigo-500 border-indigo-500/30"
+                title="Print & Export Clean Study Notes {{ '(Admin Access)' if is_admin else '' }}">
+                <i data-lucide="printer" class="w-3.5 h-3.5 text-indigo-500"></i>
+                <span>Print Notes</span>
+                {% if is_admin %}
+                <span class="text-[9px] px-1 py-0.2 rounded font-mono bg-indigo-500 text-white font-bold">ADMIN</span>
+                {% endif %}
+            </button>
+            {% endif %}
         </div>
     </div>
 
@@ -567,6 +579,15 @@
                         </button>
                         {% endif %}
                     </div>
+
+                    {% if allow_print and notes %}
+                    <button onclick="printTopicNotes()"
+                        class="mt-2 w-full text-left px-4 py-3 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 text-indigo-400 font-bold flex items-center justify-between group transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                        aria-label="Print topic study notes">
+                        <span class="flex items-center gap-3"><span>🖨️</span> Print Study Notes</span>
+                        <span class="text-xs px-2 py-0.5 rounded-full font-mono text-[10px] {{ 'bg-indigo-500 text-white' if is_admin else 'bg-indigo-500/20 text-indigo-300' }}">{{ 'ADMIN' if is_admin else 'Print' }}</span>
+                    </button>
+                    {% endif %}
 
                     {% if flashcards %}
                     <a href="{{ url_for('study.review_flashcards', topic_id=topic.id) }}"
@@ -1437,13 +1458,33 @@
         }
     });
 
+    const allowPrint = {{ 'true' if allow_print else 'false' }};
+
+    function printTopicNotes() {
+        if (window.typesetMath) {
+            window.typesetMath(document.getElementById('structured-content'));
+        }
+        setTimeout(() => {
+            window.print();
+        }, 200);
+    }
+
     document.addEventListener('keydown', function(e) {
         const isCtrlOrCmd = e.ctrlKey || e.metaKey;
         if (!isCtrlOrCmd) return;
 
         const key = e.key.toLowerCase();
-        // Disable Print (Ctrl+P), Save Page (Ctrl+S), View Source (Ctrl+U)
-        if (key === 'p' || key === 's' || key === 'u') {
+        // Allow Print (Ctrl+P) if admin or permitted, otherwise disable
+        if (key === 'p') {
+            if (!allowPrint) {
+                e.preventDefault();
+                return false;
+            }
+            return;
+        }
+
+        // Disable Save Page (Ctrl+S), View Source (Ctrl+U)
+        if (key === 's' || key === 'u') {
             e.preventDefault();
             return false;
         }

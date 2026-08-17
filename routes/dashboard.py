@@ -430,6 +430,25 @@ def view_topic(topic_id):
     experience_level = profile["experience_level"] if profile and profile["experience_level"] else "intermediate"
     study_purpose = profile["study_purpose"] if profile and profile["study_purpose"] else "learning"
     
+    # Check Admin status and Print Permissions
+    admin_email = os.getenv("ADMIN_EMAIL", "vilasagarammahesh90@gmail.com").strip().lower()
+    user_email = (user.get("email") or "").strip().lower()
+    is_admin = bool(
+        session.get("is_superadmin")
+        or (user_email and user_email == admin_email)
+        or (user.get("role") == "admin")
+    )
+
+    print_setting = db_service.query("SELECT key_value FROM system_settings WHERE key_name = 'ADMIN_PRINT_MODE'", one=True)
+    print_mode = print_setting["key_value"] if print_setting else "admin_only"
+    
+    if print_mode == "all_users":
+        allow_print = True
+    elif print_mode == "disabled":
+        allow_print = False
+    else:  # "admin_only"
+        allow_print = is_admin
+
     return render_template(
         "dashboard/topic.html",
         topic=topic,
@@ -445,7 +464,10 @@ def view_topic(topic_id):
         chat_sessions=chat_sessions,
         active_session_id=session_id,
         experience_level=experience_level,
-        study_purpose=study_purpose
+        study_purpose=study_purpose,
+        is_admin=is_admin,
+        allow_print=allow_print,
+        print_mode=print_mode
     )
 
 # ── Bookmarks ────────────────────────────────────────────────────────────
