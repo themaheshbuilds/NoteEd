@@ -1699,13 +1699,13 @@
         }
 
         const topicTitle = '{{ topic.name | e }}';
-        const topicSub = '{{ topic.subject_name | e }}{% if topic.unit_name %} · {{ topic.unit_name | e }}{% endif %}';
+        const topicSub = '{{ topic.subject_name | e }}{% if topic.unit_name %} - {{ topic.unit_name | e }}{% endif %}';
 
         // Clone notes and strip interactive elements
         const clone = content.cloneNode(true);
-        clone.querySelectorAll('button, .no-print, [role="button"], script, style, .action-bar, #mathjax-loading').forEach(el => el.remove());
+        clone.querySelectorAll('button, .no-print, [role="button"], script, style, .action-bar, #mathjax-loading, .toc-nav').forEach(el => el.remove());
 
-        // Deduplicate Title: If the first H1 matches or contains the topic title, remove it
+        // Deduplicate Title: If the first H1 matches the topic title, remove it
         const firstH1 = clone.querySelector('h1');
         if (firstH1) {
             const h1Text = firstH1.textContent.trim().toLowerCase();
@@ -1717,163 +1717,209 @@
 
         const notesHTML = clone.innerHTML;
 
-        // Collect ALL MathJax styles and stylesheets from parent document
-        let parentStyles = '';
-        document.querySelectorAll('style, link[rel="stylesheet"]').forEach(el => {
-            parentStyles += el.outerHTML + '\n';
-        });
+        // Extract complete CSSOM rules (including dynamically injected MathJax font-faces and CHTML rules)
+        let extractedCss = '';
+        try {
+            for (let i = 0; i < document.styleSheets.length; i++) {
+                try {
+                    const sheet = document.styleSheets[i];
+                    if (sheet.cssRules) {
+                        for (let j = 0; j < sheet.cssRules.length; j++) {
+                            extractedCss += sheet.cssRules[j].cssText + '\n';
+                        }
+                    }
+                } catch (e) {
+                    // Skip cross-origin stylesheets if blocked by CORS
+                }
+            }
+        } catch (e) {
+            console.warn('Could not extract all stylesheets:', e);
+        }
 
         const printHTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>${topicTitle} — Study Notes</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-${parentStyles}
+<title>Print - ${topicTitle}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style id="injected-page-styles">
+${extractedCss}
+</style>
 <style>
-/* Reset and Base Print Typography */
+/* ── EXACT CLR ARCHITECTURE REFERENCE PRINT SYSTEM ── */
 *, *::before, *::after {
     box-sizing: border-box;
 }
+
 html, body {
     background: #ffffff !important;
     background-color: #ffffff !important;
     color: #111111 !important;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    font-size: 11pt !important;
-    line-height: 1.6 !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 12pt !important;
+    line-height: 1.68 !important;
     -webkit-font-smoothing: antialiased;
     margin: 0 !important;
     padding: 0 !important;
 }
+
 .print-wrapper {
     width: 100%;
     max-width: 100%;
     margin: 0 auto;
     padding: 0;
 }
-/* Centered Academic Document Header */
+
+/* 1. Large Academic Centered Document Title */
 .print-header {
     text-align: center;
-    margin-bottom: 14pt;
-    padding-bottom: 8pt;
-    border-bottom: 1.5pt solid #d0d0d0;
+    margin-bottom: 22pt;
+    padding-bottom: 12pt;
+    border: none !important;
 }
+
 .print-header h1 {
-    font-size: 18pt !important;
+    font-size: 26pt !important;
     font-weight: 800 !important;
-    color: #0a0a0a !important;
-    margin: 0 0 3pt 0 !important;
-    letter-spacing: -0.3pt;
-    line-height: 1.25 !important;
+    color: #000000 !important;
+    margin: 0 0 6pt 0 !important;
+    letter-spacing: -0.5pt;
+    line-height: 1.2 !important;
     border: none !important;
     padding: 0 !important;
+    font-family: 'Inter', sans-serif !important;
 }
+
 .print-header p {
-    font-size: 9.5pt !important;
+    font-size: 11.5pt !important;
     color: #555555 !important;
     font-weight: 500 !important;
     margin: 0 !important;
+    border: none !important;
 }
-/* Headings Hierarchy */
-h1 {
-    font-size: 14.5pt !important;
-    font-weight: 800 !important;
-    color: #0a0a0a !important;
-    margin: 16pt 0 5pt 0 !important;
-    padding-bottom: 3pt !important;
-    border-bottom: 1pt solid #e0e0e0 !important;
-    line-height: 1.25 !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-}
-h2 {
-    font-size: 12.5pt !important;
-    font-weight: 700 !important;
-    color: #111111 !important;
-    margin: 13pt 0 4pt 0 !important;
-    padding-bottom: 2pt !important;
-    border-bottom: 0.75pt solid #eaeaea !important;
-    line-height: 1.3 !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-}
-h3 {
-    font-size: 11pt !important;
-    font-weight: 700 !important;
-    color: #111111 !important;
-    margin: 10pt 0 3pt 0 !important;
-    line-height: 1.3 !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-}
-h4 {
-    font-size: 10.5pt !important;
-    font-weight: 600 !important;
-    color: #222222 !important;
-    margin: 8pt 0 2pt 0 !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-}
-/* Paragraphs and Lists */
-p {
-    font-size: 10.5pt !important;
-    line-height: 1.62 !important;
-    color: #1a1a1a !important;
-    margin: 0 0 7pt 0 !important;
-}
-ul, ol {
-    padding-left: 18pt !important;
-    margin: 0 0 8pt 0 !important;
-}
-li {
-    font-size: 10.5pt !important;
-    line-height: 1.58 !important;
-    color: #1a1a1a !important;
-    margin-bottom: 2.5pt !important;
-}
-strong { font-weight: 700 !important; color: #0a0a0a !important; }
-em { font-style: italic !important; }
 
-/* MathJax & LaTeX Sizing Fix */
+/* 2. Major Section Headings (CLR Architecture Overview, Core Principles) */
+h1 {
+    font-size: 16pt !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    margin: 22pt 0 10pt 0 !important;
+    padding-bottom: 4pt !important;
+    border-bottom: 1px solid #e2e2e2 !important;
+    line-height: 1.3 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+}
+
+h2 {
+    font-size: 15.5pt !important;
+    font-weight: 700 !important;
+    color: #000000 !important;
+    margin: 22pt 0 10pt 0 !important;
+    padding-bottom: 4pt !important;
+    border-bottom: 1px solid #e2e2e2 !important;
+    line-height: 1.3 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+}
+
+/* 3. Numbered Sub-Headings (1. Memory Management, 2. Code Execution) */
+h3 {
+    font-size: 13pt !important;
+    font-weight: 700 !important;
+    color: #111111 !important;
+    margin: 18pt 0 6pt 0 !important;
+    padding-bottom: 0 !important;
+    border-bottom: none !important;
+    line-height: 1.35 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+}
+
+h4 {
+    font-size: 12pt !important;
+    font-weight: 700 !important;
+    color: #222222 !important;
+    margin: 14pt 0 4pt 0 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+}
+
+/* 4. Body Paragraphs and Typography */
+p {
+    font-size: 12pt !important;
+    line-height: 1.68 !important;
+    color: #1a1a1a !important;
+    margin: 0 0 11pt 0 !important;
+}
+
+ul, ol {
+    padding-left: 22pt !important;
+    margin: 0 0 12pt 0 !important;
+}
+
+li {
+    font-size: 12pt !important;
+    line-height: 1.65 !important;
+    color: #1a1a1a !important;
+    margin-bottom: 4pt !important;
+}
+
+strong {
+    font-weight: 700 !important;
+    color: #000000 !important;
+}
+
+em {
+    font-style: italic !important;
+    color: #222222 !important;
+}
+
+/* 5. MathJax Formulas - Beautiful, Centered & High Resolution */
 mjx-container {
-    font-size: 100% !important;
+    font-size: 110% !important;
     line-height: 0 !important;
     outline: none !important;
     color: #000000 !important;
 }
+
 mjx-container[display="true"] {
     display: block !important;
     text-align: center !important;
-    margin: 8pt auto !important;
-    font-size: 105% !important;
+    margin: 16pt auto !important;
+    font-size: 125% !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
 }
+
 mjx-container:not([display="true"]) {
     display: inline-block !important;
-    margin: 0 1pt !important;
+    margin: 0 2pt !important;
     vertical-align: -0.15em !important;
 }
+
 mjx-container * {
     color: #000000 !important;
     fill: #000000 !important;
 }
+
 .MathJax {
-    font-size: 100% !important;
+    font-size: 110% !important;
 }
 
-/* Code Blocks */
+/* 6. Code Blocks */
 pre {
-    background: #f6f6f6 !important;
-    border: 0.75pt solid #e0e0e0 !important;
-    border-radius: 4pt !important;
-    padding: 8pt 10pt !important;
-    margin: 6pt 0 10pt 0 !important;
+    background: #f8f9fa !important;
+    border: 1px solid #e9ecef !important;
+    border-radius: 6px !important;
+    padding: 10pt 12pt !important;
+    margin: 10pt 0 14pt 0 !important;
     font-family: 'Consolas', 'Courier New', monospace !important;
-    font-size: 9pt !important;
-    line-height: 1.45 !important;
-    color: #1a1a1a !important;
+    font-size: 9.5pt !important;
+    line-height: 1.5 !important;
+    color: #212529 !important;
     white-space: pre-wrap !important;
     word-break: break-word !important;
     display: block !important;
@@ -1882,77 +1928,89 @@ pre {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
 }
+
 pre code {
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
-    font-size: 9pt !important;
+    font-size: 9.5pt !important;
     color: inherit !important;
 }
+
 code:not(pre code) {
-    background: #f0f0f0 !important;
-    border-radius: 2pt !important;
-    padding: 1pt 3.5pt !important;
+    background: #f1f3f5 !important;
+    border-radius: 3px !important;
+    padding: 1.5pt 4pt !important;
     font-family: 'Consolas', 'Courier New', monospace !important;
-    font-size: 9pt !important;
-    color: #b5224a !important;
+    font-size: 9.5pt !important;
+    color: #c92a2a !important;
 }
+
+/* 7. Blockquotes */
 blockquote {
-    border-left: 2.5pt solid #ccc !important;
-    padding-left: 10pt !important;
-    margin: 6pt 0 !important;
-    color: #444444 !important;
+    border-left: 3px solid #ced4da !important;
+    padding-left: 12pt !important;
+    margin: 10pt 0 !important;
+    color: #495057 !important;
     font-style: italic !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
 }
-/* Clean Tables */
+
+/* 8. Tables */
 table {
     width: 100% !important;
     border-collapse: collapse !important;
-    margin: 8pt 0 12pt 0 !important;
-    font-size: 9.5pt !important;
+    margin: 12pt 0 16pt 0 !important;
+    font-size: 11pt !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
 }
+
 th {
     font-weight: 700 !important;
-    border-bottom: 1.5pt solid #bbb !important;
-    padding: 4pt 7pt !important;
+    border-bottom: 2px solid #333333 !important;
+    padding: 5pt 8pt !important;
     text-align: left !important;
-    color: #111111 !important;
+    color: #000000 !important;
     background: transparent !important;
     -webkit-print-color-adjust: exact !important;
 }
-td {
-    border-bottom: 0.5pt solid #e8e8e8 !important;
-    padding: 3.5pt 7pt !important;
-    color: #222222 !important;
-}
-hr { border: none !important; border-top: 0.75pt solid #e0e0e0 !important; margin: 12pt 0 !important; }
 
-/* Subtle Academic Watermark */
+td {
+    border-bottom: 1px solid #dee2e6 !important;
+    padding: 4.5pt 8pt !important;
+    color: #212529 !important;
+}
+
+hr {
+    border: none !important;
+    border-top: 1px solid #e9ecef !important;
+    margin: 16pt 0 !important;
+}
+
+/* 9. Subtle Academic Watermark matching Reference */
 body::before {
-    content: 'NoteEd AI';
+    content: 'Helix AI';
     position: fixed !important;
     top: 50% !important;
     left: 50% !important;
-    transform: translate(-50%, -50%) rotate(-30deg) !important;
-    font-size: 65pt !important;
+    transform: translate(-50%, -50%) rotate(-35deg) !important;
+    font-size: 85pt !important;
     font-weight: 900 !important;
-    color: rgba(0,0,0,0.025) !important;
+    color: rgba(0, 0, 0, 0.032) !important;
     pointer-events: none !important;
     white-space: nowrap !important;
-    letter-spacing: 8pt !important;
+    letter-spacing: 10pt !important;
     z-index: 0 !important;
     font-family: 'Inter', sans-serif !important;
 }
 
-/* Print Page Setup */
+/* 10. Print Page Margins */
 @media print {
     @page {
         size: A4 portrait;
-        margin: 14mm 16mm;
+        margin: 16mm 18mm;
     }
     body {
         margin: 0 !important;
@@ -1962,11 +2020,19 @@ body::before {
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
-    a { color: inherit !important; text-decoration: none !important; }
+    a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
 }
 
 @media screen {
-    body { padding: 24px; max-width: 820px; margin: 0 auto !important; }
+    body {
+        padding: 36px 40px;
+        max-width: 820px;
+        margin: 0 auto !important;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.05);
+    }
 }
 </style>
 </head>
