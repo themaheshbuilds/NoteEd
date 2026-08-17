@@ -943,8 +943,8 @@ Domain-Specific Strategies:
         """Returns all configured provider pools in priority order."""
         pools = self.get_all_provider_pools()
         chain = []
-        # Priority order: OpenRouter (6 keys rotated, high throughput) -> Groq -> Gemini -> OpenAI -> NVIDIA -> OmniRoute
-        for p_name in ["openrouter", "groq", "gemini", "openai", "nvidia", "omniroute"]:
+        # Priority order: Gemini (1M token context, 1.6s speed) -> OpenRouter (262k token context, 1.4s speed) -> Groq -> OpenAI -> NVIDIA -> OmniRoute
+        for p_name in ["gemini", "openrouter", "groq", "openai", "nvidia", "omniroute"]:
             p = pools.get(p_name)
             if p and p.get("count", 0) > 0 and p.get("keys"):
                 if p_name == "gemini":
@@ -1047,12 +1047,12 @@ CRITICAL JSON OUTPUT RULES:
             }
 
             try:
-                # 20s timeout for fast failover
+                # 12s agile timeout for fast failover across rotated keys
                 response = requests.post(
                     f"{endpoint}/chat/completions",
                     headers=self._make_headers(api_key),
                     json=payload,
-                    timeout=20
+                    timeout=12
                 )
                 
                 if response.status_code != 200:
