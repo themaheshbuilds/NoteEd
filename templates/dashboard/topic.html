@@ -290,7 +290,7 @@
         color: var(--text-primary);
     }
 
-    /* Direct White Paper Print Media Styles */
+    /* Direct Pure Black Text on White Paper Print Styles */
     @media screen {
         #print-topic-header {
             display: none !important;
@@ -328,7 +328,7 @@
         html, body {
             background: #ffffff !important;
             background-color: #ffffff !important;
-            color: #111827 !important;
+            color: #000000 !important;
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
@@ -348,7 +348,7 @@
             border: none !important;
             box-shadow: none !important;
             background: #ffffff !important;
-            color: #111827 !important;
+            color: #000000 !important;
             overflow: visible !important;
             display: block !important;
         }
@@ -361,11 +361,11 @@
             display: block !important;
             margin-bottom: 20pt !important;
             padding-bottom: 8pt !important;
-            border-bottom: 2pt solid #111827 !important;
+            border-bottom: 1.5pt solid #000000 !important;
             text-align: center !important;
         }
         #print-topic-header h1 {
-            font-size: 22pt !important;
+            font-size: 20pt !important;
             font-weight: 800 !important;
             color: #000000 !important;
             margin: 4pt 0 !important;
@@ -374,15 +374,15 @@
         #print-topic-header span {
             font-size: 9.5pt !important;
             font-weight: 600 !important;
-            color: #4b5563 !important;
+            color: #333333 !important;
         }
 
-        /* 5. Headings */
+        /* 5. Headings - Bold Black Clean Text (No Boxes) */
         #structured-content h1 {
-            font-size: 18pt !important;
+            font-size: 17pt !important;
             font-weight: 800 !important;
-            color: #111827 !important;
-            border-bottom: 2px solid #2563eb !important;
+            color: #000000 !important;
+            border-bottom: 1.5pt solid #000000 !important;
             padding-bottom: 4pt !important;
             margin-top: 18pt !important;
             margin-bottom: 8pt !important;
@@ -393,8 +393,8 @@
         #structured-content h2 {
             font-size: 14pt !important;
             font-weight: 700 !important;
-            color: #2563eb !important;
-            border-bottom: 1px solid #e2e8f0 !important;
+            color: #000000 !important;
+            border-bottom: 0.75pt solid #666666 !important;
             padding-bottom: 3pt !important;
             margin-top: 16pt !important;
             margin-bottom: 6pt !important;
@@ -405,7 +405,7 @@
         #structured-content h3 {
             font-size: 12pt !important;
             font-weight: 700 !important;
-            color: #1e293b !important;
+            color: #000000 !important;
             margin-top: 12pt !important;
             margin-bottom: 4pt !important;
             page-break-after: avoid !important;
@@ -415,23 +415,23 @@
         #structured-content h4 {
             font-size: 10.5pt !important;
             font-weight: 600 !important;
-            color: #334155 !important;
+            color: #000000 !important;
             margin-top: 10pt !important;
             margin-bottom: 3pt !important;
         }
 
-        /* 6. Paras & Lists */
+        /* 6. Paras & Lists - Pure Black Text */
         #structured-content p {
             font-size: 10.5pt !important;
             line-height: 1.65 !important;
-            color: #1f2937 !important;
+            color: #000000 !important;
             margin-bottom: 8pt !important;
         }
 
         #structured-content li {
             font-size: 10.5pt !important;
             line-height: 1.6 !important;
-            color: #1f2937 !important;
+            color: #000000 !important;
             margin-bottom: 4pt !important;
         }
 
@@ -439,28 +439,29 @@
         #structured-content ol {
             padding-left: 20pt !important;
             margin-bottom: 10pt !important;
+            color: #000000 !important;
         }
 
         #structured-content blockquote {
-            border-left: 3.5px solid #2563eb !important;
-            background: #f8fafc !important;
-            padding: 8pt 12pt !important;
+            border-left: 2.5pt solid #000000 !important;
+            background: transparent !important;
+            padding: 4pt 10pt !important;
             margin: 10pt 0 !important;
-            color: #1e293b !important;
+            color: #000000 !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
         }
 
-        /* 7. Codes */
+        /* 7. Codes - Clean Monospace Plain Text (No Heavy Boxes) */
         #structured-content pre {
-            background: #f8fafc !important;
-            border: 1px solid #e2e8f0 !important;
-            border-radius: 4pt !important;
+            background: #f9f9f9 !important;
+            border: 0.5pt solid #cccccc !important;
+            border-radius: 2pt !important;
             padding: 8pt 10pt !important;
             font-family: 'Consolas', 'Courier New', monospace !important;
             font-size: 9.5pt !important;
             line-height: 1.45 !important;
-            color: #0f172a !important;
+            color: #000000 !important;
             white-space: pre-wrap !important;
             word-break: break-word !important;
             page-break-inside: avoid !important;
@@ -471,8 +472,8 @@
         #structured-content code {
             font-family: 'Consolas', 'Courier New', monospace !important;
             font-size: 9.5pt !important;
-            background: #f1f5f9 !important;
-            color: #0f172a !important;
+            background: #f0f0f0 !important;
+            color: #000000 !important;
             padding: 1pt 3pt !important;
             border-radius: 2pt !important;
         }
@@ -480,29 +481,30 @@
         #structured-content pre code {
             background: transparent !important;
             padding: 0 !important;
+            color: #000000 !important;
         }
 
-        /* 8. Tables */
+        /* 8. Tables - Simple Ruled Borders */
         #structured-content table {
             width: 100% !important;
             border-collapse: collapse !important;
             margin: 12pt 0 !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
-            border: 1px solid #cbd5e1 !important;
+            border: 1pt solid #000000 !important;
         }
 
         #structured-content th,
         #structured-content td {
-            border: 1px solid #cbd5e1 !important;
+            border: 0.75pt solid #000000 !important;
             padding: 6pt 8pt !important;
             font-size: 9.5pt !important;
             text-align: left !important;
-            color: #1f2937 !important;
+            color: #000000 !important;
         }
 
         #structured-content th {
-            background: #f1f5f9 !important;
+            background: #f2f2f2 !important;
             font-weight: 700 !important;
         }
 
@@ -602,8 +604,8 @@
             {% endif %}
 
             {% if allow_print and notes %}
-            <button onclick="openPrintPreviewModal()" id="print-notes-top-btn"
-                class="px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all border shrink-0 flex items-center gap-1.5 hover:opacity-95 focus:outline-none bg-indigo-500/10 text-indigo-500 border-indigo-500/30"
+            <button onclick="printTopicNotes()" id="print-notes-top-btn"
+                class="px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all border shrink-0 flex items-center gap-1.5 hover:opacity-95 focus:outline-none bg-indigo-500/10 text-indigo-500 border-indigo-500/30 cursor-pointer"
                 title="Print & Export Clean Study Notes {{ '(Admin Access)' if is_admin else '' }}">
                 <i data-lucide="printer" class="w-3.5 h-3.5 text-indigo-500"></i>
                 <span>Print Notes</span>
@@ -1023,39 +1025,39 @@
                 const sectionId = 'section-' + sectionCount;
                 node.id = sectionId;
                 
-                // Style headings with clean, modern, well-proportioned typography
+                // Style headings with clean, modern, bold black typography (no boxes)
                 if (node.tagName === 'H1') {
-                    node.className = 'text-xl sm:text-2xl font-bold font-outfit tracking-tight mt-3 mb-3 text-[#1d1d1f] dark:text-zinc-100';
+                    node.className = 'text-2xl sm:text-3xl font-bold font-outfit tracking-tight mt-6 mb-3 text-black dark:text-white';
                 } else if (node.tagName === 'H2') {
-                    node.className = 'text-lg sm:text-xl font-bold font-outfit mt-6 mb-2.5 text-blue-600 dark:text-blue-400';
+                    node.className = 'text-xl sm:text-2xl font-bold font-outfit mt-7 mb-3 text-black dark:text-zinc-100 border-b border-gray-200 dark:border-zinc-800 pb-1.5';
                 } else if (node.tagName === 'H3') {
-                    node.className = 'text-base sm:text-lg font-semibold font-outfit mt-4 mb-2 text-[#1d1d1f] dark:text-zinc-200';
+                    node.className = 'text-lg sm:text-xl font-semibold font-outfit mt-5 mb-2 text-black dark:text-zinc-200';
                 } else {
-                    node.className = 'text-sm sm:text-base font-semibold font-outfit mt-3 mb-1.5 text-gray-700 dark:text-zinc-300';
+                    node.className = 'text-base sm:text-lg font-semibold font-outfit mt-4 mb-2 text-black dark:text-zinc-300';
                 }
                 
                 tocList.push({ title: node.textContent.trim(), id: sectionId });
                 articleWrapper.appendChild(node.cloneNode(true));
             } else {
-                // Apply clean prose typography
+                // Apply clean prose typography (No boxes, pure readable text)
                 if (node.tagName === 'P') {
-                    node.className = 'text-sm sm:text-base leading-relaxed mb-3.5 text-gray-700 dark:text-zinc-300';
+                    node.className = 'text-base leading-relaxed mb-4 text-black dark:text-zinc-200';
                 } else if (node.tagName === 'UL') {
-                    node.className = 'list-disc list-outside pl-5 space-y-1.5 mb-4 text-sm sm:text-base text-gray-700 dark:text-zinc-300';
+                    node.className = 'list-disc list-outside pl-6 space-y-2 mb-4 text-base text-black dark:text-zinc-200';
                 } else if (node.tagName === 'OL') {
-                    node.className = 'list-decimal list-outside pl-5 space-y-1.5 mb-4 text-sm sm:text-base text-gray-700 dark:text-zinc-300';
+                    node.className = 'list-decimal list-outside pl-6 space-y-2 mb-4 text-base text-black dark:text-zinc-200';
                 } else if (node.tagName === 'BLOCKQUOTE') {
-                    node.className = 'p-3.5 sm:p-4 rounded-xl border-l-4 my-4 text-sm sm:text-base leading-relaxed bg-blue-50/70 dark:bg-blue-950/20 border-blue-500 text-gray-800 dark:text-zinc-200';
+                    node.className = 'pl-4 border-l-4 my-4 text-base italic border-gray-400 dark:border-zinc-600 text-black dark:text-zinc-300';
                 } else if (node.tagName === 'PRE') {
-                    node.className = 'p-4 rounded-xl overflow-x-auto my-4 border text-xs sm:text-sm font-mono bg-zinc-900 border-zinc-800 text-zinc-100';
+                    node.className = 'p-4 rounded-lg overflow-x-auto my-4 text-sm font-mono bg-gray-100 dark:bg-zinc-900 text-black dark:text-zinc-100 border border-gray-300 dark:border-zinc-800';
                     const codeEl = node.querySelector('code');
                     if (codeEl && typeof hljs !== 'undefined') {
                         try { hljs.highlightElement(codeEl); } catch(e) {}
                     }
                 } else if (node.tagName === 'TABLE') {
                     const tableWrap = document.createElement('div');
-                    tableWrap.className = 'table-responsive-wrapper';
-                    node.className = 'w-full my-0 border-collapse rounded-xl overflow-hidden border border-gray-200 dark:border-zinc-800 text-xs sm:text-sm';
+                    tableWrap.className = 'table-responsive-wrapper my-4';
+                    node.className = 'w-full border-collapse border border-gray-300 dark:border-zinc-700 text-sm text-black dark:text-zinc-200';
                     tableWrap.appendChild(node.cloneNode(true));
                     articleWrapper.appendChild(tableWrap);
                     return;
