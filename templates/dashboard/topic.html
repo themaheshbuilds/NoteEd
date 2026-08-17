@@ -326,9 +326,44 @@
             background: #ffffff !important;
             background-color: #ffffff !important;
             color: #111827 !important;
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
             font-size: 11pt !important;
             line-height: 1.6 !important;
+        }
+
+        body.print-size-compact {
+            font-size: 9.5pt !important;
+            line-height: 1.45 !important;
+        }
+
+        body.print-size-large {
+            font-size: 12.5pt !important;
+            line-height: 1.7 !important;
+        }
+
+        body.print-spacing-compact {
+            line-height: 1.4 !important;
+        }
+
+        /* Watermark pseudo element */
+        body:not(.print-no-watermark)::before {
+            content: 'NoteEd AI';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-32deg);
+            font-size: 72pt;
+            font-weight: 900;
+            font-family: 'Inter', -apple-system, sans-serif;
+            color: rgba(0, 0, 0, 0.05);
+            z-index: 99999;
+            pointer-events: none;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            display: block !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
         /* Hide all UI Chrome, Navbars, Sidebars, Modals & Buttons */
@@ -342,6 +377,7 @@
         .sticky,
         #mobile-topic-sheet,
         #mobile-topic-sheet-backdrop,
+        #interactive-print-modal,
         #loading-overlay,
         #mathjax-loading,
         #archived-modal,
@@ -349,6 +385,11 @@
         #toc-nav-mobile,
         [class*="backdrop-blur"],
         .md\:hidden {
+            display: none !important;
+        }
+
+        /* Header visibility */
+        body.print-no-header #print-topic-header {
             display: none !important;
         }
 
@@ -377,16 +418,16 @@
         /* Print Header */
         #print-topic-header {
             display: block !important;
-            margin-bottom: 22pt !important;
+            margin-bottom: 20pt !important;
             padding-bottom: 12pt !important;
             border-bottom: 2pt solid #111827 !important;
             text-align: center !important;
         }
         #print-topic-header h1 {
-            font-size: 24pt !important;
+            font-size: 22pt !important;
             font-weight: 800 !important;
             color: #000000 !important;
-            margin: 8pt 0 4pt 0 !important;
+            margin: 6pt 0 3pt 0 !important;
             border: none !important;
             padding: 0 !important;
             letter-spacing: -0.02em !important;
@@ -414,7 +455,7 @@
             font-weight: 800 !important;
             border-bottom: 1.5px solid #d1d5db !important;
             padding-bottom: 4pt !important;
-            margin-top: 22pt !important;
+            margin-top: 20pt !important;
             margin-bottom: 8pt !important;
         }
 
@@ -423,14 +464,14 @@
             font-weight: 700 !important;
             border-bottom: 1px solid #e5e7eb !important;
             padding-bottom: 3pt !important;
-            margin-top: 18pt !important;
+            margin-top: 16pt !important;
             margin-bottom: 6pt !important;
         }
 
         .notes-article h3 {
             font-size: 11.5pt !important;
             font-weight: 700 !important;
-            margin-top: 14pt !important;
+            margin-top: 12pt !important;
             margin-bottom: 4pt !important;
         }
 
@@ -471,6 +512,15 @@
             word-break: break-word !important;
             page-break-inside: avoid !important;
             break-inside: avoid !important;
+        }
+
+        body.print-theme-eco .notes-article blockquote {
+            background: transparent !important;
+            border-left-color: #666 !important;
+        }
+        body.print-theme-eco .notes-article pre {
+            background: transparent !important;
+            border-color: #999 !important;
         }
 
         .notes-article code {
@@ -593,7 +643,7 @@
             {% endif %}
 
             {% if allow_print and notes %}
-            <button onclick="printTopicNotes()" id="print-notes-top-btn"
+            <button onclick="openPrintPreviewModal()" id="print-notes-top-btn"
                 class="px-3 py-1.5 rounded-xl text-xs font-bold shadow-sm transition-all border shrink-0 flex items-center gap-1.5 hover:opacity-95 focus:outline-none bg-indigo-500/10 text-indigo-500 border-indigo-500/30"
                 title="Print & Export Clean Study Notes {{ '(Admin Access)' if is_admin else '' }}">
                 <i data-lucide="printer" class="w-3.5 h-3.5 text-indigo-500"></i>
@@ -978,7 +1028,156 @@
     function scrollToChat() { openMobileSheet(); }
 </script>
 
+<!-- Interactive Print & PDF Preview Studio Modal -->
+<div id="interactive-print-modal" class="hidden fixed inset-0 z-[120] flex items-center justify-center bg-black/75 backdrop-blur-md p-2 sm:p-6" onclick="closePrintPreviewModal()">
+    <div class="w-full max-w-5xl h-[94vh] max-h-[880px] rounded-3xl border flex flex-col overflow-hidden shadow-2xl transition-all"
+         style="background: var(--bg-elevated); border-color: var(--border);" onclick="event.stopPropagation()">
+        
+        <!-- Header -->
+        <div class="px-5 py-3.5 sm:px-6 sm:py-4 border-b flex items-center justify-between shrink-0" style="border-color: var(--border);">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center bg-indigo-500/10 text-indigo-500 border border-indigo-500/20 shadow-sm">
+                    <i data-lucide="printer" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold font-outfit" style="color: var(--text-primary);">
+                        Print & PDF Studio
+                    </h3>
+                    <p class="text-xs text-gray-400">
+                        {{ topic.subject_name }}{% if topic.unit_name %} &bull; {{ topic.unit_name }}{% endif %}
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="copyTopicNotesMarkdown()" class="px-3 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center gap-1.5 hover:border-gray-400 shadow-sm cursor-pointer"
+                    style="background: var(--bg-primary); border-color: var(--border); color: var(--text-primary);" title="Copy markdown to clipboard">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span class="hidden sm:inline">Copy Notes</span>
+                </button>
+                <button onclick="closePrintPreviewModal()" class="p-2 rounded-xl text-gray-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer" aria-label="Close modal">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
 
+        <!-- Body: 2-Column (Left: Interactive Controls, Right: Live Paper Preview) -->
+        <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+            
+            <!-- Left Controls Sidebar -->
+            <div class="w-full md:w-80 border-b md:border-b-0 md:border-r p-4 sm:p-5 overflow-y-auto custom-scroll space-y-5 shrink-0"
+                 style="border-color: var(--border); background: var(--bg-primary);">
+                
+                <!-- Font Size Selector -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Font Size / Scale</label>
+                    <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl border bg-zinc-900/60 border-zinc-800 text-xs">
+                        <button onclick="setPrintOption('size', 'compact')" id="print-opt-size-compact"
+                            class="print-size-btn py-1.5 text-center font-semibold rounded-lg text-gray-400 hover:text-white transition-all cursor-pointer">
+                            Compact
+                        </button>
+                        <button onclick="setPrintOption('size', 'normal')" id="print-opt-size-normal"
+                            class="print-size-btn py-1.5 text-center font-semibold rounded-lg bg-blue-600 text-white shadow-sm transition-all cursor-pointer">
+                            Normal
+                        </button>
+                        <button onclick="setPrintOption('size', 'large')" id="print-opt-size-large"
+                            class="print-size-btn py-1.5 text-center font-semibold rounded-lg text-gray-400 hover:text-white transition-all cursor-pointer">
+                            Large
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Spacing / Density -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Line Spacing</label>
+                    <div class="grid grid-cols-2 gap-1.5 p-1 rounded-xl border bg-zinc-900/60 border-zinc-800 text-xs">
+                        <button onclick="setPrintOption('spacing', 'standard')" id="print-opt-spacing-standard"
+                            class="print-spacing-btn py-1.5 text-center font-semibold rounded-lg bg-blue-600 text-white shadow-sm transition-all cursor-pointer">
+                            Standard
+                        </button>
+                        <button onclick="setPrintOption('spacing', 'compact')" id="print-opt-spacing-compact"
+                            class="print-spacing-btn py-1.5 text-center font-semibold rounded-lg text-gray-400 hover:text-white transition-all cursor-pointer">
+                            Compact
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Theme / Ink Saver -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Paper & Ink Style</label>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="flex items-center gap-2 p-2.5 rounded-xl border border-blue-500 bg-blue-500/10 text-white cursor-pointer transition-all" id="theme-crisp-card" onclick="setPrintOption('theme', 'crisp')">
+                            <span>📄 Crisp Clean</span>
+                        </div>
+                        <div class="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-400 hover:text-white cursor-pointer transition-all" id="theme-eco-card" onclick="setPrintOption('theme', 'eco')">
+                            <span>🌱 Ink Saver</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Toggles -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Page Elements</label>
+                    <div class="space-y-2 text-xs">
+                        <label class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer hover:border-zinc-700 transition-colors">
+                            <span>Subtle AI Watermark</span>
+                            <input type="checkbox" id="print-toggle-watermark" checked onchange="updateLivePrintPreview()" class="rounded text-blue-600 focus:ring-0">
+                        </label>
+                        <label class="flex items-center justify-between p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-300 cursor-pointer hover:border-zinc-700 transition-colors">
+                            <span>Header Branding</span>
+                            <input type="checkbox" id="print-toggle-header" checked onchange="updateLivePrintPreview()" class="rounded text-blue-600 focus:ring-0">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Print CTA in Sidebar -->
+                <div class="pt-2">
+                    <button onclick="executeFinalPrint()"
+                        class="w-full py-3 px-4 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-98 cursor-pointer">
+                        <i data-lucide="printer" class="w-4 h-4"></i>
+                        <span>Print / Save as PDF</span>
+                    </button>
+                    <p class="text-[11px] text-gray-400 text-center mt-2">
+                        Shortcut: <kbd class="px-1.5 py-0.5 rounded bg-zinc-800 text-gray-300 font-mono text-[10px]">Ctrl+P</kbd>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Right Live Paper Preview -->
+            <div class="flex-1 bg-zinc-950 p-4 sm:p-6 overflow-y-auto custom-scroll flex justify-center items-start">
+                <!-- White A4 Sheet Simulator -->
+                <div id="print-live-preview-sheet" 
+                     class="w-full max-w-2xl bg-white text-[#111827] p-8 sm:p-12 rounded-xl shadow-2xl border border-gray-200 transition-all font-sans relative min-h-[500px]">
+                    <!-- Preview Watermark -->
+                    <div id="preview-watermark-overlay" class="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden" style="opacity: 0.05;">
+                        <span class="text-6xl sm:text-7xl font-black text-black -rotate-35 tracking-widest uppercase">NoteEd AI</span>
+                    </div>
+
+                    <!-- Preview Header -->
+                    <div id="preview-sheet-header" class="border-b-2 border-gray-900 pb-4 mb-6 text-center">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <img src="{{ url_for('static', filename='images/noteedhalf.png') }}" alt="NoteEd Logo" class="h-5 w-auto">
+                                <span class="font-bold text-[11px] uppercase tracking-widest text-gray-800">NoteEd AI</span>
+                            </div>
+                            <div class="text-[10px] font-semibold text-gray-600 uppercase tracking-wider">
+                                {{ topic.subject_name }}{% if topic.unit_name %} &bull; {{ topic.unit_name }}{% endif %}
+                            </div>
+                        </div>
+                        <h2 class="text-xl sm:text-2xl font-black text-gray-900 tracking-tight mt-2 mb-0.5">{{ topic.name }}</h2>
+                        <p class="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Comprehensive AI Study Notes</p>
+                    </div>
+
+                    <!-- Preview Content -->
+                    <div id="preview-sheet-content" class="text-xs sm:text-sm space-y-3 leading-relaxed">
+                        <!-- Cloned live structured content injected here -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
 
 <!-- Scripts for Content Transformation & Interactivity -->
 <script>
@@ -1650,14 +1849,19 @@
 
     const allowPrint = {{ 'true' if allow_print else 'false' }};
 
-    function printTopicNotes() {
+    let printConfig = {
+        size: 'normal',
+        spacing: 'standard',
+        theme: 'crisp',
+        watermark: true,
+        header: true
+    };
+
+    function openPrintPreviewModal() {
         {% if not allow_print %}
         alert('Printing study notes has been disabled by the administrator.');
         return;
         {% endif %}
-
-        const chatPrint = document.getElementById('chat-print-container');
-        if (chatPrint) chatPrint.remove();
 
         const content = document.getElementById('structured-content');
         if (!content || !content.innerText.trim()) {
@@ -1665,8 +1869,156 @@
             return;
         }
 
-        // Trigger native print directly - pre-rendered MathJax and clean typography are preserved
-        window.print();
+        const modal = document.getElementById('interactive-print-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        updateLivePrintPreview();
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    function closePrintPreviewModal() {
+        const modal = document.getElementById('interactive-print-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+    }
+
+    function setPrintOption(type, value) {
+        printConfig[type] = value;
+
+        if (type === 'size') {
+            document.querySelectorAll('.print-size-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                btn.classList.add('text-gray-400');
+            });
+            const activeBtn = document.getElementById(`print-opt-size-${value}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                activeBtn.classList.remove('text-gray-400');
+            }
+        } else if (type === 'spacing') {
+            document.querySelectorAll('.print-spacing-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+                btn.classList.add('text-gray-400');
+            });
+            const activeBtn = document.getElementById(`print-opt-spacing-${value}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+                activeBtn.classList.remove('text-gray-400');
+            }
+        } else if (type === 'theme') {
+            const crispCard = document.getElementById('theme-crisp-card');
+            const ecoCard = document.getElementById('theme-eco-card');
+            if (crispCard && ecoCard) {
+                if (value === 'crisp') {
+                    crispCard.className = 'flex items-center gap-2 p-2.5 rounded-xl border border-blue-500 bg-blue-500/10 text-white cursor-pointer transition-all';
+                    ecoCard.className = 'flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-400 hover:text-white cursor-pointer transition-all';
+                } else {
+                    ecoCard.className = 'flex items-center gap-2 p-2.5 rounded-xl border border-blue-500 bg-blue-500/10 text-white cursor-pointer transition-all';
+                    crispCard.className = 'flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-900/40 text-gray-400 hover:text-white cursor-pointer transition-all';
+                }
+            }
+        }
+
+        updateLivePrintPreview();
+    }
+
+    function updateLivePrintPreview() {
+        printConfig.watermark = document.getElementById('print-toggle-watermark')?.checked ?? true;
+        printConfig.header = document.getElementById('print-toggle-header')?.checked ?? true;
+
+        const previewWatermark = document.getElementById('preview-watermark-overlay');
+        if (previewWatermark) {
+            previewWatermark.style.display = printConfig.watermark ? 'flex' : 'none';
+        }
+
+        const previewHeader = document.getElementById('preview-sheet-header');
+        if (previewHeader) {
+            previewHeader.style.display = printConfig.header ? 'block' : 'none';
+        }
+
+        const previewSheet = document.getElementById('print-live-preview-sheet');
+        const previewContent = document.getElementById('preview-sheet-content');
+        const sourceContent = document.getElementById('structured-content');
+
+        if (sourceContent && previewContent) {
+            previewContent.innerHTML = sourceContent.innerHTML;
+            // Clean out interactive buttons from preview
+            previewContent.querySelectorAll('button, .no-print').forEach(el => el.remove());
+        }
+
+        if (previewSheet) {
+            // Apply font scale
+            if (printConfig.size === 'compact') {
+                previewSheet.style.fontSize = '12px';
+            } else if (printConfig.size === 'large') {
+                previewSheet.style.fontSize = '16px';
+            } else {
+                previewSheet.style.fontSize = '14px';
+            }
+
+            // Apply line height
+            previewSheet.style.lineHeight = printConfig.spacing === 'compact' ? '1.4' : '1.65';
+        }
+
+        // Retypeset MathJax in preview if available
+        if (window.typesetMath && previewContent) {
+            window.typesetMath(previewContent);
+        }
+    }
+
+    function executeFinalPrint() {
+        closePrintPreviewModal();
+
+        // Apply selected configuration classes to document body
+        document.body.classList.remove('print-size-compact', 'print-size-normal', 'print-size-large', 'print-spacing-compact', 'print-no-watermark', 'print-no-header', 'print-theme-eco');
+
+        if (printConfig.size === 'compact') document.body.classList.add('print-size-compact');
+        if (printConfig.size === 'large') document.body.classList.add('print-size-large');
+        if (printConfig.spacing === 'compact') document.body.classList.add('print-spacing-compact');
+        if (!printConfig.watermark) document.body.classList.add('print-no-watermark');
+        if (!printConfig.header) document.body.classList.add('print-no-header');
+        if (printConfig.theme === 'eco') document.body.classList.add('print-theme-eco');
+
+        const chatPrint = document.getElementById('chat-print-container');
+        if (chatPrint) chatPrint.remove();
+
+        setTimeout(() => {
+            window.print();
+        }, 120);
+    }
+
+    function printTopicNotes() {
+        openPrintPreviewModal();
+    }
+
+    function copyTopicNotesMarkdown() {
+        let fullMarkdown = '';
+        const rawContainers = document.querySelectorAll('#raw-notes-container script[data-note-content]');
+        rawContainers.forEach(c => { fullMarkdown += c.textContent + '\n\n'; });
+
+        if (!fullMarkdown.trim()) {
+            const sc = document.getElementById('structured-content');
+            fullMarkdown = sc ? sc.innerText : '';
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(fullMarkdown.trim()).then(() => {
+                alert('Study notes copied to clipboard! 📋');
+            });
+        } else {
+            const temp = document.createElement('textarea');
+            temp.value = fullMarkdown.trim();
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand('copy');
+            temp.remove();
+            alert('Study notes copied to clipboard! 📋');
+        }
     }
 
     window.addEventListener('afterprint', () => {
@@ -1675,15 +2027,25 @@
     });
 
     document.addEventListener('keydown', function(e) {
+        // Escape closes interactive print modal
+        if (e.key === 'Escape') {
+            closePrintPreviewModal();
+        }
+
         const isCtrlOrCmd = e.ctrlKey || e.metaKey;
         if (!isCtrlOrCmd) return;
 
         const key = e.key.toLowerCase();
-        // Allow Print (Ctrl+P) if admin or permitted, otherwise disable
+        // Allow Print (Ctrl+P) if admin or permitted
         if (key === 'p') {
             e.preventDefault();
             if (allowPrint) {
-                printTopicNotes();
+                const modal = document.getElementById('interactive-print-modal');
+                if (modal && !modal.classList.contains('hidden')) {
+                    executeFinalPrint();
+                } else {
+                    openPrintPreviewModal();
+                }
             }
             return false;
         }
@@ -1698,6 +2060,7 @@
         if (key === 'c' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
             e.preventDefault();
             return false;
+        }
     });
 
     // Toggle Complete
