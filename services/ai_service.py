@@ -943,8 +943,8 @@ Domain-Specific Strategies:
         """Returns all configured provider pools in priority order."""
         pools = self.get_all_provider_pools()
         chain = []
-        # Priority order: Groq (ultra-fast 4s generation) -> OpenRouter -> Gemini -> OpenAI -> NVIDIA -> OmniRoute
-        for p_name in ["groq", "openrouter", "gemini", "openai", "nvidia", "omniroute"]:
+        # Priority order: OpenRouter (6 keys rotated, high throughput) -> Groq -> Gemini -> OpenAI -> NVIDIA -> OmniRoute
+        for p_name in ["openrouter", "groq", "gemini", "openai", "nvidia", "omniroute"]:
             p = pools.get(p_name)
             if p and p.get("count", 0) > 0 and p.get("keys"):
                 if p_name == "gemini":
@@ -1493,51 +1493,53 @@ CRITICAL JSON OUTPUT RULES:
 
         results = {}
         subtasks = [
-            ("notes_summary", prompts["notes_summary"], max_notes_tokens, "Notes & Summary"),
-            ("flashcards", prompts["flashcards"], 4096, "Flashcards"),
-            ("quizzes", prompts["quizzes"], 4096, "MCQ Quizzes"),
-            ("viva", prompts["viva"], 4096, "Viva Voce & Oral Q&A")
+            ("notes_summary", prompts["notes_summary"], max_notes_tokens, "Notes & Core Concepts"),
+            ("flashcards", prompts["flashcards"], 2048, "Flashcards"),
+            ("quizzes", prompts["quizzes"], 2048, "MCQ Quizzes"),
+            ("viva", prompts["viva"], 2048, "Viva Q&A")
         ]
 
+        import concurrent.futures
+        import threading
         from services.db_service import db_service
 
-        for s_idx, (pkey, prompt_text, max_tok, label) in enumerate(subtasks, 1):
-            # Check if task was stopped or cancelled by user
-            if task_id:
-                try:
-                    task_check = db_service.query("SELECT status FROM background_tasks WHERE id = ?", (task_id,), one=True)
-                    if task_check and task_check["status"] in ["cancelled", "completed"]:
-                        print(f"Task {task_id} was stopped by user. Ending generation pipeline early.")
-                        break
-                except Exception:
-                    pass
+        completed_count = base_completed
+        progress_lock = threading.Lock()
 
+        def _worker(pkey, prompt_text, max_tok, label):
+            nonlocal completed_count
             try:
                 data = self._generate_partial(
                     prompt_text, 
                     max_tokens=max_tok, 
-                    retries=4, 
+                    retries=3, 
                     custom_instr=custom_instr
                 )
-                if data:
-                    results.update(data)
+                if data and isinstance(data, dict):
+                    with progress_lock:
+                        results.update(data)
             except Exception as e:
                 print(f"Sub-task {pkey} generation note: {e}")
 
             if task_id:
-                try:
-                    completed_count = base_completed + s_idx
-                    if s_idx < len(subtasks):
-                        next_label = subtasks[s_idx][3]
-                        msg = f"Generating {next_label} ({s_idx}/4)..."
-                    else:
+                with progress_lock:
+                    completed_count += 1
+                    done_sub = min(4, completed_count - base_completed)
+                    msg = f"Generated {label} ({done_sub}/4)..."
+                    if done_sub >= 4:
                         msg = "Generation complete!"
-                    db_service.execute(
-                        "UPDATE background_tasks SET completed_items = ?, message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                        (completed_count, msg, task_id)
-                    )
-                except Exception as db_err:
-                    print(f"Failed to update task progress: {db_err}")
+                    try:
+                        db_service.execute(
+                            "UPDATE background_tasks SET completed_items = ?, message = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                            (completed_count, msg, task_id)
+                        )
+                    except Exception as db_err:
+                        print(f"Failed to update task progress: {db_err}")
+
+        # Run all 4 subtasks concurrently in parallel across rotated API keys
+        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+            futures = [executor.submit(_worker, pkey, prompt_text, max_tok, label) for (pkey, prompt_text, max_tok, label) in subtasks]
+            concurrent.futures.wait(futures, timeout=35)
 
         # Instant fallbacks for any missing sub-tasks so user NEVER waits or hangs
         if not results.get("flashcards"):
