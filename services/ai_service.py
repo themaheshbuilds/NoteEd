@@ -100,7 +100,7 @@ class AIService:
             "total_keys": total_keys,
             "gemini": {"count": len(gemini_keys), "keys": gemini_keys, "name": "Google Gemini", "default_model": get_val("GEMINI_MODEL", "gemini-2.5-flash")},
             "openrouter": {"count": len(openrouter_keys), "keys": openrouter_keys, "name": "OpenRouter", "default_model": get_val("OPENROUTER_MODEL", "google/gemma-4-26b-a4b-it:free")},
-            "groq": {"count": len(groq_keys), "keys": groq_keys, "name": "Groq", "default_model": get_val("GROQ_MODEL", "qwen/qwen3.6-27b")},
+            "groq": {"count": len(groq_keys), "keys": groq_keys, "name": "Groq", "default_model": get_val("GROQ_MODEL", "openai/gpt-oss-20b")},
             "openai": {"count": len(openai_keys), "keys": openai_keys, "name": "OpenAI", "default_model": get_val("OPENAI_MODEL", "gpt-4o-mini")},
             "nvidia": {"count": len(nvidia_keys), "keys": nvidia_keys, "name": "NVIDIA NIM", "default_model": get_val("NVIDIA_MODEL", "meta/llama-3.3-70b-instruct")},
             "omniroute": {"count": len(omni_keys), "keys": omni_keys, "name": "OmniRoute Gateway", "base_url": get_val("OMNIROUTE_BASE_URL", "http://localhost:20128/v1"), "default_model": get_val("OMNIROUTE_MODEL", "openrouter/free")}
@@ -943,8 +943,8 @@ Domain-Specific Strategies:
         """Returns all configured provider pools in priority order."""
         pools = self.get_all_provider_pools()
         chain = []
-        # Priority order: OpenRouter (fast, high throughput, zero 413s) -> Gemini -> Groq -> OpenAI -> NVIDIA -> OmniRoute
-        for p_name in ["openrouter", "groq", "gemini", "openai", "nvidia", "omniroute"]:
+        # Priority order: Groq (ultra-fast 4s generation) -> OpenRouter -> Gemini -> OpenAI -> NVIDIA -> OmniRoute
+        for p_name in ["groq", "openrouter", "gemini", "openai", "nvidia", "omniroute"]:
             p = pools.get(p_name)
             if p and p.get("count", 0) > 0 and p.get("keys"):
                 if p_name == "gemini":
