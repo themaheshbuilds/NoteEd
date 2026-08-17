@@ -1633,27 +1633,10 @@
     const allowPrint = {{ 'true' if allow_print else 'false' }};
 
     function printTopicNotes() {
-        // 1. Extract raw markdown notes or fallback to rendered article
-        const rawContainers = document.querySelectorAll('#raw-notes-container script[data-note-content]');
-        let printHtml = '';
-
-        if (rawContainers.length > 0) {
-            let fullMarkdown = '';
-            rawContainers.forEach(container => {
-                fullMarkdown += container.textContent + '\n\n';
-            });
-            printHtml = window.parseMarkdownWithMath 
-                ? window.parseMarkdownWithMath(fullMarkdown) 
-                : (typeof marked !== 'undefined' ? marked.parse(fullMarkdown) : fullMarkdown);
-        } else {
-            const content = document.querySelector('.notes-article') || document.getElementById('structured-content');
-            if (!content) {
-                alert('No study notes available to print.');
-                return;
-            }
-            const cloned = content.cloneNode(true);
-            cloned.querySelectorAll('button, svg, .no-print, [class*="badge"], [class*="pill"]').forEach(el => el.remove());
-            printHtml = cloned.innerHTML;
+        const content = document.getElementById('structured-content') || document.querySelector('.notes-article');
+        if (!content || !content.innerText.trim()) {
+            alert('No study notes available to print.');
+            return;
         }
 
         // Clean up any old print canvas or chat print container
@@ -1664,6 +1647,10 @@
 
         const printCanvas = document.createElement('div');
         printCanvas.id = 'noteed-print-canvas';
+
+        // Clone the rendered content directly
+        const cloned = content.cloneNode(true);
+        cloned.querySelectorAll('button, svg, .no-print, [class*="badge"], [class*="pill"], .action-bar').forEach(el => el.remove());
 
         printCanvas.innerHTML = `
             <div class="print-watermark-overlay" aria-hidden="true">
@@ -1678,7 +1665,7 @@
                     <p class="print-doc-subtitle">{{ topic.subject_name }}{% if topic.unit_name %} &bull; {{ topic.unit_name }}{% endif %} &bull; NoteEd AI Study Notes</p>
                 </div>
                 <div class="print-doc-content">
-                    ${printHtml}
+                    ${cloned.innerHTML}
                 </div>
             </div>
             <style id="noteed-notes-print-style">
@@ -1710,6 +1697,8 @@
                     }
                     #noteed-print-canvas {
                         display: block !important;
+                        visibility: visible !important;
+                        position: static !important;
                         width: 100% !important;
                         max-width: 100% !important;
                         background: #ffffff !important;
@@ -1793,6 +1782,17 @@
                     .print-doc-content {
                         width: 100% !important;
                         color: #1f2937 !important;
+                    }
+                    .print-doc-content .learning-card,
+                    .print-doc-content .notes-article,
+                    .print-doc-content .markdown-body,
+                    .print-doc-content #structured-content {
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: transparent !important;
+                        padding: 0 !important;
+                        margin: 0 0 12pt 0 !important;
+                        width: 100% !important;
                     }
                     .print-doc-content h1 {
                         font-size: 16pt !important;
@@ -1953,7 +1953,7 @@
 
         setTimeout(() => {
             window.print();
-        }, 300);
+        }, 250);
     }
 
     document.addEventListener('keydown', function(e) {
