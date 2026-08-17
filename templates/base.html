@@ -540,6 +540,7 @@
         @media print {
             @page {
                 margin: 14mm 12mm;
+                size: A4 portrait;
             }
 
             * {
@@ -548,14 +549,14 @@
                 box-shadow: none !important;
                 text-shadow: none !important;
                 filter: none !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
 
             html,
             body {
                 background: #ffffff !important;
-                color: #000000 !important;
-                font-size: 16pt !important;
-                line-height: 1.65 !important;
+                color: #111111 !important;
                 width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
@@ -572,79 +573,7 @@
             .print\:hidden {
                 display: none !important;
             }
-
-            main {
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: none !important;
-                width: 100% !important;
-            }
-
-            main > * {
-                width: 100% !important;
-            }
-
-            h1,
-            h2,
-            h3,
-            h4,
-            h5,
-            h6,
-            p,
-            li,
-            td,
-            th,
-            span,
-            a,
-            label {
-                color: #000000 !important;
-            }
-
-            h1 {
-                font-size: 26pt !important;
-                line-height: 1.2 !important;
-                text-align: center !important;
-                margin: 0 0 0.5rem !important;
-            }
-
-            h2 {
-                font-size: 19pt !important;
-                line-height: 1.25 !important;
-                margin: 1.25rem 0 0.35rem !important;
-                padding-bottom: 0.2rem !important;
-                border-bottom: 1px solid #d8d8d8 !important;
-            }
-
-            h3 {
-                font-size: 15.5pt !important;
-                line-height: 1.25 !important;
-                margin: 1rem 0 0.3rem !important;
-            }
-
-            p,
-            li,
-            td,
-            th,
-            span,
-            a,
-            label {
-                font-size: 16pt !important;
-                line-height: 1.7 !important;
-            }
-
-            p {
-                margin: 0 0 0.85rem !important;
-            }
-
-            ul,
-            ol {
-                margin: 0 0 0.85rem 1.2rem !important;
-            }
-
-            a {
-                color: #000000 !important;
-                text-decoration: underline !important;
-            }
+        }
 
             img,
             svg {

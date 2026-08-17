@@ -1384,9 +1384,6 @@
 
         setTimeout(() => {
             window.print();
-            setTimeout(() => {
-                if (printContainer) printContainer.remove();
-            }, 500);
         }, 300);
     }
     
@@ -1635,10 +1632,7 @@
 
         setTimeout(() => {
             window.print();
-            setTimeout(() => {
-                if (printCanvas) printCanvas.remove();
-            }, 800);
-        }, 250);
+        }, 300);
     }
 
     document.addEventListener('keydown', function(e) {
