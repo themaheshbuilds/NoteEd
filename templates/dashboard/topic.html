@@ -1342,8 +1342,11 @@
         cloned.querySelectorAll('button, svg, .animate-pulse').forEach(el => el.remove());
 
         printContainer.innerHTML = `
-            <div class="print-watermark-canvas" aria-hidden="true">
-                <span>NoteEd AI &bull; Study Notes</span>
+            <div class="print-watermark-overlay" aria-hidden="true">
+                <div class="print-watermark-content">
+                    <img src="{{ url_for('static', filename='images/noteedhalf.png') }}" alt="NoteEd Logo" class="print-watermark-img">
+                    <span class="print-watermark-text">NoteEd AI</span>
+                </div>
             </div>
             <div class="print-chat-wrapper" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #111; max-width: 100%; margin: 0; padding: 0;">
                 <div style="margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1.5px solid #222;">
@@ -1358,6 +1361,46 @@
                 @media print {
                     body > *:not(#chat-print-container) { display: none !important; }
                     #chat-print-container { display: block !important; width: 100% !important; background: #ffffff !important; color: #111111 !important; }
+                    .print-watermark-overlay {
+                        display: flex !important;
+                        position: fixed !important;
+                        top: 0 !important;
+                        left: 0 !important;
+                        right: 0 !important;
+                        bottom: 0 !important;
+                        width: 100vw !important;
+                        height: 100vh !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        pointer-events: none !important;
+                        z-index: 99999 !important;
+                    }
+                    .print-watermark-content {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        gap: 14pt !important;
+                        transform: rotate(-32deg) !important;
+                        opacity: 0.06 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    .print-watermark-img {
+                        height: 52pt !important;
+                        width: auto !important;
+                        object-fit: contain !important;
+                        filter: grayscale(100%) brightness(0) !important;
+                        display: block !important;
+                    }
+                    .print-watermark-text {
+                        font-family: 'Inter', -apple-system, sans-serif !important;
+                        font-size: 50pt !important;
+                        font-weight: 800 !important;
+                        color: #000000 !important;
+                        letter-spacing: 6px !important;
+                        text-transform: uppercase !important;
+                        white-space: nowrap !important;
+                    }
                     .print-chat-messages .flex { display: block !important; margin-bottom: 12pt !important; page-break-inside: avoid; }
                     .print-chat-messages .ai-message, 
                     .print-chat-messages div[class*="rounded"] {
@@ -1618,7 +1661,10 @@
 
         printCanvas.innerHTML = `
             <div class="print-watermark-overlay" aria-hidden="true">
-                <span>NoteEd AI</span>
+                <div class="print-watermark-content">
+                    <img src="{{ url_for('static', filename='images/noteedhalf.png') }}" alt="NoteEd Logo" class="print-watermark-img">
+                    <span class="print-watermark-text">NoteEd AI</span>
+                </div>
             </div>
             <div class="print-document-sheet">
                 <div class="print-doc-header">
@@ -1681,14 +1727,29 @@
                         pointer-events: none !important;
                         z-index: 99999 !important;
                     }
-                    .print-watermark-overlay span {
+                    .print-watermark-content {
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        gap: 14pt !important;
+                        transform: rotate(-32deg) !important;
+                        opacity: 0.06 !important;
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+                    .print-watermark-img {
+                        height: 52pt !important;
+                        width: auto !important;
+                        object-fit: contain !important;
+                        filter: grayscale(100%) brightness(0) !important;
+                        display: block !important;
+                    }
+                    .print-watermark-text {
                         font-family: 'Inter', -apple-system, sans-serif !important;
-                        font-size: 56pt !important;
+                        font-size: 50pt !important;
                         font-weight: 800 !important;
                         color: #000000 !important;
-                        opacity: 0.055 !important;
-                        transform: rotate(-35deg) !important;
-                        letter-spacing: 8px !important;
+                        letter-spacing: 6px !important;
                         text-transform: uppercase !important;
                         white-space: nowrap !important;
                     }
